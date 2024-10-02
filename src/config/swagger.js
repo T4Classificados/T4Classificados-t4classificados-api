@@ -10,7 +10,7 @@ const options = {
     },
     servers: [
       {
-        url: 'http://localhost:5000/api',
+        url: 'http://54.172.252.55:5000/api',
         description: 'Servidor de desenvolvimento',
       },
     ],

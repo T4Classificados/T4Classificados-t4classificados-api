@@ -5,8 +5,16 @@ exports.createEvent = async (req, res) => {
   try {
     const { nome, data, local, tipo } = req.body;
     const imagem = req.file ? req.file.filename : null;
-    const result = await eventModel.createEvent(nome, data, local, tipo, imagem);
-    res.status(201).json({ message: 'Evento criado com sucesso', eventId: result.insertId });
+    const userId = req.userData.userId; // Obtém o ID do usuário do token
+
+    const result = await eventModel.createEvent(nome, data, local, tipo, imagem, userId);
+    const eventLink = `${config.baseUrl}/evento/${result.eventLink}`;
+
+    res.status(201).json({ 
+      message: 'Evento criado com sucesso', 
+      eventId: result.insertId,
+      eventLink
+    });
   } catch (error) {
     console.error('Erro ao criar evento:', error);
     res.status(500).json({ message: 'Erro ao criar evento' });
@@ -18,7 +26,13 @@ exports.getAllEvents = async (req, res) => {
     const events = await eventModel.getAllEvents();
     const eventsWithImageUrl = events.map(event => ({
       ...event,
-      imagemUrl: event.imagem ? `${config.baseUrl}/uploads/${event.imagem}` : null
+      imagemUrl: event.imagem ? `${config.baseUrl}/uploads/${event.imagem}` : null,
+      user: {
+        id: event.user_id,
+        nome: event.user_nome,
+        sobrenome: event.user_sobrenome,
+        telefone: event.user_telefone
+      }
     }));
     res.json(eventsWithImageUrl);
   } catch (error) {
@@ -30,11 +44,19 @@ exports.getAllEvents = async (req, res) => {
 exports.getEventById = async (req, res) => {
   try {
     const { id } = req.params;
+    console.log('ID do evento solicitado:', id); // Adicione este log
     const event = await eventModel.getEventById(id);
+    console.log('Evento retornado pelo modelo:', event); // Adicione este log
     if (event) {
       const eventWithImageUrl = {
         ...event,
-        imagemUrl: event.imagem ? `${config.baseUrl}/uploads/${event.imagem}` : null
+        imagemUrl: event.imagem ? `${config.baseUrl}/uploads/${event.imagem}` : null,
+        user: {
+          id: event.user_id,
+          nome: event.user_nome,
+          sobrenome: event.user_sobrenome,
+          telefone: event.user_telefone
+        }
       };
       res.json(eventWithImageUrl);
     } else {
@@ -112,5 +134,51 @@ exports.getEventStatistics = async (req, res) => {
   } catch (error) {
     console.error('Erro ao buscar estatísticas:', error);
     res.status(500).json({ message: 'Erro ao buscar estatísticas' });
+  }
+};
+
+exports.getUserEventStatistics = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    // Verifique se o usuário tem permissão para acessar essas estatísticas
+    if (req.userData.role !== 'admin' && req.userData.userId !== parseInt(userId)) {
+      return res.status(403).json({ message: 'Acesso negado' });
+    }
+
+    const statistics = await eventModel.getUserEventStatistics(userId);
+    if (statistics) {
+      res.json(statistics);
+    } else {
+      res.status(404).json({ message: 'Não foi possível obter as estatísticas do usuário' });
+    }
+  } catch (error) {
+    console.error('Erro ao buscar estatísticas do usuário:', error);
+    res.status(500).json({ message: 'Erro ao buscar estatísticas do usuário' });
+  }
+};
+
+exports.getEventByLink = async (req, res) => {
+  try {
+    const { eventLink } = req.params;
+    const event = await eventModel.getEventByLink(eventLink);
+    if (event) {
+      const eventWithImageUrl = {
+        ...event,
+        imagemUrl: event.imagem ? `${config.baseUrl}/uploads/${event.imagem}` : null,
+        user: {
+          id: event.user_id,
+          nome: event.user_nome,
+          sobrenome: event.user_sobrenome,
+          telefone: event.user_telefone
+        }
+      };
+      res.json(eventWithImageUrl);
+    } else {
+      res.status(404).json({ message: 'Evento não encontrado' });
+    }
+  } catch (error) {
+    console.error('Erro ao buscar evento:', error);
+    res.status(500).json({ message: 'Erro ao buscar evento' });
   }
 };

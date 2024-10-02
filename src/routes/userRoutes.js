@@ -318,4 +318,40 @@ router.post('/request-password-reset', userController.requestPasswordReset);
  */
 router.post('/reset-password', userController.resetPassword);
 
+/**
+ * @swagger
+ * /change-password:
+ *   put:
+ *     summary: Altera a senha do usuário logado
+ *     tags: [Usuários]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - senhaAtual
+ *               - novaSenha
+ *             properties:
+ *               senhaAtual:
+ *                 type: string
+ *               novaSenha:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Senha alterada com sucesso
+ *       400:
+ *         description: Senha atual incorreta ou nova senha igual à atual
+ *       401:
+ *         description: Não autorizado
+ *       404:
+ *         description: Usuário não encontrado
+ *       500:
+ *         description: Erro ao alterar senha
+ */
+router.put('/change-password', authMiddleware, userController.changePassword);
+
 module.exports = router;

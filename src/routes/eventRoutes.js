@@ -61,6 +61,15 @@ router.get('/events/statistics', eventController.getEventStatistics);
  *     responses:
  *       201:
  *         description: Evento criado com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 eventId:
+ *                   type: integer
  *       401:
  *         description: Não autorizado
  */
@@ -75,6 +84,37 @@ router.post('/events', upload.single('imagem'), eventController.createEvent);
  *     responses:
  *       200:
  *         description: Lista de eventos obtida com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: integer
+ *                   nome:
+ *                     type: string
+ *                   data:
+ *                     type: string
+ *                     format: date
+ *                   local:
+ *                     type: string
+ *                   tipo:
+ *                     type: string
+ *                   imagemUrl:
+ *                     type: string
+ *                   user:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                       nome:
+ *                         type: string
+ *                       sobrenome:
+ *                         type: string
+ *                       telefone:
+ *                         type: string
  */
 router.get('/events', eventController.getAllEvents);
 
@@ -93,6 +133,35 @@ router.get('/events', eventController.getAllEvents);
  *     responses:
  *       200:
  *         description: Evento obtido com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: integer
+ *                 nome:
+ *                   type: string
+ *                 data:
+ *                   type: string
+ *                   format: date
+ *                 local:
+ *                   type: string
+ *                 tipo:
+ *                   type: string
+ *                 imagemUrl:
+ *                   type: string
+ *                 user:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                     nome:
+ *                       type: string
+ *                     sobrenome:
+ *                       type: string
+ *                     telefone:
+ *                       type: string
  *       404:
  *         description: Evento não encontrado
  */
@@ -160,5 +229,100 @@ router.put('/events/:id', upload.single('imagem'), eventController.updateEvent);
  *         description: Evento não encontrado
  */
 router.delete('/events/:id', eventController.deleteEvent);
+
+/**
+ * @swagger
+ * /events/user-statistics/{userId}:
+ *   get:
+ *     summary: Obtém estatísticas dos eventos de um usuário específico
+ *     tags: [Eventos]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID do usuário
+ *     responses:
+ *       200:
+ *         description: Estatísticas obtidas com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 totalEvents:
+ *                   type: integer
+ *                 totalGuests:
+ *                   type: integer
+ *                 acceptedInvitations:
+ *                   type: integer
+ *                 rejectedInvitations:
+ *                   type: integer
+ *                 pendingInvitations:
+ *                   type: integer
+ *       401:
+ *         description: Não autorizado
+ *       403:
+ *         description: Acesso negado
+ *       404:
+ *         description: Usuário não encontrado
+ *       500:
+ *         description: Erro ao buscar estatísticas
+ */
+router.get('/events/user-statistics/:userId', authMiddleware, eventController.getUserEventStatistics);
+
+/**
+ * @swagger
+ * /events/link/{eventLink}:
+ *   get:
+ *     summary: Obtém um evento específico pelo link
+ *     tags: [Eventos]
+ *     parameters:
+ *       - in: path
+ *         name: eventLink
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Evento obtido com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: integer
+ *                 nome:
+ *                   type: string
+ *                 data:
+ *                   type: string
+ *                   format: date
+ *                 local:
+ *                   type: string
+ *                 tipo:
+ *                   type: string
+ *                 imagemUrl:
+ *                   type: string
+ *                 event_link:
+ *                   type: string
+ *                 user:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                     nome:
+ *                       type: string
+ *                     sobrenome:
+ *                       type: string
+ *                     telefone:
+ *                       type: string
+ *       404:
+ *         description: Evento não encontrado
+ */
+router.get('/events/link/:eventLink', eventController.getEventByLink);
 
 module.exports = router;

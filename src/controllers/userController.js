@@ -295,3 +295,32 @@ exports.resetPassword = async (req, res) => {
     res.status(500).json({ message: 'Erro ao redefinir senha' });
   }
 };
+
+exports.changePassword = async (req, res) => {
+  try {
+    const { senhaAtual, novaSenha } = req.body;
+    const userId = req.userData.userId;
+
+    const user = await userModel.getUserById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'Usuário não encontrado' });
+    }
+
+    const isPasswordValid = await bcrypt.compare(senhaAtual, user.senha);
+    if (!isPasswordValid) {
+      return res.status(400).json({ message: 'Senha atual incorreta' });
+    }
+
+    if (senhaAtual === novaSenha) {
+      return res.status(400).json({ message: 'A nova senha deve ser diferente da senha atual' });
+    }
+
+    const hashedPassword = await bcrypt.hash(novaSenha, 10);
+    await userModel.updatePassword(userId, hashedPassword);
+
+    res.json({ message: 'Senha alterada com sucesso' });
+  } catch (error) {
+    console.error('Erro ao alterar senha:', error);
+    res.status(500).json({ message: 'Erro ao alterar senha' });
+  }
+};

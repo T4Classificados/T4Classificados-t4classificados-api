@@ -1,20 +1,36 @@
 const db = require('../config/database');
+const crypto = require('crypto');
 
-exports.createEvent = async (nome, data, local, tipo, imagem) => {
+function generateEventLink() {
+  return crypto.randomBytes(8).toString('hex');
+}
+
+exports.createEvent = async (nome, data, local, tipo, imagem, userId) => {
+  const eventLink = generateEventLink();
   const [result] = await db.query(
-    'INSERT INTO eventos (nome, data, local, tipo, imagem) VALUES (?, ?, ?, ?, ?)',
-    [nome, data, local, tipo, imagem]
+    'INSERT INTO eventos (nome, data, local, tipo, imagem, user_id, event_link) VALUES (?, ?, ?, ?, ?, ?, ?)',
+    [nome, data, local, tipo, imagem, userId, eventLink]
   );
-  return result;
+  return { ...result, eventLink };
 };
 
 exports.getAllEvents = async () => {
-  const [rows] = await db.query('SELECT * FROM eventos');
+  const [rows] = await db.query(`
+    SELECT e.*, u.nome as user_nome, u.sobrenome as user_sobrenome, u.telefone as user_telefone
+    FROM eventos e
+    JOIN usuarios u ON e.user_id = u.id
+  `);
   return rows;
 };
 
 exports.getEventById = async (id) => {
-  const [rows] = await db.query('SELECT * FROM eventos WHERE id = ?', [id]);
+  const [rows] = await db.query(`
+    SELECT e.*, u.nome as user_nome, u.sobrenome as user_sobrenome, u.telefone as user_telefone
+    FROM eventos e
+    JOIN usuarios u ON e.user_id = u.id
+    WHERE e.id = ?
+  `, [id]);
+  console.log('Resultado da consulta getEventById:', rows); // Adicione este log
   return rows[0];
 };
 
@@ -51,4 +67,41 @@ exports.getEventStatistics = async () => {
     rejectedInvitations: guestStatus[0].rejeitados || 0,
     pendingInvitations: guestStatus[0].pendentes || 0
   };
+};
+
+exports.getUserEventStatistics = async (userId) => {
+  const [totalEvents] = await db.query('SELECT COUNT(*) as total FROM eventos WHERE user_id = ?', [userId]);
+  const [totalGuests] = await db.query(`
+    SELECT COUNT(*) as total 
+    FROM convidados c
+    JOIN eventos e ON c.evento_id = e.id
+    WHERE e.user_id = ?
+  `, [userId]);
+  const [guestStatus] = await db.query(`
+    SELECT 
+      SUM(CASE WHEN c.status = 'aceito' THEN 1 ELSE 0 END) as aceitos,
+      SUM(CASE WHEN c.status = 'rejeitado' THEN 1 ELSE 0 END) as rejeitados,
+      SUM(CASE WHEN c.status = 'pendente' THEN 1 ELSE 0 END) as pendentes
+    FROM convidados c
+    JOIN eventos e ON c.evento_id = e.id
+    WHERE e.user_id = ?
+  `, [userId]);
+
+  return {
+    totalEvents: totalEvents[0].total,
+    totalGuests: totalGuests[0].total,
+    acceptedInvitations: guestStatus[0].aceitos || 0,
+    rejectedInvitations: guestStatus[0].rejeitados || 0,
+    pendingInvitations: guestStatus[0].pendentes || 0
+  };
+};
+
+exports.getEventByLink = async (eventLink) => {
+  const [rows] = await db.query(`
+    SELECT e.*, u.nome as user_nome, u.sobrenome as user_sobrenome, u.telefone as user_telefone
+    FROM eventos e
+    JOIN usuarios u ON e.user_id = u.id
+    WHERE e.event_link = ?
+  `, [eventLink]);
+  return rows[0];
 };

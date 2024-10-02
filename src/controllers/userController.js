@@ -87,7 +87,7 @@ exports.loginUser = async (req, res) => {
     }
 
     const accessToken = jwt.sign(
-      { userId: user.id, telefone: user.telefone, role: user.role },
+      { userId: user.id, telefone: user.telefone, role: user.role, nome: user.nome, sobrenome: user.sobrenome },
       process.env.JWT_SECRET,
       { expiresIn: '1h' }
     );
@@ -107,7 +107,8 @@ exports.loginUser = async (req, res) => {
         nome: user.nome,
         sobrenome: user.sobrenome,
         telefone: user.telefone,
-        role: user.role
+        role: user.role,
+        is_active: user.is_active
       }
     });
   } catch (error) {
@@ -188,5 +189,27 @@ exports.refreshToken = async (req, res) => {
   } catch (error) {
     console.error('Erro ao atualizar token:', error);
     res.status(500).json({ message: 'Erro ao atualizar token' });
+  }
+};
+
+exports.getCurrentUser = async (req, res) => {
+  try {
+    const userId = req.userData.userId;
+    const user = await userModel.getUserById(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: 'Usuário não encontrado' });
+    }
+
+    // Remova informações sensíveis antes de enviar
+    const { senha, confirmation_code, ...userInfo } = user;
+
+    res.json({
+      message: 'Informações do usuário obtidas com sucesso',
+      user: userInfo
+    });
+  } catch (error) {
+    console.error('Erro ao obter informações do usuário:', error);
+    res.status(500).json({ message: 'Erro ao obter informações do usuário' });
   }
 };

@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/userController');
+const authMiddleware = require('../middleware/auth');
 
 /**
  * @swagger
@@ -65,6 +66,32 @@ router.post('/register', userController.registerUser);
  *     responses:
  *       200:
  *         description: Login bem-sucedido
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 accessToken:
+ *                   type: string
+ *                 refreshToken:
+ *                   type: string
+ *                 user:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                     nome:
+ *                       type: string
+ *                     sobrenome:
+ *                       type: string
+ *                     telefone:
+ *                       type: string
+ *                     role:
+ *                       type: string
+ *                     is_active:
+ *                       type: boolean
  *       401:
  *         description: Credenciais inválidas
  *       403:
@@ -156,5 +183,45 @@ router.post('/confirm-account', userController.confirmAccount);
  *         description: Erro ao atualizar token
  */
 router.post('/refresh-token', userController.refreshToken);
+
+/**
+ * @swagger
+ * /me:
+ *   get:
+ *     summary: Obtém informações do usuário logado
+ *     tags: [Usuários]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Informações do usuário obtidas com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 user:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                     nome:
+ *                       type: string
+ *                     sobrenome:
+ *                       type: string
+ *                     telefone:
+ *                       type: string
+ *                     role:
+ *                       type: string
+ *                     is_active:
+ *                       type: boolean
+ *       401:
+ *         description: Não autorizado
+ *       404:
+ *         description: Usuário não encontrado
+ */
+router.get('/me', authMiddleware, userController.getCurrentUser);
 
 module.exports = router;

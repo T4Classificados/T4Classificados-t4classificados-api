@@ -27,3 +27,18 @@ exports.updateConfirmationCode = async (id, confirmationCode) => {
   const [result] = await db.query('UPDATE usuarios SET confirmation_code = ? WHERE id = ?', [confirmationCode, id]);
   return result;
 };
+
+exports.updateResetCode = async (id, resetCode) => {
+  const [result] = await db.query('UPDATE usuarios SET reset_code = ? WHERE id = ?', [resetCode, id]);
+  return result;
+};
+
+exports.updatePassword = async (id, newPassword) => {
+  const [result] = await db.query('UPDATE usuarios SET senha = ? WHERE id = ?', [newPassword, id]);
+  return result;
+};
+
+exports.clearResetCode = async (id) => {
+  const [result] = await db.query('UPDATE usuarios SET reset_code = NULL WHERE id = ?', [id]);
+  return result;
+};

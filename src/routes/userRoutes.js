@@ -224,4 +224,98 @@ router.post('/refresh-token', userController.refreshToken);
  */
 router.get('/me', authMiddleware, userController.getCurrentUser);
 
+/**
+ * @swagger
+ * /resend-confirmation:
+ *   post:
+ *     summary: Reenvia o código de confirmação
+ *     tags: [Usuários]
+ *     security: [] # Remove a necessidade de autenticação
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - telefone
+ *             properties:
+ *               telefone:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Novo código de confirmação enviado com sucesso
+ *       400:
+ *         description: Conta já está ativa
+ *       404:
+ *         description: Usuário não encontrado
+ *       500:
+ *         description: Erro ao enviar o código de confirmação
+ */
+router.post('/resend-confirmation', userController.resendConfirmationCode);
+
+/**
+ * @swagger
+ * /request-password-reset:
+ *   post:
+ *     summary: Solicita redefinição de senha
+ *     tags: [Usuários]
+ *     security: [] # Remove a necessidade de autenticação
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - telefone
+ *             properties:
+ *               telefone:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Código de redefinição enviado com sucesso
+ *       404:
+ *         description: Usuário não encontrado
+ *       500:
+ *         description: Erro ao enviar o código de redefinição
+ */
+router.post('/request-password-reset', userController.requestPasswordReset);
+
+/**
+ * @swagger
+ * /reset-password:
+ *   post:
+ *     summary: Redefine a senha do usuário
+ *     tags: [Usuários]
+ *     security: [] # Remove a necessidade de autenticação
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - telefone
+ *               - resetCode
+ *               - newPassword
+ *             properties:
+ *               telefone:
+ *                 type: string
+ *               resetCode:
+ *                 type: string
+ *               newPassword:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Senha redefinida com sucesso
+ *       400:
+ *         description: Código de redefinição inválido
+ *       404:
+ *         description: Usuário não encontrado
+ *       500:
+ *         description: Erro ao redefinir senha
+ */
+router.post('/reset-password', userController.resetPassword);
+
 module.exports = router;

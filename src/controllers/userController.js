@@ -213,3 +213,85 @@ exports.getCurrentUser = async (req, res) => {
     res.status(500).json({ message: 'Erro ao obter informações do usuário' });
   }
 };
+
+exports.resendConfirmationCode = async (req, res) => {
+  try {
+    const { telefone } = req.body;
+
+    const user = await userModel.getUserByTelefone(telefone);
+    if (!user) {
+      return res.status(404).json({ message: 'Usuário não encontrado' });
+    }
+
+    if (user.is_active) {
+      return res.status(400).json({ message: 'Conta já está ativa' });
+    }
+
+    const confirmationCode = generateConfirmationCode();
+    await userModel.updateConfirmationCode(user.id, confirmationCode);
+
+    // Enviar SMS com o novo código de confirmação
+    const smsMessage = `Seu novo código de confirmação é: ${confirmationCode}`;
+    const smsSent = await sendSMS(telefone, smsMessage);
+
+    if (smsSent) {
+      res.json({ message: 'Novo código de confirmação enviado com sucesso' });
+    } else {
+      res.status(500).json({ message: 'Erro ao enviar o código de confirmação por SMS' });
+    }
+  } catch (error) {
+    console.error('Erro ao reenviar código de confirmação:', error);
+    res.status(500).json({ message: 'Erro ao reenviar código de confirmação' });
+  }
+};
+
+exports.requestPasswordReset = async (req, res) => {
+  try {
+    const { telefone } = req.body;
+    const user = await userModel.getUserByTelefone(telefone);
+
+    if (!user) {
+      return res.status(404).json({ message: 'Usuário não encontrado' });
+    }
+
+    const resetCode = generateConfirmationCode();
+    await userModel.updateResetCode(user.id, resetCode);
+
+    // Enviar SMS com o código de redefinição
+    const smsMessage = `Seu código para redefinição de senha é: ${resetCode}`;
+    const smsSent = await sendSMS(telefone, smsMessage);
+
+    if (smsSent) {
+      res.json({ message: 'Código de redefinição de senha enviado com sucesso' });
+    } else {
+      res.status(500).json({ message: 'Erro ao enviar o código de redefinição por SMS' });
+    }
+  } catch (error) {
+    console.error('Erro ao solicitar redefinição de senha:', error);
+    res.status(500).json({ message: 'Erro ao solicitar redefinição de senha' });
+  }
+};
+
+exports.resetPassword = async (req, res) => {
+  try {
+    const { telefone, resetCode, newPassword } = req.body;
+    const user = await userModel.getUserByTelefone(telefone);
+
+    if (!user) {
+      return res.status(404).json({ message: 'Usuário não encontrado' });
+    }
+
+    if (user.reset_code !== resetCode) {
+      return res.status(400).json({ message: 'Código de redefinição inválido' });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await userModel.updatePassword(user.id, hashedPassword);
+    await userModel.clearResetCode(user.id);
+
+    res.json({ message: 'Senha redefinida com sucesso' });
+  } catch (error) {
+    console.error('Erro ao redefinir senha:', error);
+    res.status(500).json({ message: 'Erro ao redefinir senha' });
+  }
+};

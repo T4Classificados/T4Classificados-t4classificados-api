@@ -1,3 +1,7 @@
+const dotenv = require('dotenv');
+
+dotenv.config();
+
 const swaggerJsdoc = require('swagger-jsdoc');
 
 const options = {
@@ -10,7 +14,7 @@ const options = {
     },
     servers: [
       {
-        url: 'http://54.172.252.55:5000/api',
+        url: `${process.env.BASE_URL}:5000/api`,
         description: 'Servidor de desenvolvimento',
       },
     ],

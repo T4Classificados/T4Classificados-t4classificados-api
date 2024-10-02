@@ -1,9 +1,9 @@
 const db = require('../config/database');
 
-exports.createUser = async (nome, sobrenome, telefone, senha, role = 'user') => {
+exports.createUser = async (nome, sobrenome, telefone, senha, role = 'user', confirmationCode) => {
   const [result] = await db.query(
-    'INSERT INTO usuarios (nome, sobrenome, telefone, senha, role) VALUES (?, ?, ?, ?, ?)',
-    [nome, sobrenome, telefone, senha, role]
+    'INSERT INTO usuarios (nome, sobrenome, telefone, senha, role, confirmation_code, is_active) VALUES (?, ?, ?, ?, ?, ?, ?)',
+    [nome, sobrenome, telefone, senha, role, confirmationCode, false]
   );
   return result;
 };
@@ -14,6 +14,16 @@ exports.getUserByTelefone = async (telefone) => {
 };
 
 exports.getUserById = async (id) => {
-  const [rows] = await db.query('SELECT id, nome, sobrenome, telefone, role FROM usuarios WHERE id = ?', [id]);
+  const [rows] = await db.query('SELECT * FROM usuarios WHERE id = ?', [id]);
   return rows[0];
+};
+
+exports.activateUser = async (id) => {
+  const [result] = await db.query('UPDATE usuarios SET is_active = 1, confirmation_code = NULL WHERE id = ?', [id]);
+  return result;
+};
+
+exports.updateConfirmationCode = async (id, confirmationCode) => {
+  const [result] = await db.query('UPDATE usuarios SET confirmation_code = ? WHERE id = ?', [confirmationCode, id]);
+  return result;
 };

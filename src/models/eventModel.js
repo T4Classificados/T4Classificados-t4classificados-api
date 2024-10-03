@@ -128,3 +128,19 @@ exports.deleteUserEvent = async (userId, eventId) => {
   const [result] = await db.query('DELETE FROM eventos WHERE id = ? AND user_id = ?', [eventId, userId]);
   return result;
 };
+
+exports.checkGuestByEventAndPhone = async (eventId, telefone) => {
+  const [rows] = await db.query(
+    'SELECT * FROM convidados WHERE evento_id = ? AND telefone = ?',
+    [eventId, telefone]
+  );
+  return rows[0];
+};
+
+exports.checkGuestByEventLinkAndPhone = async (eventLink, telefone) => {
+  const [rows] = await db.query(
+    'SELECT c.* FROM convidados c JOIN eventos e ON c.evento_id = e.id WHERE e.event_link = ? AND c.telefone = ?',
+    [eventLink, telefone]
+  );
+  return rows[0];
+};

@@ -288,3 +288,53 @@ exports.deleteUserEvent = async (req, res) => {
     res.status(500).json({ message: 'Erro ao excluir evento' });
   }
 };
+
+exports.checkGuestByEventAndPhone = async (req, res) => {
+  try {
+    const { eventId, telefone } = req.params;
+    const guest = await eventModel.checkGuestByEventAndPhone(eventId, telefone);
+    
+    if (guest) {
+      res.json({
+        isInvited: true,
+        guest: {
+          id: guest.id,
+          nome: guest.nome,
+          telefone: guest.telefone,
+          status: guest.status,
+          // Adicione outros campos relevantes do convidado aqui
+        }
+      });
+    } else {
+      res.json({ isInvited: false });
+    }
+  } catch (error) {
+    console.error('Erro ao verificar convidado:', error);
+    res.status(500).json({ message: 'Erro ao verificar convidado' });
+  }
+};
+
+exports.checkGuestByEventLinkAndPhone = async (req, res) => {
+  try {
+    const { eventLink, telefone } = req.params;
+    const guest = await eventModel.checkGuestByEventLinkAndPhone(eventLink, telefone);
+    
+    if (guest) {
+      res.json({
+        isInvited: true,
+        guest: {
+          id: guest.id,
+          nome: guest.nome,
+          telefone: guest.telefone,
+          status: guest.status,
+          // Adicione outros campos relevantes do convidado aqui
+        }
+      });
+    } else {
+      res.json({ isInvited: false });
+    }
+  } catch (error) {
+    console.error('Erro ao verificar convidado:', error);
+    res.status(500).json({ message: 'Erro ao verificar convidado' });
+  }
+};

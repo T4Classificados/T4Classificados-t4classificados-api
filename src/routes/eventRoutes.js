@@ -494,4 +494,49 @@ router.put('/user/:idUser/events/:eventId', authMiddleware, upload.single('image
  */
 router.delete('/user/:idUser/events/:eventId', authMiddleware, eventController.deleteUserEvent);
 
+/**
+ * @swagger
+ * /events/link/{eventLink}/check-guest/{telefone}:
+ *   get:
+ *     summary: Verifica se um convidado está associado a um evento específico usando o link do evento
+ *     tags: [Eventos]
+ *     parameters:
+ *       - in: path
+ *         name: eventLink
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Link do evento
+ *       - in: path
+ *         name: telefone
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Número de telefone do convidado
+ *     responses:
+ *       200:
+ *         description: Verificação realizada com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 isInvited:
+ *                   type: boolean
+ *                 guest:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                     nome:
+ *                       type: string
+ *                     telefone:
+ *                       type: string
+ *                     status:
+ *                       type: string
+ *       500:
+ *         description: Erro ao verificar convidado
+ */
+router.get('/events/link/:eventLink/check-guest/:telefone', eventController.checkGuestByEventLinkAndPhone);
+
 module.exports = router;

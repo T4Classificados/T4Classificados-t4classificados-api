@@ -133,3 +133,35 @@ exports.deleteGuestForUser = async (guestId, userId) => {
   );
   return result;
 };
+
+exports.getEventByIdAndUserId = async (eventId, userId) => {
+  const [rows] = await db.query('SELECT * FROM eventos WHERE id = ? AND user_id = ?', [eventId, userId]);
+  return rows[0];
+};
+
+exports.updateEventForUser = async (eventId, userId, eventData) => {
+  // Primeiro, obtenha os dados atuais do evento
+  const currentEvent = await exports.getEventByIdAndUserId(eventId, userId);
+  
+  if (!currentEvent) {
+    throw new Error('Event not found or does not belong to the user');
+  }
+
+  // Mescle os dados atuais com os novos dados fornecidos
+  const updatedData = {
+    nome: eventData.nome || currentEvent.nome,
+    data: eventData.data || currentEvent.data,
+    local: eventData.local || currentEvent.local,
+    descricao: eventData.descricao || currentEvent.descricao,
+    // Adicione outros campos do evento conforme necessário
+  };
+
+  const [result] = await db.query(
+    `UPDATE eventos
+     SET nome = ?, data = ?, local = ?, descricao = ?
+     WHERE id = ? AND user_id = ?`,
+    [updatedData.nome, updatedData.data, updatedData.local, updatedData.descricao, eventId, userId]
+  );
+  
+  return result;
+};

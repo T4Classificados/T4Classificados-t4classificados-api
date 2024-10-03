@@ -93,15 +93,34 @@ exports.getGuestByIdAndUserId = async (guestId, userId) => {
 };
 
 exports.updateGuestForUser = async (guestId, userId, guestData) => {
-  const { nome, telefone, acompanhante, numeroAcompanhantes, tipoAcompanhante, eventoId, status } = guestData;
+  // Primeiro, obtenha os dados atuais do convidado
+  const currentGuest = await exports.getGuestByIdAndUserId(guestId, userId);
+  
+  if (!currentGuest) {
+    throw new Error('Guest not found or does not belong to the user');
+  }
+
+  // Mescle os dados atuais com os novos dados fornecidos
+  const updatedData = {
+    nome: guestData.nome || currentGuest.nome,
+    telefone: guestData.telefone || currentGuest.telefone,
+    acompanhante: guestData.acompanhante !== undefined ? guestData.acompanhante : currentGuest.acompanhante,
+    numeroAcompanhantes: guestData.numeroAcompanhantes !== undefined ? guestData.numeroAcompanhantes : currentGuest.numero_acompanhantes,
+    tipoAcompanhante: guestData.tipoAcompanhante || currentGuest.tipo_acompanhante,
+    eventoId: guestData.eventoId || currentGuest.evento_id,
+    status: guestData.status || currentGuest.status
+  };
+
   const [result] = await db.query(
     `UPDATE convidados c
      JOIN eventos e ON c.evento_id = e.id
      SET c.nome = ?, c.telefone = ?, c.acompanhante = ?, c.numero_acompanhantes = ?, 
          c.tipo_acompanhante = ?, c.evento_id = ?, c.status = ?
      WHERE c.id = ? AND e.user_id = ?`,
-    [nome, telefone, acompanhante, numeroAcompanhantes, tipoAcompanhante, eventoId, status, guestId, userId]
+    [updatedData.nome, updatedData.telefone, updatedData.acompanhante, updatedData.numeroAcompanhantes, 
+     updatedData.tipoAcompanhante, updatedData.eventoId, updatedData.status, guestId, userId]
   );
+  
   return result;
 };
 

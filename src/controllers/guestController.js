@@ -163,3 +163,83 @@ exports.updateGuestStatusByTelefone = async (req, res) => {
     res.status(500).json({ message: 'Erro ao atualizar status do convite' });
   }
 };
+
+exports.getGuestsByUserId = async (req, res) => {
+  try {
+    const { idUser } = req.params;
+    const guests = await guestModel.getGuestsByUserId(idUser);
+    res.json(guests);
+  } catch (error) {
+    console.error('Erro ao buscar convidados do usuário:', error);
+    res.status(500).json({ message: 'Erro ao buscar convidados do usuário' });
+  }
+};
+
+exports.createGuestForUser = async (req, res) => {
+  try {
+    const { idUser } = req.params;
+    const { nome, telefone, acompanhante, numeroAcompanhantes, tipoAcompanhante, eventoId } = req.body;
+    const confirmationToken = crypto.randomBytes(20).toString('hex');
+    
+    const guestData = { nome, telefone, acompanhante, numeroAcompanhantes, tipoAcompanhante, eventoId, confirmationToken };
+    const result = await guestModel.createGuestForUser(idUser, guestData);
+    
+    const newGuest = await guestModel.getGuestByIdAndUserId(result.insertId, idUser);
+    
+    res.status(201).json({
+      message: 'Convidado adicionado com sucesso',
+      guest: newGuest
+    });
+  } catch (error) {
+    console.error('Erro ao adicionar convidado:', error);
+    res.status(500).json({ message: 'Erro ao adicionar convidado' });
+  }
+};
+
+exports.getGuestByIdAndUserId = async (req, res) => {
+  try {
+    const { idUser, guestId } = req.params;
+    const guest = await guestModel.getGuestByIdAndUserId(guestId, idUser);
+    if (guest) {
+      res.json(guest);
+    } else {
+      res.status(404).json({ message: 'Convidado não encontrado' });
+    }
+  } catch (error) {
+    console.error('Erro ao buscar convidado:', error);
+    res.status(500).json({ message: 'Erro ao buscar convidado' });
+  }
+};
+
+exports.updateGuestForUser = async (req, res) => {
+  try {
+    const { idUser, guestId } = req.params;
+    const updateData = req.body;
+    
+    const result = await guestModel.updateGuestForUser(guestId, idUser, updateData);
+    if (result.affectedRows > 0) {
+      const updatedGuest = await guestModel.getGuestByIdAndUserId(guestId, idUser);
+      res.json({ message: 'Convidado atualizado com sucesso', guest: updatedGuest });
+    } else {
+      res.status(404).json({ message: 'Convidado não encontrado' });
+    }
+  } catch (error) {
+    console.error('Erro ao atualizar convidado:', error);
+    res.status(500).json({ message: 'Erro ao atualizar convidado' });
+  }
+};
+
+exports.deleteGuestForUser = async (req, res) => {
+  try {
+    const { idUser, guestId } = req.params;
+    const result = await guestModel.deleteGuestForUser(guestId, idUser);
+    if (result.affectedRows > 0) {
+      res.json({ message: 'Convidado excluído com sucesso' });
+    } else {
+      res.status(404).json({ message: 'Convidado não encontrado' });
+    }
+  } catch (error) {
+    console.error('Erro ao excluir convidado:', error);
+    res.status(500).json({ message: 'Erro ao excluir convidado' });
+  }
+};

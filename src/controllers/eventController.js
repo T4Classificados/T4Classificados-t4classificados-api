@@ -182,3 +182,109 @@ exports.getEventByLink = async (req, res) => {
     res.status(500).json({ message: 'Erro ao buscar evento' });
   }
 };
+
+exports.getUserEvents = async (req, res) => {
+  try {
+    const { idUser } = req.params;
+    const events = await eventModel.getEventsByUserId(idUser);
+    const eventsWithImageUrl = events.map(event => ({
+      ...event,
+      imagemUrl: event.imagem ? `${config.baseUrl}/uploads/${event.imagem}` : null
+    }));
+    res.json(eventsWithImageUrl);
+  } catch (error) {
+    console.error('Erro ao buscar eventos do usuário:', error);
+    res.status(500).json({ message: 'Erro ao buscar eventos do usuário' });
+  }
+};
+
+exports.createUserEvent = async (req, res) => {
+  try {
+    const { idUser } = req.params;
+    const { nome, data, local, tipo } = req.body;
+    const imagem = req.file ? req.file.filename : null;
+
+    const result = await eventModel.createEvent(nome, data, local, tipo, imagem, idUser);
+    const eventLink = `${config.baseUrl}/evento/${result.eventLink}`;
+
+    res.status(201).json({ 
+      message: 'Evento criado com sucesso', 
+      eventId: result.insertId,
+      eventLink
+    });
+  } catch (error) {
+    console.error('Erro ao criar evento:', error);
+    res.status(500).json({ message: 'Erro ao criar evento' });
+  }
+};
+
+exports.getUserEventById = async (req, res) => {
+  try {
+    const { idUser, eventId } = req.params;
+    const event = await eventModel.getUserEventById(idUser, eventId);
+    if (event) {
+      const eventWithImageUrl = {
+        ...event,
+        imagemUrl: event.imagem ? `${config.baseUrl}/uploads/${event.imagem}` : null
+      };
+      res.json(eventWithImageUrl);
+    } else {
+      res.status(404).json({ message: 'Evento não encontrado' });
+    }
+  } catch (error) {
+    console.error('Erro ao buscar evento:', error);
+    res.status(500).json({ message: 'Erro ao buscar evento' });
+  }
+};
+
+exports.updateUserEvent = async (req, res) => {
+  try {
+    const { idUser, eventId } = req.params;
+    const { nome, data, local, tipo } = req.body;
+    const imagem = req.file ? req.file.filename : undefined;
+    
+    const existingEvent = await eventModel.getUserEventById(idUser, eventId);
+    if (!existingEvent) {
+      return res.status(404).json({ message: 'Evento não encontrado' });
+    }
+    
+    const updatedEvent = {
+      nome: nome || existingEvent.nome,
+      data: data || existingEvent.data,
+      local: local || existingEvent.local,
+      tipo: tipo || existingEvent.tipo,
+      imagem: imagem !== undefined ? imagem : existingEvent.imagem
+    };
+    
+    const result = await eventModel.updateUserEvent(idUser, eventId, updatedEvent);
+    
+    if (result.affectedRows > 0) {
+      const updatedEventWithUrl = {
+        ...updatedEvent,
+        id: eventId,
+        imagemUrl: updatedEvent.imagem ? `${config.baseUrl}/uploads/${updatedEvent.imagem}` : null
+      };
+      res.json({ message: 'Evento atualizado com sucesso', event: updatedEventWithUrl });
+    } else {
+      res.status(404).json({ message: 'Evento não encontrado' });
+    }
+  } catch (error) {
+    console.error('Erro ao atualizar evento:', error);
+    res.status(500).json({ message: 'Erro ao atualizar evento' });
+  }
+};
+
+exports.deleteUserEvent = async (req, res) => {
+  try {
+    const { idUser, eventId } = req.params;
+    const result = await eventModel.deleteUserEvent(idUser, eventId);
+    if (result.affectedRows > 0) {
+      res.json({ message: 'Evento excluído com sucesso' });
+    } else {
+      res.status(404).json({ message: 'Evento não encontrado' });
+    }
+  } catch (error) {
+    console.error('Erro ao excluir evento:', error);
+    res.status(500).json({ message: 'Erro ao excluir evento' });
+  }
+};

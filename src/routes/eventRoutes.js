@@ -325,4 +325,173 @@ router.get('/events/user-statistics/:userId', authMiddleware, eventController.ge
  */
 router.get('/events/link/:eventLink', eventController.getEventByLink);
 
+/**
+ * @swagger
+ * /user/{idUser}/events:
+ *   get:
+ *     summary: Lista todos os eventos de um usuário específico
+ *     tags: [Eventos]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: idUser
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Lista de eventos obtida com sucesso
+ *       401:
+ *         description: Não autorizado
+ */
+router.get('/user/:idUser/events', authMiddleware, eventController.getUserEvents);
+
+/**
+ * @swagger
+ * /user/{idUser}/events:
+ *   post:
+ *     summary: Cria um novo evento para um usuário específico
+ *     tags: [Eventos]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: idUser
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               nome:
+ *                 type: string
+ *               data:
+ *                 type: string
+ *                 format: date
+ *               local:
+ *                 type: string
+ *               tipo:
+ *                 type: string
+ *               imagem:
+ *                 type: string
+ *                 format: binary
+ *     responses:
+ *       201:
+ *         description: Evento criado com sucesso
+ *       401:
+ *         description: Não autorizado
+ */
+router.post('/user/:idUser/events', authMiddleware, upload.single('imagem'), eventController.createUserEvent);
+
+/**
+ * @swagger
+ * /user/{idUser}/events/{eventId}:
+ *   get:
+ *     summary: Obtém um evento específico de um usuário
+ *     tags: [Eventos]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: idUser
+ *         required: true
+ *         schema:
+ *           type: integer
+ *       - in: path
+ *         name: eventId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Evento obtido com sucesso
+ *       401:
+ *         description: Não autorizado
+ *       404:
+ *         description: Evento não encontrado
+ */
+router.get('/user/:idUser/events/:eventId', authMiddleware, eventController.getUserEventById);
+
+/**
+ * @swagger
+ * /user/{idUser}/events/{eventId}:
+ *   put:
+ *     summary: Atualiza um evento específico de um usuário
+ *     tags: [Eventos]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: idUser
+ *         required: true
+ *         schema:
+ *           type: integer
+ *       - in: path
+ *         name: eventId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               nome:
+ *                 type: string
+ *               data:
+ *                 type: string
+ *                 format: date
+ *               local:
+ *                 type: string
+ *               tipo:
+ *                 type: string
+ *               imagem:
+ *                 type: string
+ *                 format: binary
+ *     responses:
+ *       200:
+ *         description: Evento atualizado com sucesso
+ *       401:
+ *         description: Não autorizado
+ *       404:
+ *         description: Evento não encontrado
+ */
+router.put('/user/:idUser/events/:eventId', authMiddleware, upload.single('imagem'), eventController.updateUserEvent);
+
+/**
+ * @swagger
+ * /user/{idUser}/events/{eventId}:
+ *   delete:
+ *     summary: Exclui um evento específico de um usuário
+ *     tags: [Eventos]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: idUser
+ *         required: true
+ *         schema:
+ *           type: integer
+ *       - in: path
+ *         name: eventId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Evento excluído com sucesso
+ *       401:
+ *         description: Não autorizado
+ *       404:
+ *         description: Evento não encontrado
+ */
+router.delete('/user/:idUser/events/:eventId', authMiddleware, eventController.deleteUserEvent);
+
 module.exports = router;

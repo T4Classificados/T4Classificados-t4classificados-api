@@ -105,3 +105,26 @@ exports.getEventByLink = async (eventLink) => {
   `, [eventLink]);
   return rows[0];
 };
+
+exports.getEventsByUserId = async (userId) => {
+  const [rows] = await db.query('SELECT * FROM eventos WHERE user_id = ?', [userId]);
+  return rows;
+};
+
+exports.getUserEventById = async (userId, eventId) => {
+  const [rows] = await db.query('SELECT * FROM eventos WHERE id = ? AND user_id = ?', [eventId, userId]);
+  return rows[0];
+};
+
+exports.updateUserEvent = async (userId, eventId, eventData) => {
+  const { nome, data, local, tipo, imagem } = eventData;
+  const query = 'UPDATE eventos SET nome = ?, data = ?, local = ?, tipo = ?, imagem = ? WHERE id = ? AND user_id = ?';
+  const params = [nome, data, local, tipo, imagem, eventId, userId];
+  const [result] = await db.query(query, params);
+  return result;
+};
+
+exports.deleteUserEvent = async (userId, eventId) => {
+  const [result] = await db.query('DELETE FROM eventos WHERE id = ? AND user_id = ?', [eventId, userId]);
+  return result;
+};

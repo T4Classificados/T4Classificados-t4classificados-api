@@ -1,5 +1,8 @@
 const eventModel = require('../models/eventModel');
 const config = require('../config/config'); // Vamos criar este arquivo de configuração
+const dotenv = require('dotenv');
+
+dotenv.config();
 
 exports.createEvent = async (req, res) => {
   try {
@@ -26,7 +29,7 @@ exports.getAllEvents = async (req, res) => {
     const events = await eventModel.getAllEvents();
     const eventsWithImageUrl = events.map(event => ({
       ...event,
-      imagemUrl: event.imagem ? `${config.baseUrl}/uploads/${event.imagem}` : null,
+      imagemUrl: event.imagem ? `${config.baseUrl}:${process.env.PORT}/uploads/${event.imagem}` : null,
       user: {
         id: event.user_id,
         nome: event.user_nome,
@@ -50,7 +53,7 @@ exports.getEventById = async (req, res) => {
     if (event) {
       const eventWithImageUrl = {
         ...event,
-        imagemUrl: event.imagem ? `${config.baseUrl}/uploads/${event.imagem}` : null,
+        imagemUrl: event.imagem ? `${config.baseUrl}:${process.env.PORT}/uploads/${event.imagem}` : null,
         user: {
           id: event.user_id,
           nome: event.user_nome,
@@ -96,7 +99,7 @@ exports.updateEvent = async (req, res) => {
       const updatedEventWithUrl = {
         ...updatedEvent,
         id: id,
-        imagemUrl: updatedEvent.imagem ? `${config.baseUrl}/uploads/${updatedEvent.imagem}` : null
+        imagemUrl: updatedEvent.imagem ? `${config.baseUrl}:${process.env.PORT}/uploads/${updatedEvent.imagem}` : null
       };
       res.json({ message: 'Evento atualizado com sucesso', event: updatedEventWithUrl });
     } else {
@@ -165,7 +168,7 @@ exports.getEventByLink = async (req, res) => {
     if (event) {
       const eventWithImageUrl = {
         ...event,
-        imagemUrl: event.imagem ? `${config.baseUrl}/uploads/${event.imagem}` : null,
+        imagemUrl: event.imagem ? `${config.baseUrl}:${process.env.PORT}/uploads/${event.imagem}` : null,
         user: {
           id: event.user_id,
           nome: event.user_nome,
@@ -189,7 +192,7 @@ exports.getUserEvents = async (req, res) => {
     const events = await eventModel.getEventsByUserId(idUser);
     const eventsWithImageUrl = events.map(event => ({
       ...event,
-      imagemUrl: event.imagem ? `${config.baseUrl}/uploads/${event.imagem}` : null
+      imagemUrl: event.imagem ? `${config.baseUrl}:${process.env.PORT}/uploads/${event.imagem}` : null
     }));
     res.json(eventsWithImageUrl);
   } catch (error) {
@@ -225,7 +228,7 @@ exports.getUserEventById = async (req, res) => {
     if (event) {
       const eventWithImageUrl = {
         ...event,
-        imagemUrl: event.imagem ? `${config.baseUrl}/uploads/${event.imagem}` : null
+        imagemUrl: event.imagem ? `${config.baseUrl}:${process.env.PORT}/uploads/${event.imagem}` : null
       };
       res.json(eventWithImageUrl);
     } else {
@@ -262,7 +265,7 @@ exports.updateUserEvent = async (req, res) => {
       const updatedEventWithUrl = {
         ...updatedEvent,
         id: eventId,
-        imagemUrl: updatedEvent.imagem ? `${config.baseUrl}/uploads/${updatedEvent.imagem}` : null
+        imagemUrl: updatedEvent.imagem ? `${config.baseUrl}:${process.env.PORT}/uploads/${updatedEvent.imagem}` : null
       };
       res.json({ message: 'Evento atualizado com sucesso', event: updatedEventWithUrl });
     } else {

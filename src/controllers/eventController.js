@@ -192,7 +192,11 @@ exports.getUserEvents = async (req, res) => {
     const events = await eventModel.getEventsByUserId(idUser);
     const eventsWithImageUrl = events.map(event => ({
       ...event,
-      imagemUrl: event.imagem ? `${config.baseUrl}:${process.env.PORT}/uploads/${event.imagem}` : null
+      imagemUrl: event.imagem ? `${config.baseUrl}:${process.env.PORT}/uploads/${event.imagem}` : null,
+      total_convidados: parseInt(event.total_convidados),
+      convidados_aceitos: parseInt(event.convidados_aceitos),
+      convidados_rejeitados: parseInt(event.convidados_rejeitados),
+      convidados_pendentes: parseInt(event.convidados_pendentes)
     }));
     res.json(eventsWithImageUrl);
   } catch (error) {
@@ -228,7 +232,11 @@ exports.getUserEventById = async (req, res) => {
     if (event) {
       const eventWithImageUrl = {
         ...event,
-        imagemUrl: event.imagem ? `${config.baseUrl}:${process.env.PORT}/uploads/${event.imagem}` : null
+        imagemUrl: event.imagem ? `${config.baseUrl}:${process.env.PORT}/uploads/${event.imagem}` : null,
+        total_convidados: parseInt(event.total_convidados),
+        convidados_aceitos: parseInt(event.convidados_aceitos),
+        convidados_rejeitados: parseInt(event.convidados_rejeitados),
+        convidados_pendentes: parseInt(event.convidados_pendentes)
       };
       res.json(eventWithImageUrl);
     } else {

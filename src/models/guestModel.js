@@ -9,12 +9,12 @@ exports.createGuest = async (nome, telefone, acompanhante, numeroAcompanhantes, 
 };
 
 exports.getAllGuests = async () => {
-  const [rows] = await db.query('SELECT * FROM convidados');
+  const [rows] = await db.query('SELECT * FROM convidados ORDER BY id DESC');
   return rows;
 };
 
 exports.getGuestById = async (id) => {
-  const [rows] = await db.query('SELECT * FROM convidados WHERE id = ?', [id]);
+  const [rows] = await db.query('SELECT * FROM convidados WHERE id = ? ORDER BY id DESC', [id]);
   return rows[0];
 };
 
@@ -39,7 +39,7 @@ exports.deleteGuest = async (id) => {
 };
 
 exports.getGuestByToken = async (token) => {
-  const [rows] = await db.query('SELECT * FROM convidados WHERE confirmation_token = ?', [token]);
+  const [rows] = await db.query('SELECT * FROM convidados WHERE confirmation_token = ? ORDER BY id DESC', [token]);
   return rows[0];
 };
 
@@ -68,7 +68,7 @@ exports.getGuestsByUserId = async (userId) => {
     SELECT c.*, e.nome as evento_nome, e.data as evento_data, e.local as evento_local
     FROM convidados c
     JOIN eventos e ON c.evento_id = e.id
-    WHERE e.user_id = ?
+    WHERE e.user_id = ? ORDER BY c.id DESC
   `, [userId]);
   return rows;
 };

@@ -17,7 +17,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage });
 
-router.use(authMiddleware);
+//router.use(authMiddleware);
 
 /**
  * @swagger
@@ -29,7 +29,7 @@ router.use(authMiddleware);
  *       200:
  *         description: Estatísticas obtidas com sucesso
  */
-router.get('/events/statistics', eventController.getEventStatistics);
+router.get('/events/statistics', authMiddleware, eventController.getEventStatistics);
 
 /**
  * @swagger
@@ -73,7 +73,7 @@ router.get('/events/statistics', eventController.getEventStatistics);
  *       401:
  *         description: Não autorizado
  */
-router.post('/events', upload.single('imagem'), eventController.createEvent);
+router.post('/events', upload.single('imagem'), authMiddleware, eventController.createEvent);
 
 /**
  * @swagger
@@ -116,7 +116,7 @@ router.post('/events', upload.single('imagem'), eventController.createEvent);
  *                       telefone:
  *                         type: string
  */
-router.get('/events', eventController.getAllEvents);
+router.get('/events', authMiddleware, eventController.getAllEvents);
 
 /**
  * @swagger
@@ -165,7 +165,7 @@ router.get('/events', eventController.getAllEvents);
  *       404:
  *         description: Evento não encontrado
  */
-router.get('/events/:id', eventController.getEventById);
+router.get('/events/:id', authMiddleware, eventController.getEventById);
 
 /**
  * @swagger
@@ -208,7 +208,7 @@ router.get('/events/:id', eventController.getEventById);
  *       404:
  *         description: Evento não encontrado
  */
-router.put('/events/:id', upload.single('imagem'), eventController.updateEvent);
+router.put('/events/:id', authMiddleware, upload.single('imagem'), eventController.updateEvent);
 
 /**
  * @swagger
@@ -228,7 +228,7 @@ router.put('/events/:id', upload.single('imagem'), eventController.updateEvent);
  *       404:
  *         description: Evento não encontrado
  */
-router.delete('/events/:id', eventController.deleteEvent);
+router.delete('/events/:id', authMiddleware, eventController.deleteEvent);
 
 /**
  * @swagger
@@ -280,6 +280,7 @@ router.get('/events/user-statistics/:userId', authMiddleware, eventController.ge
  *   get:
  *     summary: Obtém um evento específico pelo link
  *     tags: [Eventos]
+ *     security: []
  *     parameters:
  *       - in: path
  *         name: eventLink
@@ -500,6 +501,7 @@ router.delete('/user/:idUser/events/:eventId', authMiddleware, eventController.d
  *   get:
  *     summary: Verifica se um convidado está associado a um evento específico usando o link do evento
  *     tags: [Eventos]
+ *     security: []
  *     parameters:
  *       - in: path
  *         name: eventLink

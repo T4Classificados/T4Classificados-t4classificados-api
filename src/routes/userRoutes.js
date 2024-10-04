@@ -363,6 +363,7 @@ router.get('/:idUser/guests', authMiddleware, guestController.getGuestsByUserId)
  *   post:
  *     summary: Valida o código do convidado
  *     tags: [Convidados]
+ *     security: []
  *     requestBody:
  *       required: true
  *       content:

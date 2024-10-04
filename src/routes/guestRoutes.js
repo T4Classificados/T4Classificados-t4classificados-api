@@ -9,6 +9,7 @@ const authMiddleware = require('../middleware/auth');
  *   post:
  *     summary: Confirma a presença de um convidado
  *     tags: [Convidados]
+ *     security: []
  *     parameters:
  *       - in: path
  *         name: token
@@ -43,6 +44,7 @@ router.post('/guests/confirm/:token', guestController.confirmPresence);
  *   put:
  *     summary: Atualiza o status de um convidado pelo telefone
  *     tags: [Convidados]
+ *     security: []
  *     parameters:
  *       - in: path
  *         name: telefone
@@ -113,7 +115,7 @@ router.use('/guests', authMiddleware);
  *       401:
  *         description: Não autorizado
  */
-router.post('/guests', guestController.createGuest);
+router.post('/guests', authMiddleware, guestController.createGuest);
 
 /**
  * @swagger
@@ -129,7 +131,7 @@ router.post('/guests', guestController.createGuest);
  *       401:
  *         description: Não autorizado
  */
-router.get('/guests', guestController.getAllGuests);
+router.get('/guests', authMiddleware, guestController.getAllGuests);
 
 /**
  * @swagger
@@ -153,7 +155,7 @@ router.get('/guests', guestController.getAllGuests);
  *       404:
  *         description: Convidado não encontrado
  */
-router.get('/guests/:id', guestController.getGuestById);
+router.get('/guests/:id', authMiddleware, guestController.getGuestById);
 
 /**
  * @swagger
@@ -199,7 +201,7 @@ router.get('/guests/:id', guestController.getGuestById);
  *       404:
  *         description: Convidado não encontrado
  */
-router.put('/guests/:id', guestController.updateGuest);
+router.put('/guests/:id', authMiddleware, guestController.updateGuest);
 
 /**
  * @swagger
@@ -223,7 +225,7 @@ router.put('/guests/:id', guestController.updateGuest);
  *       404:
  *         description: Convidado não encontrado
  */
-router.delete('/guests/:id', guestController.deleteGuest);
+router.delete('/guests/:id', authMiddleware, guestController.deleteGuest);
 
 // ... (mantenha as rotas existentes)
 

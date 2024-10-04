@@ -357,4 +357,56 @@ router.put('/change-password', authMiddleware, userController.changePassword);
 
 router.get('/:idUser/guests', authMiddleware, guestController.getGuestsByUserId);
 
+/**
+ * @swagger
+ * /validate-guest-code:
+ *   post:
+ *     summary: Valida o código do convidado
+ *     tags: [Convidados]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - telefone
+ *               - codigo
+ *             properties:
+ *               telefone:
+ *                 type: string
+ *               codigo:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Código validado com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 valid:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 guest:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                     nome:
+ *                       type: string
+ *                     telefone:
+ *                       type: string
+ *                     status:
+ *                       type: string
+ *                     evento_id:
+ *                       type: integer
+ *       400:
+ *         description: Dados inválidos
+ *       500:
+ *         description: Erro ao validar código
+ */
+router.post('/validate-guest-code', guestController.validateGuestCode);
+
 module.exports = router;

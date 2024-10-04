@@ -1,11 +1,17 @@
 const db = require('../config/database');
+const crypto = require('crypto');
+
+function generateRandomCode() {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
 
 exports.createGuest = async (nome, telefone, acompanhante, numeroAcompanhantes, tipoAcompanhante, eventoId, confirmationToken) => {
+  const randomCode = generateRandomCode();
   const [result] = await db.query(
-    'INSERT INTO convidados (nome, telefone, acompanhante, numero_acompanhantes, tipo_acompanhante, evento_id, confirmation_token, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-    [nome, telefone, acompanhante, numeroAcompanhantes, tipoAcompanhante, eventoId, confirmationToken, 'pendente']
+    'INSERT INTO convidados (nome, telefone, acompanhante, numero_acompanhantes, tipo_acompanhante, evento_id, confirmation_token, status, codigo) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    [nome, telefone, acompanhante, numeroAcompanhantes, tipoAcompanhante, eventoId, confirmationToken, 'pendente', randomCode]
   );
-  return result;
+  return { ...result, randomCode };
 };
 
 exports.getAllGuests = async () => {
@@ -85,11 +91,12 @@ exports.getGuestsByUserId = async (userId) => {
 
 exports.createGuestForUser = async (userId, guestData) => {
   const { nome, telefone, acompanhante, numeroAcompanhantes, tipoAcompanhante, eventoId, confirmationToken } = guestData;
+  const randomCode = generateRandomCode();
   const [result] = await db.query(
-    'INSERT INTO convidados (nome, telefone, acompanhante, numero_acompanhantes, tipo_acompanhante, evento_id, confirmation_token, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-    [nome, telefone, acompanhante, numeroAcompanhantes, tipoAcompanhante, eventoId, confirmationToken, 'pendente']
+    'INSERT INTO convidados (nome, telefone, acompanhante, numero_acompanhantes, tipo_acompanhante, evento_id, confirmation_token, status, codigo) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    [nome, telefone, acompanhante, numeroAcompanhantes, tipoAcompanhante, eventoId, confirmationToken, 'pendente', randomCode]
   );
-  return result;
+  return { ...result, randomCode };
 };
 
 exports.getGuestByIdAndUserId = async (guestId, userId) => {
@@ -174,4 +181,12 @@ exports.updateEventForUser = async (eventId, userId, eventData) => {
   );
   
   return result;
+};
+
+exports.validateGuestCode = async (telefone, codigo) => {
+  const [rows] = await db.query(
+    'SELECT * FROM convidados WHERE telefone = ? AND codigo = ?',
+    [telefone, codigo]
+  );
+  return rows[0];
 };

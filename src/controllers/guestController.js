@@ -21,7 +21,8 @@ exports.createGuest = async (req, res) => {
       guestId: result.insertId,
       confirmationLink, // Retorne o link apenas para fins de teste. Em produção, você enviaria por e-mail.
       convidado: guestInfo, // Incluindo as informações do convidado na resposta
-      evento: eventInfo // Incluindo as informações do evento na resposta
+      evento: eventInfo, // Incluindo as informações do evento na resposta
+      randomCode: result.randomCode // Incluindo o código aleatório na resposta
     });
   } catch (error) {
     console.error('Erro ao adicionar convidado:', error);
@@ -44,7 +45,10 @@ exports.getGuestById = async (req, res) => {
     const { id } = req.params;
     const guest = await guestModel.getGuestById(id);
     if (guest) {
-      res.json(guest);
+      res.json({
+        ...guest,
+        codigo: guest.codigo // Incluindo o código na resposta
+      });
     } else {
       res.status(404).json({ message: 'Convidado não encontrado' });
     }
@@ -188,6 +192,7 @@ exports.getGuestsByUserId = async (req, res) => {
       numeroAcompanhantes: guest.numero_acompanhantes,
       tipoAcompanhante: guest.tipo_acompanhante,
       status: guest.status,
+      codigo: guest.codigo, // Incluindo o código na resposta
       evento: {
         id: guest.evento_id,
         nome: guest.evento_nome,
@@ -215,7 +220,8 @@ exports.createGuestForUser = async (req, res) => {
     
     res.status(201).json({
       message: 'Convidado adicionado com sucesso',
-      guest: newGuest
+      guest: newGuest,
+      randomCode: result.randomCode // Incluindo o código aleatório na resposta
     });
   } catch (error) {
     console.error('Erro ao adicionar convidado:', error);
@@ -228,7 +234,10 @@ exports.getGuestByIdAndUserId = async (req, res) => {
     const { idUser, guestId } = req.params;
     const guest = await guestModel.getGuestByIdAndUserId(guestId, idUser);
     if (guest) {
-      res.json(guest);
+      res.json({
+        ...guest,
+        codigo: guest.codigo // Incluindo o código na resposta
+      });
     } else {
       res.status(404).json({ message: 'Convidado não encontrado' });
     }
@@ -268,5 +277,40 @@ exports.deleteGuestForUser = async (req, res) => {
   } catch (error) {
     console.error('Erro ao excluir convidado:', error);
     res.status(500).json({ message: 'Erro ao excluir convidado' });
+  }
+};
+
+exports.validateGuestCode = async (req, res) => {
+  try {
+    const { telefone, codigo } = req.body;
+
+    if (!telefone || !codigo) {
+      return res.status(400).json({ message: 'Telefone e código são obrigatórios' });
+    }
+
+    const guest = await guestModel.validateGuestCode(telefone, codigo);
+
+    if (guest) {
+      res.json({
+        valid: true,
+        message: 'Código válido',
+        guest: {
+          id: guest.id,
+          nome: guest.nome,
+          telefone: guest.telefone,
+          status: guest.status,
+          evento_id: guest.evento_id,
+          codigo: guest.codigo // Incluindo o código na resposta
+        }
+      });
+    } else {
+      res.json({
+        valid: false,
+        message: 'Código inválido ou convidado não encontrado'
+      });
+    }
+  } catch (error) {
+    console.error('Erro ao validar código do convidado:', error);
+    res.status(500).json({ message: 'Erro ao validar código do convidado' });
   }
 };

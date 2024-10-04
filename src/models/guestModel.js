@@ -65,10 +65,11 @@ exports.updateGuestStatusByTelefone = async (telefone, status) => {
 
 exports.getGuestsByUserId = async (userId) => {
   const [rows] = await db.query(`
-    SELECT c.*, e.nome as evento_nome, e.data as evento_data, e.local as evento_local
+    SELECT c.*, e.nome AS evento_nome, e.event_link
     FROM convidados c
     JOIN eventos e ON c.evento_id = e.id
-    WHERE e.user_id = ? ORDER BY c.id DESC
+    WHERE e.user_id = ?
+    ORDER BY c.id DESC
   `, [userId]);
   return rows;
 };

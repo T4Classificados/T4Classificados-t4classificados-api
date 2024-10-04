@@ -166,9 +166,19 @@ exports.updateGuestStatusByTelefone = async (req, res) => {
 
 exports.getGuestsByUserId = async (req, res) => {
   try {
-    const { idUser } = req.params;
-    const guests = await guestModel.getGuestsByUserId(idUser);
-    res.json(guests);
+    const { userId } = req.params;
+    const guests = await guestModel.getGuestsByUserId(userId);
+    
+    const guestsWithEventInfo = guests.map(guest => ({
+      ...guest,
+      evento: {
+        id: guest.evento_id,
+        nome: guest.evento_nome,
+        event_link: guest.event_link
+      }
+    }));
+
+    res.json(guestsWithEventInfo);
   } catch (error) {
     console.error('Erro ao buscar convidados do usuário:', error);
     res.status(500).json({ message: 'Erro ao buscar convidados do usuário' });

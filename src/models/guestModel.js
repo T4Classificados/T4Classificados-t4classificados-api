@@ -64,13 +64,22 @@ exports.updateGuestStatusByTelefone = async (telefone, status) => {
 };
 
 exports.getGuestsByUserId = async (userId) => {
-  const [rows] = await db.query(`
+  if (!userId) {
+    throw new Error('ID do usuário não fornecido');
+  }
+
+  const query = `
     SELECT c.*, e.nome AS evento_nome, e.event_link
     FROM convidados c
     JOIN eventos e ON c.evento_id = e.id
     WHERE e.user_id = ?
     ORDER BY c.id DESC
-  `, [userId]);
+  `;
+  console.log('Executando query:', query);
+  console.log('UserId:', userId);
+
+  const [rows] = await db.query(query, [userId]);
+  console.log('Resultados da query:', rows);
   return rows;
 };
 

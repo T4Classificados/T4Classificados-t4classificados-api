@@ -166,11 +166,28 @@ exports.updateGuestStatusByTelefone = async (req, res) => {
 
 exports.getGuestsByUserId = async (req, res) => {
   try {
-    const { userId } = req.params;
-    const guests = await guestModel.getGuestsByUserId(userId);
+    const { idUser } = req.params;
+    console.log('Buscando convidados para o usuário:', idUser);
+
+    if (!idUser) {
+      return res.status(400).json({ message: 'ID do usuário não fornecido' });
+    }
+
+    const guests = await guestModel.getGuestsByUserId(idUser);
+    console.log('Convidados encontrados:', guests);
     
+    if (guests.length === 0) {
+      return res.json({ message: 'Nenhum convidado encontrado para este usuário', guests: [] });
+    }
+
     const guestsWithEventInfo = guests.map(guest => ({
-      ...guest,
+      id: guest.id,
+      nome: guest.nome,
+      telefone: guest.telefone,
+      acompanhante: guest.acompanhante,
+      numeroAcompanhantes: guest.numero_acompanhantes,
+      tipoAcompanhante: guest.tipo_acompanhante,
+      status: guest.status,
       evento: {
         id: guest.evento_id,
         nome: guest.evento_nome,

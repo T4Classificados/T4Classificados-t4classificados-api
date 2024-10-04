@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/userController');
 const authMiddleware = require('../middleware/auth');
+const guestController = require('../controllers/guestController');
 
 /**
  * @swagger
@@ -353,5 +354,7 @@ router.post('/reset-password', userController.resetPassword);
  *         description: Erro ao alterar senha
  */
 router.put('/change-password', authMiddleware, userController.changePassword);
+
+router.get('/:idUser/guests', authMiddleware, guestController.getGuestsByUserId);
 
 module.exports = router;

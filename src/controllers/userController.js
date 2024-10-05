@@ -165,13 +165,13 @@ exports.refreshToken = async (req, res) => {
       const accessToken = jwt.sign(
         { userId: user.id, telefone: user.telefone, role: user.role },
         process.env.JWT_SECRET,
-        { expiresIn: '1h' }
+        { expiresIn: '720h' }
       );
 
       const newRefreshToken = jwt.sign(
         { userId: user.id },
         process.env.JWT_REFRESH_SECRET,
-        { expiresIn: '7d' }
+        { expiresIn: "720h" }
       );
 
       res.json({

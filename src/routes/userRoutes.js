@@ -3,6 +3,8 @@ const router = express.Router();
 const userController = require('../controllers/userController');
 const authMiddleware = require('../middleware/auth');
 const guestController = require('../controllers/guestController');
+const contactController = require('../controllers/contactController');
+const isAdminMiddleware = require('../middleware/isAdmin'); // Importe o middleware de admin
 
 /**
  * @swagger
@@ -409,5 +411,87 @@ router.get('/:idUser/guests', authMiddleware, guestController.getGuestsByUserId)
  *         description: Erro ao validar código
  */
 router.post('/validate-guest-code', guestController.validateGuestCode);
+
+/**
+ * @swagger
+ * /contact:
+ *   post:
+ *     summary: Envia formulário de contato
+ *     tags: [Contato]
+ *     security: [] # Remove a necessidade de autenticação
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - nomeEmpresa
+ *               - telefone
+ *             properties:
+ *               nomeEmpresa:
+ *                 type: string
+ *               telefone:
+ *                 type: string
+ *               mensagem:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Formulário de contato enviado com sucesso
+ *       400:
+ *         description: Dados inválidos
+ *       500:
+ *         description: Erro ao processar formulário de contato
+ */
+router.post('/contact', contactController.submitContactForm);
+
+/**
+ * @swagger
+ * /contacts:
+ *   get:
+ *     summary: Lista todos os contatos
+ *     tags: [Contato]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Lista de contatos obtida com sucesso
+ *       401:
+ *         description: Não autorizado
+ *       403:
+ *         description: Acesso negado (não é admin)
+ *       500:
+ *         description: Erro ao buscar contatos
+ */
+router.get('/contacts', authMiddleware, isAdminMiddleware, contactController.getAllContacts);
+
+/**
+ * @swagger
+ * /contacts/{id}:
+ *   get:
+ *     summary: Obtém detalhes de um contato específico
+ *     tags: [Contato]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID do contato
+ *     responses:
+ *       200:
+ *         description: Detalhes do contato obtidos com sucesso
+ *       401:
+ *         description: Não autorizado
+ *       403:
+ *         description: Acesso negado (não é admin)
+ *       404:
+ *         description: Contato não encontrado
+ *       500:
+ *         description: Erro ao buscar contato
+ */
+router.get('/contacts/:id', authMiddleware, isAdminMiddleware, contactController.getContactById);
 
 module.exports = router;

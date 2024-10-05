@@ -25,11 +25,12 @@ const upload = multer({ storage: storage });
  *   get:
  *     summary: Obtém estatísticas dos eventos
  *     tags: [Eventos]
+ *     security: []
  *     responses:
  *       200:
  *         description: Estatísticas obtidas com sucesso
  */
-router.get('/events/statistics', authMiddleware, eventController.getEventStatistics);
+router.get('/events/statistics', eventController.getEventStatistics);
 
 /**
  * @swagger

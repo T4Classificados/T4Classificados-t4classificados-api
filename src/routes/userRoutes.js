@@ -5,6 +5,7 @@ const authMiddleware = require('../middleware/auth');
 const guestController = require('../controllers/guestController');
 const contactController = require('../controllers/contactController');
 const isAdminMiddleware = require('../middleware/isAdmin'); // Importe o middleware de admin
+const eventController = require('../controllers/eventController');
 
 /**
  * @swagger
@@ -493,5 +494,68 @@ router.get('/contacts', authMiddleware, isAdminMiddleware, contactController.get
  *         description: Erro ao buscar contato
  */
 router.get('/contacts/:id', authMiddleware, isAdminMiddleware, contactController.getContactById);
+
+/**
+ * @swagger
+ * /user/{userId}/events/recent:
+ *   get:
+ *     summary: Obtém os eventos recentes de um usuário específico
+ *     tags: [Eventos]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID do usuário
+ *     responses:
+ *       200:
+ *         description: Lista de eventos recentes obtida com sucesso
+ *       401:
+ *         description: Não autorizado
+ *       500:
+ *         description: Erro ao buscar eventos recentes
+ */
+router.get('/:userId/events/recent', authMiddleware, eventController.getRecentUserEvents);
+
+/**
+ * @swagger
+ * /events/{eventLink}/guests:
+ *   post:
+ *     summary: Adiciona um novo convidado a um evento usando o event_link
+ *     tags: [Eventos, Convidados]
+ *     security: []
+ *     parameters:
+ *       - in: path
+ *         name: eventLink
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Link único do evento
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - nome
+ *               - telefone
+ *             properties:
+ *               nome:
+ *                 type: string
+ *               telefone:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Convidado adicionado com sucesso
+ *       404:
+ *         description: Evento não encontrado
+ *       500:
+ *         description: Erro ao adicionar convidado
+ */
+router.post('/events/:eventLink/guests', eventController.addGuestByEventLink);
 
 module.exports = router;

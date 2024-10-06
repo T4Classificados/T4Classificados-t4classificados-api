@@ -166,3 +166,46 @@ exports.checkGuestByEventLinkAndPhone = async (eventLink, telefone) => {
   );
   return rows[0];
 };
+
+exports.getRecentEventsByUserId = async (userId) => {
+  const query = `
+    SELECT e.*, 
+           COUNT(c.id) as total_convidados,
+           SUM(CASE WHEN c.status = 'aceito' THEN 1 ELSE 0 END) as convidados_aceitos,
+           SUM(CASE WHEN c.status = 'rejeitado' THEN 1 ELSE 0 END) as convidados_rejeitados,
+           SUM(CASE WHEN c.status = 'pendente' THEN 1 ELSE 0 END) as convidados_pendentes
+    FROM eventos e
+    LEFT JOIN convidados c ON e.id = c.evento_id
+    WHERE e.user_id = ?
+    GROUP BY e.id
+    ORDER BY e.data DESC
+    LIMIT 10
+  `;
+  console.log('Executando query:', query);
+  console.log('UserId:', userId);
+  const [rows] = await db.query(query, [userId]);
+  console.log('Resultados da query:', rows);
+  return rows;
+};
+
+exports.addGuestByEventLink = async (eventLink, guestData) => {
+  const { nome, telefone, acompanhante, numeroAcompanhantes, tipoAcompanhante } = guestData;
+  const randomCode = Math.floor(100000 + Math.random() * 900000).toString();
+  
+  // Primeiro, obtenha o ID do evento usando o event_link
+  const [eventRows] = await db.query('SELECT id FROM eventos WHERE event_link = ?', [eventLink]);
+  
+  if (eventRows.length === 0) {
+    throw new Error('Evento não encontrado');
+  }
+  
+  const eventoId = eventRows[0].id;
+  
+  // Agora, insira o novo convidado
+  const [result] = await db.query(
+    'INSERT INTO convidados (nome, telefone, acompanhante, numero_acompanhantes, tipo_acompanhante, evento_id, status, codigo) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+    [nome, telefone, 0, 0, null, eventoId, 'aceito', randomCode]
+  );
+  
+  return { ...result, randomCode, eventoId };
+};

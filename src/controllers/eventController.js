@@ -349,3 +349,53 @@ exports.checkGuestByEventLinkAndPhone = async (req, res) => {
     res.status(500).json({ message: 'Erro ao verificar convidado' });
   }
 };
+
+exports.getRecentUserEvents = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    console.log('Buscando eventos recentes para o usuário:', userId);
+
+    const events = await eventModel.getRecentEventsByUserId(userId);
+    console.log('Eventos encontrados:', events);
+
+    if (!events || events.length === 0) {
+      return res.status(404).json({ message: 'Nenhum evento recente encontrado para este usuário' });
+    }
+
+    const eventsWithImageUrl = events.map(event => ({
+      ...event,
+      imagemUrl: event.imagem ? `${config.baseUrl}:${process.env.PORT}/uploads/${event.imagem}` : null,
+      total_convidados: parseInt(event.total_convidados) || 0,
+      convidados_aceitos: parseInt(event.convidados_aceitos) || 0,
+      convidados_rejeitados: parseInt(event.convidados_rejeitados) || 0,
+      convidados_pendentes: parseInt(event.convidados_pendentes) || 0
+    }));
+    res.json(eventsWithImageUrl);
+  } catch (error) {
+    console.error('Erro ao buscar eventos recentes do usuário:', error);
+    res.status(500).json({ message: 'Erro ao buscar eventos recentes do usuário' });
+  }
+};
+
+exports.addGuestByEventLink = async (req, res) => {
+  try {
+    const { eventLink } = req.params;
+    const guestData = req.body;
+
+    const result = await eventModel.addGuestByEventLink(eventLink, guestData);
+    
+    res.status(201).json({
+      message: 'Convidado adicionado com sucesso',
+      guestId: result.insertId,
+      eventoId: result.eventoId,
+      randomCode: result.randomCode
+    });
+  } catch (error) {
+    console.error('Erro ao adicionar convidado:', error);
+    if (error.message === 'Evento não encontrado') {
+      res.status(404).json({ message: 'Evento não encontrado' });
+    } else {
+      res.status(500).json({ message: 'Erro ao adicionar convidado' });
+    }
+  }
+};

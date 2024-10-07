@@ -3,9 +3,9 @@ const crypto = require('crypto');
 
 exports.createGuest = async (req, res) => {
   try {
-    const { nome, telefone, acompanhante, numeroAcompanhantes, tipoAcompanhante, eventoId } = req.body;
+    const { nome, telefone, acompanhantes, eventoId } = req.body;
     const confirmationToken = this.generateConfirmationToken();
-    const result = await guestModel.createGuest(nome, telefone, acompanhante, numeroAcompanhantes, tipoAcompanhante, eventoId, confirmationToken);
+    const result = await guestModel.createGuest(nome, telefone, acompanhantes || [], eventoId, confirmationToken);
     
     // Buscar informações do evento
     const eventInfo = await guestModel.getEventInfo(eventoId);
@@ -74,9 +74,6 @@ exports.updateGuest = async (req, res) => {
     const updatedGuest = {
       nome: updateData.nome || existingGuest.nome,
       telefone: updateData.telefone || existingGuest.telefone,
-      acompanhante: updateData.acompanhante !== undefined ? updateData.acompanhante : existingGuest.acompanhante,
-      numeroAcompanhantes: updateData.numeroAcompanhantes !== undefined ? updateData.numeroAcompanhantes : existingGuest.numero_acompanhantes,
-      tipoAcompanhante: updateData.tipoAcompanhante || existingGuest.tipo_acompanhante,
       eventoId: updateData.eventoId || existingGuest.evento_id,
       status: updateData.status || existingGuest.status
     };
@@ -98,7 +95,7 @@ exports.deleteGuest = async (req, res) => {
     const { id } = req.params;
     const result = await guestModel.deleteGuest(id);
     if (result.affectedRows > 0) {
-      res.json({ message: 'Convidado excluído com sucesso' });
+      res.json({ message: 'Convidado e seus acompanhantes excluídos com sucesso' });
     } else {
       res.status(404).json({ message: 'Convidado não encontrado' });
     }
@@ -188,11 +185,10 @@ exports.getGuestsByUserId = async (req, res) => {
       id: guest.id,
       nome: guest.nome,
       telefone: guest.telefone,
-      acompanhante: guest.acompanhante,
-      numeroAcompanhantes: guest.numero_acompanhantes,
-      tipoAcompanhante: guest.tipo_acompanhante,
       status: guest.status,
       codigo: guest.codigo,
+      acompanhante: guest.acompanhante,
+      acompanhantes: guest.acompanhantes,
       evento: {
         id: guest.evento_id,
         nome: guest.evento_nome,
@@ -211,10 +207,10 @@ exports.getGuestsByUserId = async (req, res) => {
 exports.createGuestForUser = async (req, res) => {
   try {
     const { idUser } = req.params;
-    const { nome, telefone, acompanhante, numeroAcompanhantes, tipoAcompanhante, eventoId } = req.body;
+    const { nome, telefone, acompanhantes, eventoId } = req.body;
     const confirmationToken = crypto.randomBytes(20).toString('hex');
     
-    const guestData = { nome, telefone, acompanhante, numeroAcompanhantes, tipoAcompanhante, eventoId, confirmationToken };
+    const guestData = { nome, telefone, acompanhantes: acompanhantes || [], eventoId, confirmationToken };
     const result = await guestModel.createGuestForUser(idUser, guestData);
     
     const newGuest = await guestModel.getGuestByIdAndUserId(result.insertId, idUser);
@@ -237,7 +233,9 @@ exports.getGuestByIdAndUserId = async (req, res) => {
     if (guest) {
       res.json({
         ...guest,
-        codigo: guest.codigo // Incluindo o código na resposta
+        codigo: guest.codigo,
+        acompanhante: guest.acompanhante,
+        acompanhantes: guest.acompanhantes
       });
     } else {
       res.status(404).json({ message: 'Convidado não encontrado' });
@@ -271,7 +269,7 @@ exports.deleteGuestForUser = async (req, res) => {
     const { idUser, guestId } = req.params;
     const result = await guestModel.deleteGuestForUser(guestId, idUser);
     if (result.affectedRows > 0) {
-      res.json({ message: 'Convidado excluído com sucesso' });
+      res.json({ message: 'Convidado e seus acompanhantes excluídos com sucesso' });
     } else {
       res.status(404).json({ message: 'Convidado não encontrado' });
     }
@@ -313,5 +311,48 @@ exports.validateGuestCode = async (req, res) => {
   } catch (error) {
     console.error('Erro ao validar código do convidado:', error);
     res.status(500).json({ message: 'Erro ao validar código do convidado' });
+  }
+};
+
+exports.addAccompanist = async (req, res) => {
+  try {
+    const { guestId } = req.params;
+    const { nome } = req.body;
+
+    if (!nome) {
+      return res.status(400).json({ message: 'Nome do acompanhante é obrigatório' });
+    }
+
+    const result = await guestModel.addAccompanist(guestId, nome);
+    res.status(201).json({ message: 'Acompanhante adicionado com sucesso', accompanistId: result.insertId });
+  } catch (error) {
+    console.error('Erro ao adicionar acompanhante:', error);
+    res.status(500).json({ message: 'Erro ao adicionar acompanhante' });
+  }
+};
+
+exports.listAccompanists = async (req, res) => {
+  try {
+    const { guestId } = req.params;
+    const accompanists = await guestModel.listAccompanists(guestId);
+    res.json(accompanists);
+  } catch (error) {
+    console.error('Erro ao listar acompanhantes:', error);
+    res.status(500).json({ message: 'Erro ao listar acompanhantes' });
+  }
+};
+
+exports.deleteAccompanist = async (req, res) => {
+  try {
+    const { guestId, accompanistId } = req.params;
+    const result = await guestModel.deleteAccompanist(guestId, accompanistId);
+    if (result.affectedRows > 0) {
+      res.json({ message: 'Acompanhante excluído com sucesso' });
+    } else {
+      res.status(404).json({ message: 'Acompanhante não encontrado' });
+    }
+  } catch (error) {
+    console.error('Erro ao excluir acompanhante:', error);
+    res.status(500).json({ message: 'Erro ao excluir acompanhante' });
   }
 };

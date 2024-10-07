@@ -101,10 +101,6 @@ router.use('/guests', authMiddleware);
  *                 type: string
  *               acompanhante:
  *                 type: boolean
- *               numeroAcompanhantes:
- *                 type: integer
- *               tipoAcompanhante:
- *                 type: string
  *               eventoId:
  *                 type: integer
  *     responses:
@@ -184,10 +180,6 @@ router.get('/guests/:id', authMiddleware, guestController.getGuestById);
  *                 type: string
  *               acompanhante:
  *                 type: boolean
- *               numeroAcompanhantes:
- *                 type: integer
- *               tipoAcompanhante:
- *                 type: string
  *               eventoId:
  *                 type: integer
  *               status:
@@ -282,10 +274,6 @@ router.get('/user/:idUser/guests', authMiddleware, guestController.getGuestsByUs
  *                 type: string
  *               acompanhante:
  *                 type: boolean
- *               numeroAcompanhantes:
- *                 type: integer
- *               tipoAcompanhante:
- *                 type: string
  *               eventoId:
  *                 type: integer
  *     responses:
@@ -357,10 +345,6 @@ router.get('/user/:idUser/guests/:guestId', authMiddleware, guestController.getG
  *                 type: string
  *               acompanhante:
  *                 type: boolean
- *               numeroAcompanhantes:
- *                 type: integer
- *               tipoAcompanhante:
- *                 type: string
  *               eventoId:
  *                 type: integer
  *               status:
@@ -404,5 +388,100 @@ router.put('/user/:idUser/guests/:guestId', authMiddleware, guestController.upda
  *         description: Convidado não encontrado
  */
 router.delete('/user/:idUser/guests/:guestId', authMiddleware, guestController.deleteGuestForUser);
+
+// Novas rotas para acompanhantes
+router.post('/:guestId/acompanhantes', guestController.addAccompanist);
+router.get('/:guestId/acompanhantes', guestController.listAccompanists);
+router.delete('/:guestId/acompanhantes/:accompanistId', guestController.deleteAccompanist);
+
+/**
+ * @swagger
+ * /guests/{guestId}/acompanhantes:
+ *   post:
+ *     summary: Adiciona um acompanhante a um convidado
+ *     tags: [Acompanhantes]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: guestId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - nome
+ *             properties:
+ *               nome:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Acompanhante adicionado com sucesso
+ *       400:
+ *         description: Dados inválidos
+ *       401:
+ *         description: Não autorizado
+ *       404:
+ *         description: Convidado não encontrado
+ */
+router.post('/guests/:guestId/acompanhantes', authMiddleware, guestController.addAccompanist);
+
+/**
+ * @swagger
+ * /guests/{guestId}/acompanhantes:
+ *   get:
+ *     summary: Lista todos os acompanhantes de um convidado
+ *     tags: [Acompanhantes]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: guestId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Lista de acompanhantes obtida com sucesso
+ *       401:
+ *         description: Não autorizado
+ *       404:
+ *         description: Convidado não encontrado
+ */
+router.get('/guests/:guestId/acompanhantes', authMiddleware, guestController.listAccompanists);
+
+/**
+ * @swagger
+ * /guests/{guestId}/acompanhantes/{accompanistId}:
+ *   delete:
+ *     summary: Remove um acompanhante de um convidado
+ *     tags: [Acompanhantes]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: guestId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *       - in: path
+ *         name: accompanistId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Acompanhante removido com sucesso
+ *       401:
+ *         description: Não autorizado
+ *       404:
+ *         description: Convidado ou acompanhante não encontrado
+ */
+router.delete('/guests/:guestId/acompanhantes/:accompanistId', authMiddleware, guestController.deleteAccompanist);
 
 module.exports = router;

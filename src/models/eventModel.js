@@ -189,7 +189,7 @@ exports.getRecentEventsByUserId = async (userId) => {
 };
 
 exports.addGuestByEventLink = async (eventLink, guestData) => {
-  const { nome, telefone, acompanhante, numeroAcompanhantes, tipoAcompanhante } = guestData;
+  const { nome, telefone, acompanhante } = guestData;
   const randomCode = Math.floor(100000 + Math.random() * 900000).toString();
   
   // Primeiro, obtenha o ID do evento usando o event_link
@@ -203,7 +203,7 @@ exports.addGuestByEventLink = async (eventLink, guestData) => {
   
   // Agora, insira o novo convidado
   const [result] = await db.query(
-    'INSERT INTO convidados (nome, telefone, acompanhante, numero_acompanhantes, tipo_acompanhante, evento_id, status, codigo) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+    'INSERT INTO convidados (nome, telefone, acompanhante, evento_id, status, codigo) VALUES (?, ?, ?, ?, ?, ?)',
     [nome, telefone, 0, 0, null, eventoId, 'aceito', randomCode]
   );
   

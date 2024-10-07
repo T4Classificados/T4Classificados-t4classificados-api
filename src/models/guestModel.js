@@ -5,13 +5,35 @@ function generateRandomCode() {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
-exports.createGuest = async (nome, telefone, acompanhante, numeroAcompanhantes, tipoAcompanhante, eventoId, confirmationToken) => {
-  const randomCode = generateRandomCode();
-  const [result] = await db.query(
-    'INSERT INTO convidados (nome, telefone, acompanhante, numero_acompanhantes, tipo_acompanhante, evento_id, confirmation_token, status, codigo) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-    [nome, telefone, acompanhante, numeroAcompanhantes, tipoAcompanhante, eventoId, confirmationToken, 'pendente', randomCode]
-  );
-  return { ...result, randomCode };
+exports.createGuest = async (nome, telefone, acompanhantes, eventoId, confirmationToken) => {
+  const connection = await db.getConnection();
+  try {
+    await connection.beginTransaction();
+
+    const [result] = await db.query(
+      'INSERT INTO convidados (nome, telefone, evento_id, confirmation_token) VALUES (?, ?, ?, ?)',
+      [nome, telefone, eventoId, confirmationToken]
+    );
+
+    const guestId = result.insertId;
+
+    // Inserir acompanhantes apenas se houver algum
+    if (acompanhantes && acompanhantes.length > 0) {
+      const acompanhantesValues = acompanhantes.map(acompanhante => [guestId, acompanhante]);
+      await db.query(
+        'INSERT INTO acompanhantes (convidado_id, nome) VALUES ?',
+        [acompanhantesValues]
+      );
+    }
+
+    await connection.commit();
+    return result;
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
 };
 
 exports.getAllGuests = async () => {
@@ -25,23 +47,38 @@ exports.getGuestById = async (id) => {
 };
 
 exports.updateGuest = async (id, guestData) => {
-  const { nome, telefone, acompanhante, numeroAcompanhantes, tipoAcompanhante, eventoId, status } = guestData;
+  const { nome, telefone, eventoId, status } = guestData;
   
   const query = `
     UPDATE convidados 
-    SET nome = ?, telefone = ?, acompanhante = ?, numero_acompanhantes = ?, 
-        tipo_acompanhante = ?, evento_id = ?, status = ? 
+    SET nome = ?, telefone = ?, evento_id = ?, status = ? 
     WHERE id = ?
   `;
-  const params = [nome, telefone, acompanhante, numeroAcompanhantes, tipoAcompanhante, eventoId, status, id];
+  const params = [nome, telefone, eventoId, status, id];
 
   const [result] = await db.query(query, params);
   return result;
 };
 
 exports.deleteGuest = async (id) => {
-  const [result] = await db.query('DELETE FROM convidados WHERE id = ?', [id]);
-  return result;
+  const connection = await db.getConnection();
+  try {
+    await connection.beginTransaction();
+
+    // Primeiro, excluímos os acompanhantes
+    await connection.query('DELETE FROM acompanhantes WHERE convidado_id = ?', [id]);
+
+    // Em seguida, excluímos o convidado
+    const [result] = await connection.query('DELETE FROM convidados WHERE id = ?', [id]);
+
+    await connection.commit();
+    return result;
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
 };
 
 exports.getGuestByToken = async (token) => {
@@ -81,22 +118,54 @@ exports.getGuestsByUserId = async (userId) => {
     WHERE e.user_id = ?
     ORDER BY c.id DESC
   `;
-  console.log('Executando query:', query);
-  console.log('UserId:', userId);
 
-  const [rows] = await db.query(query, [userId]);
-  console.log('Resultados da query:', rows);
-  return rows;
+  const [guests] = await db.query(query, [userId]);
+
+  // Buscar acompanhantes para cada convidado
+  for (let guest of guests) {
+    const [acompanhantes] = await db.query(
+      'SELECT * FROM acompanhantes WHERE convidado_id = ?',
+      [guest.id]
+    );
+    guest.acompanhantes = acompanhantes;
+    guest.acompanhante = guest.acompanhante === 1; // Convertendo para booleano
+  }
+
+  return guests;
 };
 
 exports.createGuestForUser = async (userId, guestData) => {
-  const { nome, telefone, acompanhante, numeroAcompanhantes, tipoAcompanhante, eventoId, confirmationToken } = guestData;
+  const { nome, telefone, acompanhantes, eventoId, confirmationToken } = guestData;
   const randomCode = generateRandomCode();
-  const [result] = await db.query(
-    'INSERT INTO convidados (nome, telefone, acompanhante, numero_acompanhantes, tipo_acompanhante, evento_id, confirmation_token, status, codigo) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-    [nome, telefone, acompanhante, numeroAcompanhantes, tipoAcompanhante, eventoId, confirmationToken, 'pendente', randomCode]
-  );
-  return { ...result, randomCode };
+  const connection = await db.getConnection();
+  
+  try {
+    await connection.beginTransaction();
+
+    const [result] = await connection.query(
+      'INSERT INTO convidados (nome, telefone, evento_id, confirmation_token, status, codigo) VALUES (?, ?, ?, ?, ?, ?)',
+      [nome, telefone, eventoId, confirmationToken, 'pendente', randomCode]
+    );
+
+    const guestId = result.insertId;
+
+    // Inserir acompanhantes apenas se houver algum
+    if (acompanhantes && acompanhantes.length > 0) {
+      const acompanhantesValues = acompanhantes.map(acompanhante => [guestId, acompanhante]);
+      await connection.query(
+        'INSERT INTO acompanhantes (convidado_id, nome) VALUES ?',
+        [acompanhantesValues]
+      );
+    }
+
+    await connection.commit();
+    return { ...result, randomCode };
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
 };
 
 exports.getGuestByIdAndUserId = async (guestId, userId) => {
@@ -106,7 +175,22 @@ exports.getGuestByIdAndUserId = async (guestId, userId) => {
     JOIN eventos e ON c.evento_id = e.id
     WHERE c.id = ? AND e.user_id = ?
   `, [guestId, userId]);
-  return rows[0];
+
+  if (rows.length === 0) {
+    return null;
+  }
+
+  const guest = rows[0];
+
+  // Buscar acompanhantes para o convidado
+  const [acompanhantes] = await db.query(
+    'SELECT * FROM acompanhantes WHERE convidado_id = ?',
+    [guestId]
+  );
+  guest.acompanhantes = acompanhantes;
+  guest.acompanhante = guest.acompanhante === 1; // Convertendo para booleano
+
+  return guest;
 };
 
 exports.updateGuestForUser = async (guestId, userId, guestData) => {
@@ -121,9 +205,6 @@ exports.updateGuestForUser = async (guestId, userId, guestData) => {
   const updatedData = {
     nome: guestData.nome || currentGuest.nome,
     telefone: guestData.telefone || currentGuest.telefone,
-    acompanhante: guestData.acompanhante !== undefined ? guestData.acompanhante : currentGuest.acompanhante,
-    numeroAcompanhantes: guestData.numeroAcompanhantes !== undefined ? guestData.numeroAcompanhantes : currentGuest.numero_acompanhantes,
-    tipoAcompanhante: guestData.tipoAcompanhante || currentGuest.tipo_acompanhante,
     eventoId: guestData.eventoId || currentGuest.evento_id,
     status: guestData.status || currentGuest.status
   };
@@ -131,24 +212,44 @@ exports.updateGuestForUser = async (guestId, userId, guestData) => {
   const [result] = await db.query(
     `UPDATE convidados c
      JOIN eventos e ON c.evento_id = e.id
-     SET c.nome = ?, c.telefone = ?, c.acompanhante = ?, c.numero_acompanhantes = ?, 
-         c.tipo_acompanhante = ?, c.evento_id = ?, c.status = ?
+     SET c.nome = ?, c.telefone = ?, c.evento_id = ?, c.status = ?
      WHERE c.id = ? AND e.user_id = ?`,
-    [updatedData.nome, updatedData.telefone, updatedData.acompanhante, updatedData.numeroAcompanhantes, 
-     updatedData.tipoAcompanhante, updatedData.eventoId, updatedData.status, guestId, userId]
+    [updatedData.nome, updatedData.telefone, updatedData.eventoId, updatedData.status, guestId, userId]
   );
   
   return result;
 };
 
 exports.deleteGuestForUser = async (guestId, userId) => {
-  const [result] = await db.query(
-    `DELETE c FROM convidados c
-     JOIN eventos e ON c.evento_id = e.id
-     WHERE c.id = ? AND e.user_id = ?`,
-    [guestId, userId]
-  );
-  return result;
+  const connection = await db.getConnection();
+  try {
+    await connection.beginTransaction();
+
+    // Primeiro, excluímos os acompanhantes
+    await connection.query(
+      `DELETE a FROM acompanhantes a
+       JOIN convidados c ON a.convidado_id = c.id
+       JOIN eventos e ON c.evento_id = e.id
+       WHERE c.id = ? AND e.user_id = ?`,
+      [guestId, userId]
+    );
+
+    // Em seguida, excluímos o convidado
+    const [result] = await connection.query(
+      `DELETE c FROM convidados c
+       JOIN eventos e ON c.evento_id = e.id
+       WHERE c.id = ? AND e.user_id = ?`,
+      [guestId, userId]
+    );
+
+    await connection.commit();
+    return result;
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
 };
 
 exports.getEventByIdAndUserId = async (eventId, userId) => {
@@ -189,4 +290,28 @@ exports.validateGuestCode = async (telefone, codigo) => {
     [telefone, codigo]
   );
   return rows[0];
+};
+
+exports.addAccompanist = async (guestId, nome) => {
+  const [result] = await db.query(
+    'INSERT INTO acompanhantes (convidado_id, nome) VALUES (?, ?)',
+    [guestId, nome]
+  );
+  return result;
+};
+
+exports.listAccompanists = async (guestId) => {
+  const [rows] = await db.query(
+    'SELECT * FROM acompanhantes WHERE convidado_id = ?',
+    [guestId]
+  );
+  return rows;
+};
+
+exports.deleteAccompanist = async (guestId, accompanistId) => {
+  const [result] = await db.query(
+    'DELETE FROM acompanhantes WHERE id = ? AND convidado_id = ?',
+    [accompanistId, guestId]
+  );
+  return result;
 };

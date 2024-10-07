@@ -457,6 +457,30 @@ router.get('/guests/:guestId/acompanhantes', authMiddleware, guestController.lis
 
 /**
  * @swagger
+ * /guests/{guestId}/acompanhantes:
+ *   delete:
+ *     summary: Remove todos os acompanhantes de um convidado
+ *     tags: [Acompanhantes]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: guestId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Todos os acompanhantes removidos com sucesso
+ *       401:
+ *         description: Não autorizado
+ *       404:
+ *         description: Convidado não encontrado ou sem acompanhantes
+ */
+router.delete('/guests/:guestId/acompanhantes', authMiddleware, guestController.deleteAllAccompanists);
+
+/**
+ * @swagger
  * /guests/{guestId}/acompanhantes/{accompanistId}:
  *   delete:
  *     summary: Remove um acompanhante de um convidado

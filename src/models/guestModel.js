@@ -206,15 +206,16 @@ exports.updateGuestForUser = async (guestId, userId, guestData) => {
     nome: guestData.nome || currentGuest.nome,
     telefone: guestData.telefone || currentGuest.telefone,
     eventoId: guestData.eventoId || currentGuest.evento_id,
-    status: guestData.status || currentGuest.status
+    status: guestData.status || currentGuest.status,
+    acompanhante: guestData.acompanhante !== undefined ? guestData.acompanhante : currentGuest.acompanhante
   };
 
   const [result] = await db.query(
     `UPDATE convidados c
      JOIN eventos e ON c.evento_id = e.id
-     SET c.nome = ?, c.telefone = ?, c.evento_id = ?, c.status = ?
+     SET c.nome = ?, c.telefone = ?, c.evento_id = ?, c.status = ?, c.acompanhante = ?
      WHERE c.id = ? AND e.user_id = ?`,
-    [updatedData.nome, updatedData.telefone, updatedData.eventoId, updatedData.status, guestId, userId]
+    [updatedData.nome, updatedData.telefone, updatedData.eventoId, updatedData.status, updatedData.acompanhante, guestId, userId]
   );
   
   return result;
@@ -312,6 +313,14 @@ exports.deleteAccompanist = async (guestId, accompanistId) => {
   const [result] = await db.query(
     'DELETE FROM acompanhantes WHERE id = ? AND convidado_id = ?',
     [accompanistId, guestId]
+  );
+  return result;
+};
+
+exports.deleteAllAccompanists = async (guestId) => {
+  const [result] = await db.query(
+    'DELETE FROM acompanhantes WHERE convidado_id = ?',
+    [guestId]
   );
   return result;
 };

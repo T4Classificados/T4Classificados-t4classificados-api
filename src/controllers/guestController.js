@@ -251,6 +251,11 @@ exports.updateGuestForUser = async (req, res) => {
     const { idUser, guestId } = req.params;
     const updateData = req.body;
     
+    // Verificar se o atributo acompanhante está presente no corpo da requisição
+    if ('acompanhante' in updateData) {
+      updateData.acompanhante = updateData.acompanhante ? 1 : 0; // Convertendo para 1 (true) ou 0 (false)
+    }
+    
     const result = await guestModel.updateGuestForUser(guestId, idUser, updateData);
     if (result.affectedRows > 0) {
       const updatedGuest = await guestModel.getGuestByIdAndUserId(guestId, idUser);
@@ -354,5 +359,20 @@ exports.deleteAccompanist = async (req, res) => {
   } catch (error) {
     console.error('Erro ao excluir acompanhante:', error);
     res.status(500).json({ message: 'Erro ao excluir acompanhante' });
+  }
+};
+
+exports.deleteAllAccompanists = async (req, res) => {
+  try {
+    const { guestId } = req.params;
+    const result = await guestModel.deleteAllAccompanists(guestId);
+    if (result.affectedRows > 0) {
+      res.json({ message: 'Todos os acompanhantes foram excluídos com sucesso' });
+    } else {
+      res.status(404).json({ message: 'Nenhum acompanhante encontrado para este convidado' });
+    }
+  } catch (error) {
+    console.error('Erro ao excluir todos os acompanhantes:', error);
+    res.status(500).json({ message: 'Erro ao excluir todos os acompanhantes' });
   }
 };

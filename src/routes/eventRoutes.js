@@ -454,6 +454,9 @@ router.get('/user/:idUser/events/:eventId', authMiddleware, eventController.getU
  *                 type: string
  *               tipo:
  *                 type: string
+ *               privacidade:
+ *                 type: string
+ *                 enum: [publico, privado]
  *               imagem:
  *                 type: string
  *                 format: binary

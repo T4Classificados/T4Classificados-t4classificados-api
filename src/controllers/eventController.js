@@ -208,16 +208,17 @@ exports.getUserEvents = async (req, res) => {
 exports.createUserEvent = async (req, res) => {
   try {
     const { idUser } = req.params;
-    const { nome, data, local, tipo } = req.body;
+    const { nome, data, local, tipo, privacidade } = req.body;
     const imagem = req.file ? req.file.filename : null;
 
-    const result = await eventModel.createEvent(nome, data, local, tipo, imagem, idUser);
+    const result = await eventModel.createEvent(nome, data, local, tipo, imagem, idUser, privacidade);
     const eventLink = `${config.baseUrl}/evento/${result.eventLink}`;
 
     res.status(201).json({ 
       message: 'Evento criado com sucesso', 
       eventId: result.insertId,
-      eventLink
+      eventLink,
+      privacidade
     });
   } catch (error) {
     console.error('Erro ao criar evento:', error);
@@ -251,7 +252,7 @@ exports.getUserEventById = async (req, res) => {
 exports.updateUserEvent = async (req, res) => {
   try {
     const { idUser, eventId } = req.params;
-    const { nome, data, local, tipo } = req.body;
+    const { nome, data, local, tipo, privacidade } = req.body;
     const imagem = req.file ? req.file.filename : undefined;
     
     const existingEvent = await eventModel.getUserEventById(idUser, eventId);
@@ -264,7 +265,8 @@ exports.updateUserEvent = async (req, res) => {
       data: data || existingEvent.data,
       local: local || existingEvent.local,
       tipo: tipo || existingEvent.tipo,
-      imagem: imagem !== undefined ? imagem : existingEvent.imagem
+      imagem: imagem !== undefined ? imagem : existingEvent.imagem,
+      privacidade: privacidade || existingEvent.privacidade
     };
     
     const result = await eventModel.updateUserEvent(idUser, eventId, updatedEvent);

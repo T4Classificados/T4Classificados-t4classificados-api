@@ -5,10 +5,10 @@ function generateEventLink() {
   return crypto.randomBytes(8).toString('hex');
 }
 
-exports.createEvent = async (nome, data, local, tipo, imagem, userId) => {
-  const query = 'INSERT INTO eventos (nome, data, local, tipo, imagem, user_id, event_link) VALUES (?, ?, ?, ?, ?, ?, ?)';
+exports.createEvent = async (nome, data, local, tipo, imagem, userId, privacidade = 'publico') => {
+  const query = 'INSERT INTO eventos (nome, data, local, tipo, imagem, user_id, event_link, privacidade) VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
   const eventLink = generateEventLink();
-  const [result] = await db.query(query, [nome, data, local, tipo, imagem, userId, eventLink]);
+  const [result] = await db.query(query, [nome, data, local, tipo, imagem, userId, eventLink, privacidade]);
   return { ...result, eventLink };
 };
 
@@ -139,9 +139,9 @@ exports.getUserEventById = async (userId, eventId) => {
 };
 
 exports.updateUserEvent = async (userId, eventId, eventData) => {
-  const { nome, data, local, tipo, imagem } = eventData;
-  const query = 'UPDATE eventos SET nome = ?, data = ?, local = ?, tipo = ?, imagem = ? WHERE id = ? AND user_id = ?';
-  const params = [nome, data, local, tipo, imagem, eventId, userId];
+  const { nome, data, local, tipo, imagem, privacidade } = eventData;
+  const query = 'UPDATE eventos SET nome = ?, data = ?, local = ?, tipo = ?, imagem = ?, privacidade = ? WHERE id = ? AND user_id = ?';
+  const params = [nome, data, local, tipo, imagem, privacidade, eventId, userId];
   const [result] = await db.query(query, params);
   return result;
 };

@@ -6,6 +6,7 @@ const guestController = require('../controllers/guestController');
 const contactController = require('../controllers/contactController');
 const isAdminMiddleware = require('../middleware/isAdmin'); // Importe o middleware de admin
 const eventController = require('../controllers/eventController');
+const upload = require('../middleware/upload');
 
 /**
  * @swagger
@@ -557,5 +558,7 @@ router.get('/:userId/events/recent', authMiddleware, eventController.getRecentUs
  *         description: Erro ao adicionar convidado
  */
 router.post('/events/:eventLink/guests', eventController.addGuestByEventLink);
+
+router.post('/:idUser/events', authMiddleware, upload.single('imagem'), eventController.createUserEvent);
 
 module.exports = router;

@@ -75,7 +75,7 @@ exports.getGuestsByUserId = async (userId) => {
   }
 
   const query = `
-    SELECT c.*, e.nome AS evento_nome, e.event_link
+    SELECT c.*, e.nome AS evento_nome, e.event_link, e.privacidade
     FROM convidados c
     JOIN eventos e ON c.evento_id = e.id
     WHERE e.user_id = ?

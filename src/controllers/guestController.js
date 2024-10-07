@@ -192,11 +192,12 @@ exports.getGuestsByUserId = async (req, res) => {
       numeroAcompanhantes: guest.numero_acompanhantes,
       tipoAcompanhante: guest.tipo_acompanhante,
       status: guest.status,
-      codigo: guest.codigo, // Incluindo o código na resposta
+      codigo: guest.codigo,
       evento: {
         id: guest.evento_id,
         nome: guest.evento_nome,
-        event_link: guest.event_link
+        event_link: guest.event_link,
+        privacidade: guest.privacidade
       }
     }));
 

@@ -449,10 +449,20 @@ exports.generateGuestListPDF = async (req, res) => {
       size: 'A4',
       margins: { top: 50, bottom: 50, left: 50, right: 50 }
     });
-    const filename = `guest_list_${eventId}.pdf`;
-    const filePath = path.join(__dirname, '../../uploads', filename);
 
-    doc.pipe(fs.createWriteStream(filePath));
+    // Criar um buffer para armazenar o PDF
+    let buffers = [];
+    doc.on('data', buffers.push.bind(buffers));
+    doc.on('end', () => {
+      let pdfData = Buffer.concat(buffers);
+      let base64Data = pdfData.toString('base64');
+      let pdfDataUri = `data:application/pdf;base64,${base64Data}`;
+
+      res.json({
+        message: 'PDF gerado com sucesso',
+        pdfDataUri: pdfDataUri
+      });
+    });
 
     // Adicionar fundo colorido
     doc.rect(0, 0, doc.page.width, doc.page.height).fill('#f0f0f0');
@@ -526,10 +536,6 @@ exports.generateGuestListPDF = async (req, res) => {
 
     doc.end();
 
-    res.json({
-      message: 'PDF gerado com sucesso',
-      pdfUrl: `${req.protocol}://${req.get('host')}/uploads/${filename}`
-    });
   } catch (error) {
     console.error('Erro ao gerar PDF de convidados:', error);
     res.status(500).json({ message: 'Erro ao gerar PDF de convidados' });

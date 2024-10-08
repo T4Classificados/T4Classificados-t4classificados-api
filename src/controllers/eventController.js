@@ -472,9 +472,9 @@ exports.generateGuestListPDF = async (req, res) => {
     doc.image(iconPath, 50, 45, { width: 50 });
 
     // Adicionar título e informações do evento
-    doc.font('Helvetica-Bold').fontSize(28).fillColor('#333333').text('Lista de Convidados', 120, 50);
-    doc.fontSize(18).text(event.nome, 120, 90);
-    doc.font('Helvetica').fontSize(14).fillColor('#666666').text(`Data: ${new Date(event.data).toLocaleDateString()}`, 120, 120);
+    doc.font('Helvetica-Bold').fontSize(23).fillColor('#333333').text('Lista de convidados', 115, 50);
+    doc.fontSize(16).text(event.nome, 115, 80);
+    doc.font('Helvetica').fontSize(10).fillColor('#666666').text(`Data: ${new Date(event.data).toLocaleDateString()} - Hora: ${new Date(event.data).toLocaleTimeString()}`, 115, 120);
 
     // Adicionar linha decorativa
     doc.moveTo(50, 150).lineTo(550, 150).stroke('#cccccc');
@@ -531,8 +531,16 @@ exports.generateGuestListPDF = async (req, res) => {
     });
 
     // Adicionar rodapé
-    doc.font('Helvetica').fontSize(10).fillColor('#999999');
-    doc.text(`Gerado por ConvidaFacil em ${new Date().toLocaleString()}`, 50, 750, { align: 'center' });
+    doc.font('Helvetica').fontSize(9).fillColor('#999999');
+    const text = "Gerado por ConviteFacil (www.convitefacil.com)";
+    const textWidth = doc.widthOfString(text);
+    const pageWidth = doc.page.width;
+    const x = (pageWidth - textWidth) / 2;
+
+    doc
+      .fillColor("#4b0082")
+      .text(text, x, 670)
+      .link(x, 670, textWidth, 10, "https://www.convitefacil.com");
 
     doc.end();
 

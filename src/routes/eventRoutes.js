@@ -503,25 +503,22 @@ router.delete('/user/:idUser/events/:eventId', authMiddleware, eventController.d
  * @swagger
  * /events/link/{eventLink}/check-guest/{telefone}:
  *   get:
- *     summary: Verifica se um convidado está associado a um evento específico usando o link do evento
+ *     summary: Verifica se um convidado existe para um evento específico
  *     tags: [Eventos]
- *     security: []
  *     parameters:
  *       - in: path
  *         name: eventLink
  *         required: true
  *         schema:
  *           type: string
- *         description: Link do evento
  *       - in: path
  *         name: telefone
  *         required: true
  *         schema:
  *           type: string
- *         description: Número de telefone do convidado
  *     responses:
  *       200:
- *         description: Verificação realizada com sucesso
+ *         description: Retorna se o convidado está convidado e suas informações
  *         content:
  *           application/json:
  *             schema:
@@ -540,6 +537,15 @@ router.delete('/user/:idUser/events/:eventId', authMiddleware, eventController.d
  *                       type: string
  *                     status:
  *                       type: string
+ *                     acompanhantes:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: integer
+ *                           nome:
+ *                             type: string
  *       500:
  *         description: Erro ao verificar convidado
  */

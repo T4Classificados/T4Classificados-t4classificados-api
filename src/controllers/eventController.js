@@ -333,6 +333,9 @@ exports.checkGuestByEventLinkAndPhone = async (req, res) => {
     const guest = await eventModel.checkGuestByEventLinkAndPhone(eventLink, telefone);
     
     if (guest) {
+      // Buscar acompanhantes
+      const acompanhantes = await eventModel.getAccompanistsByGuestId(guest.id);
+
       res.json({
         isInvited: true,
         guest: {
@@ -340,7 +343,7 @@ exports.checkGuestByEventLinkAndPhone = async (req, res) => {
           nome: guest.nome,
           telefone: guest.telefone,
           status: guest.status,
-          // Adicione outros campos relevantes do convidado aqui
+          acompanhantes: acompanhantes || []
         }
       });
     } else {
@@ -399,5 +402,32 @@ exports.addGuestByEventLink = async (req, res) => {
     } else {
       res.status(500).json({ message: 'Erro ao adicionar convidado' });
     }
+  }
+};
+
+exports.checkGuestByEventLink = async (req, res) => {
+  try {
+    const { eventLink, telefone } = req.params;
+    const guest = await eventModel.checkGuestByEventLink(eventLink, telefone);
+    
+    if (guest) {
+      res.json({
+        exists: true,
+        guest: {
+          id: guest.id,
+          nome: guest.nome,
+          telefone: guest.telefone,
+          status: guest.status,
+          codigo: guest.codigo,
+          acompanhante: guest.acompanhante === 1, // Convertendo para booleano
+          acompanhantes: guest.acompanhantes || [] // Incluindo a lista de acompanhantes
+        }
+      });
+    } else {
+      res.json({ exists: false });
+    }
+  } catch (error) {
+    console.error('Erro ao verificar convidado:', error);
+    res.status(500).json({ message: 'Erro ao verificar convidado' });
   }
 };

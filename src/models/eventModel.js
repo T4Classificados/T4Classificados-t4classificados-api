@@ -209,3 +209,32 @@ exports.addGuestByEventLink = async (eventLink, guestData) => {
   
   return { ...result, randomCode, eventoId };
 };
+
+exports.checkGuestByEventLink = async (eventLink, telefone) => {
+  const [rows] = await db.query(`
+    SELECT c.id, c.nome, c.telefone, c.status, c.codigo, c.acompanhante
+    FROM convidados c
+    JOIN eventos e ON c.evento_id = e.id
+    WHERE e.event_link = ? AND c.telefone = ?
+  `, [eventLink, telefone]);
+  
+  if (rows[0]) {
+    const [acompanhantes] = await db.query(`
+      SELECT id, nome
+      FROM acompanhantes
+      WHERE convidado_id = ?
+    `, [rows[0].id]);
+    
+    rows[0].acompanhantes = acompanhantes;
+  }
+  
+  return rows[0];
+};
+
+exports.getAccompanistsByGuestId = async (guestId) => {
+  const [rows] = await db.query(
+    'SELECT id, nome FROM acompanhantes WHERE convidado_id = ?',
+    [guestId]
+  );
+  return rows;
+};

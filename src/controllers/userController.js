@@ -7,23 +7,26 @@ const dotenv = require('dotenv');
 
 dotenv.config();
 
+
+const accountSid = process.env.TWILIO_ACCOUNT_SID;
+const authToken = process.env.TWILIO_AUTH_TOKEN;
+const client = require("twilio")(accountSid, authToken);
+
 function generateConfirmationCode() {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
-async function sendSMS(phoneNumber, message) {
+async function sendSMS(phoneNumber, smsMessage) {
   try {
-    const response = await axios.post(process.env.SMS_SERVICE_URL, {
-      message: {
-        api_key_app: process.env.SMS_API_KEY,
-        phone_number: phoneNumber,
-        message_body: message,
-      },
+    const message = await client.messages.create({
+      body: smsMessage,
+      messagingServiceSid: process.env.TWILIO_MESSAGING_SERVICE_SID,
+      to: phoneNumber,
     });
-    console.log('SMS enviado com sucesso:', response.data);
+    console.log("SMS enviado com sucesso:", message.sid);
     return true;
   } catch (error) {
-    console.error('Erro ao enviar SMS:', error);
+    console.error("Erro ao enviar SMS:", error);
     return false;
   }
 }

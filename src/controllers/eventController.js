@@ -445,26 +445,63 @@ exports.generateGuestListPDF = async (req, res) => {
       return res.status(404).json({ message: 'Evento não encontrado' });
     }
 
-    const doc = new PDFDocument();
+    const doc = new PDFDocument({
+      size: 'A4',
+      margins: { top: 50, bottom: 50, left: 72, right: 72 }
+    });
     const filename = `guest_list_${eventId}.pdf`;
     const filePath = path.join(__dirname, '../../uploads', filename);
 
     doc.pipe(fs.createWriteStream(filePath));
 
-    // Adicionar conteúdo ao PDF
-    doc.fontSize(18).text(`Lista de Convidados - ${event.nome}`, { align: 'center' });
-    doc.moveDown();
-    doc.fontSize(12).text(`Data: ${new Date(event.data).toLocaleDateString()}`, { align: 'center' });
-    doc.moveDown();
+    // Adicionar ícone do ConvidaFacil
+    const iconPath = path.join(__dirname, "../../assets/convidafacil_icon.png");
+    doc.image(iconPath, 50, 45, { width: 50 });
 
+    // Adicionar conteúdo ao PDF com estilo melhorado
+    doc.font('Helvetica-Bold').fontSize(24).text('Lista de Convidados', { align: 'center' });
+    doc.font('Helvetica').fontSize(18).text(event.nome, { align: 'center' });
+    doc.moveDown();
+    doc.fontSize(14).text(`Data: ${new Date(event.data).toLocaleDateString()}`, { align: 'center' });
+    doc.moveDown(2);
+
+    // Adicionar tabela de convidados
+    const tableTop = 200;
+    const tableLeft = 50;
+    const rowHeight = 25;
+    let currentTop = tableTop;
+
+    // Cabeçalho da tabela
+    doc.font('Helvetica-Bold').fontSize(12);
+    doc.text('Nº', tableLeft, currentTop);
+    doc.text('Nome', tableLeft + 30, currentTop);
+    doc.text('Telefone', tableLeft + 250, currentTop);
+    currentTop += rowHeight;
+
+    // Linhas da tabela
+    doc.font('Helvetica').fontSize(10);
     guests.forEach((guest, index) => {
-      doc.text(`${index + 1}. ${guest.nome} - ${guest.telefone}`);
+      if (currentTop > 700) {  // Nova página se necessário
+        doc.addPage();
+        currentTop = 50;
+      }
+
+      doc.text(index + 1, tableLeft, currentTop);
+      doc.text(guest.nome, tableLeft + 30, currentTop);
+      doc.text(guest.telefone, tableLeft + 250, currentTop);
+      currentTop += rowHeight;
+
       if (guest.acompanhantes && guest.acompanhantes.length > 0) {
         guest.acompanhantes.forEach(acompanhante => {
-          doc.text(`   - ${acompanhante.nome}`, { indent: 20 });
+          if (currentTop > 700) {
+            doc.addPage();
+            currentTop = 50;
+          }
+          doc.text('', tableLeft, currentTop);
+          doc.text(`- ${acompanhante.nome}`, tableLeft + 40, currentTop);
+          currentTop += rowHeight;
         });
       }
-      doc.moveDown();
     });
 
     doc.end();

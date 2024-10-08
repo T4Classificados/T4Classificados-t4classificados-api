@@ -551,4 +551,79 @@ router.delete('/user/:idUser/events/:eventId', authMiddleware, eventController.d
  */
 router.get('/events/link/:eventLink/check-guest/:telefone', eventController.checkGuestByEventLinkAndPhone);
 
+/**
+ * @swagger
+ * /events/{eventId}/guest-list-pdf:
+ *   get:
+ *     summary: Gera um PDF com a lista de convidados que aceitaram o convite
+ *     tags: [Eventos]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: eventId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: PDF gerado com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 pdfUrl:
+ *                   type: string
+ *       401:
+ *         description: Não autorizado
+ *       404:
+ *         description: Evento não encontrado
+ *       500:
+ *         description: Erro ao gerar PDF
+ */
+router.get('/events/:eventId/guest-list-pdf', authMiddleware, eventController.generateGuestListPDF);
+
+/**
+ * @swagger
+ * /events/{eventLink}/guests:
+ *   post:
+ *     summary: Adiciona um novo convidado a um evento específico
+ *     tags: [Eventos]
+ *     parameters:
+ *       - in: path
+ *         name: eventLink
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - nome
+ *               - telefone
+ *             properties:
+ *               nome:
+ *                 type: string
+ *               telefone:
+ *                 type: string
+ *               acompanhantes:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *     responses:
+ *       201:
+ *         description: Convidado adicionado com sucesso
+ *       404:
+ *         description: Evento não encontrado
+ *       500:
+ *         description: Erro ao adicionar convidado
+ */
+router.post('/events/:eventLink/guests', eventController.addGuestByEventLink);
+
 module.exports = router;

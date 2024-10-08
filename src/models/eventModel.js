@@ -189,25 +189,49 @@ exports.getRecentEventsByUserId = async (userId) => {
 };
 
 exports.addGuestByEventLink = async (eventLink, guestData) => {
-  const { nome, telefone, acompanhante } = guestData;
+  const { nome, telefone, acompanhantes } = guestData;
   const randomCode = Math.floor(100000 + Math.random() * 900000).toString();
   
-  // Primeiro, obtenha o ID do evento usando o event_link
-  const [eventRows] = await db.query('SELECT id FROM eventos WHERE event_link = ?', [eventLink]);
+  const connection = await db.getConnection();
   
-  if (eventRows.length === 0) {
-    throw new Error('Evento não encontrado');
+  try {
+    await connection.beginTransaction();
+
+    // Primeiro, obtenha o ID do evento usando o event_link
+    const [eventRows] = await connection.query('SELECT id FROM eventos WHERE event_link = ?', [eventLink]);
+    
+    if (eventRows.length === 0) {
+      throw new Error('Evento não encontrado');
+    }
+    
+    const eventoId = eventRows[0].id;
+    
+    // Insira o novo convidado com status 'aceito' e o evento_id correto
+    const [result] = await connection.query(
+      'INSERT INTO convidados (nome, telefone, evento_id, status, codigo) VALUES (?, ?, ?, ?, ?)',
+      [nome, telefone, eventoId, 'aceito', randomCode]
+    );
+    
+    const guestId = result.insertId;
+
+    // Insira os acompanhantes, se houver
+    if (acompanhantes && acompanhantes.length > 0) {
+      const acompanhantesValues = acompanhantes.map(acompanhante => [guestId, acompanhante]);
+      await connection.query(
+        'INSERT INTO acompanhantes (convidado_id, nome) VALUES ?',
+        [acompanhantesValues]
+      );
+    }
+
+    await connection.commit();
+    
+    return { insertId: guestId, randomCode, eventoId };
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
   }
-  
-  const eventoId = eventRows[0].id;
-  
-  // Agora, insira o novo convidado
-  const [result] = await db.query(
-    'INSERT INTO convidados (nome, telefone, acompanhante, evento_id, status, codigo) VALUES (?, ?, ?, ?, ?, ?)',
-    [nome, telefone, 0, 0, null, eventoId, 'aceito', randomCode]
-  );
-  
-  return { ...result, randomCode, eventoId };
 };
 
 exports.checkGuestByEventLink = async (eventLink, telefone) => {
@@ -237,4 +261,24 @@ exports.getAccompanistsByGuestId = async (guestId) => {
     [guestId]
   );
   return rows;
+};
+
+exports.getAcceptedGuestsByEventId = async (eventId) => {
+  const [guests] = await db.query(`
+    SELECT c.id, c.nome, c.telefone
+    FROM convidados c
+    WHERE c.evento_id = ? AND c.status = 'aceito'
+    ORDER BY c.nome
+  `, [eventId]);
+
+  for (let guest of guests) {
+    const [acompanhantes] = await db.query(`
+      SELECT id, nome
+      FROM acompanhantes
+      WHERE convidado_id = ?
+    `, [guest.id]);
+    guest.acompanhantes = acompanhantes;
+  }
+
+  return guests;
 };

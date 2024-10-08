@@ -1,6 +1,9 @@
 const eventModel = require('../models/eventModel');
 const config = require('../config/config'); // Vamos criar este arquivo de configuração
 const dotenv = require('dotenv');
+const PDFDocument = require('pdfkit');
+const fs = require('fs');
+const path = require('path');
 
 dotenv.config();
 
@@ -385,9 +388,9 @@ exports.getRecentUserEvents = async (req, res) => {
 exports.addGuestByEventLink = async (req, res) => {
   try {
     const { eventLink } = req.params;
-    const guestData = req.body;
+    const { nome, telefone, acompanhantes } = req.body;
 
-    const result = await eventModel.addGuestByEventLink(eventLink, guestData);
+    const result = await eventModel.addGuestByEventLink(eventLink, { nome, telefone, acompanhantes });
     
     res.status(201).json({
       message: 'Convidado adicionado com sucesso',
@@ -429,5 +432,49 @@ exports.checkGuestByEventLink = async (req, res) => {
   } catch (error) {
     console.error('Erro ao verificar convidado:', error);
     res.status(500).json({ message: 'Erro ao verificar convidado' });
+  }
+};
+
+exports.generateGuestListPDF = async (req, res) => {
+  try {
+    const { eventId } = req.params;
+    const guests = await eventModel.getAcceptedGuestsByEventId(eventId);
+    const event = await eventModel.getEventById(eventId);
+
+    if (!event) {
+      return res.status(404).json({ message: 'Evento não encontrado' });
+    }
+
+    const doc = new PDFDocument();
+    const filename = `guest_list_${eventId}.pdf`;
+    const filePath = path.join(__dirname, '../../uploads', filename);
+
+    doc.pipe(fs.createWriteStream(filePath));
+
+    // Adicionar conteúdo ao PDF
+    doc.fontSize(18).text(`Lista de Convidados - ${event.nome}`, { align: 'center' });
+    doc.moveDown();
+    doc.fontSize(12).text(`Data: ${new Date(event.data).toLocaleDateString()}`, { align: 'center' });
+    doc.moveDown();
+
+    guests.forEach((guest, index) => {
+      doc.text(`${index + 1}. ${guest.nome} - ${guest.telefone}`);
+      if (guest.acompanhantes && guest.acompanhantes.length > 0) {
+        guest.acompanhantes.forEach(acompanhante => {
+          doc.text(`   - ${acompanhante.nome}`, { indent: 20 });
+        });
+      }
+      doc.moveDown();
+    });
+
+    doc.end();
+
+    res.json({
+      message: 'PDF gerado com sucesso',
+      pdfUrl: `${req.protocol}://${req.get('host')}/uploads/${filename}`
+    });
+  } catch (error) {
+    console.error('Erro ao gerar PDF de convidados:', error);
+    res.status(500).json({ message: 'Erro ao gerar PDF de convidados' });
   }
 };

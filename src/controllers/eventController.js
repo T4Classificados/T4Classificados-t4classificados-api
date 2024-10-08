@@ -390,6 +390,12 @@ exports.addGuestByEventLink = async (req, res) => {
     const { eventLink } = req.params;
     const { nome, telefone, acompanhantes } = req.body;
 
+    // Verificar se já existe um convidado com este telefone para este evento
+    const guestExists = await eventModel.checkGuestExistsByEventLinkAndPhone(eventLink, telefone);
+    if (guestExists) {
+      return res.status(400).json({ message: 'Já existe um convidado com este número de telefone para este evento' });
+    }
+
     const result = await eventModel.addGuestByEventLink(eventLink, { nome, telefone, acompanhantes });
     
     res.status(201).json({
@@ -402,6 +408,8 @@ exports.addGuestByEventLink = async (req, res) => {
     console.error('Erro ao adicionar convidado:', error);
     if (error.message === 'Evento não encontrado') {
       res.status(404).json({ message: 'Evento não encontrado' });
+    } else if (error.message === 'Já existe um convidado com este número de telefone para este evento') {
+      res.status(400).json({ message: error.message });
     } else {
       res.status(500).json({ message: 'Erro ao adicionar convidado' });
     }

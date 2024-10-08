@@ -188,6 +188,17 @@ exports.getRecentEventsByUserId = async (userId) => {
   return rows;
 };
 
+exports.checkGuestExistsByEventLinkAndPhone = async (eventLink, telefone) => {
+  const [rows] = await db.query(`
+    SELECT c.id
+    FROM convidados c
+    JOIN eventos e ON c.evento_id = e.id
+    WHERE e.event_link = ? AND c.telefone = ?
+  `, [eventLink, telefone]);
+  
+  return rows.length > 0;
+};
+
 exports.addGuestByEventLink = async (eventLink, guestData) => {
   const { nome, telefone, acompanhantes } = guestData;
   const randomCode = Math.floor(100000 + Math.random() * 900000).toString();
@@ -205,6 +216,16 @@ exports.addGuestByEventLink = async (eventLink, guestData) => {
     }
     
     const eventoId = eventRows[0].id;
+
+    // Verificar se já existe um convidado com este telefone para este evento
+    const [existingGuest] = await connection.query(
+      'SELECT id FROM convidados WHERE evento_id = ? AND telefone = ?',
+      [eventoId, telefone]
+    );
+
+    if (existingGuest.length > 0) {
+      throw new Error('Já existe um convidado com este número de telefone para este evento');
+    }
     
     // Insira o novo convidado com status 'aceito' e o evento_id correto
     const [result] = await connection.query(

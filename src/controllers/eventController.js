@@ -447,62 +447,82 @@ exports.generateGuestListPDF = async (req, res) => {
 
     const doc = new PDFDocument({
       size: 'A4',
-      margins: { top: 50, bottom: 50, left: 72, right: 72 }
+      margins: { top: 50, bottom: 50, left: 50, right: 50 }
     });
     const filename = `guest_list_${eventId}.pdf`;
     const filePath = path.join(__dirname, '../../uploads', filename);
 
     doc.pipe(fs.createWriteStream(filePath));
 
+    // Adicionar fundo colorido
+    doc.rect(0, 0, doc.page.width, doc.page.height).fill('#f0f0f0');
+
     // Adicionar ícone do ConvidaFacil
     const iconPath = path.join(__dirname, "../../assets/convidafacil_icon.png");
     doc.image(iconPath, 50, 45, { width: 50 });
 
-    // Adicionar conteúdo ao PDF com estilo melhorado
-    doc.font('Helvetica-Bold').fontSize(24).text('Lista de Convidados', { align: 'center' });
-    doc.font('Helvetica').fontSize(18).text(event.nome, { align: 'center' });
-    doc.moveDown();
-    doc.fontSize(14).text(`Data: ${new Date(event.data).toLocaleDateString()}`, { align: 'center' });
-    doc.moveDown(2);
+    // Adicionar título e informações do evento
+    doc.font('Helvetica-Bold').fontSize(28).fillColor('#333333').text('Lista de Convidados', 120, 50);
+    doc.fontSize(18).text(event.nome, 120, 90);
+    doc.font('Helvetica').fontSize(14).fillColor('#666666').text(`Data: ${new Date(event.data).toLocaleDateString()}`, 120, 120);
+
+    // Adicionar linha decorativa
+    doc.moveTo(50, 150).lineTo(550, 150).stroke('#cccccc');
 
     // Adicionar tabela de convidados
-    const tableTop = 200;
-    const tableLeft = 50;
-    const rowHeight = 25;
+    const tableTop = 180;
     let currentTop = tableTop;
 
-    // Cabeçalho da tabela
-    doc.font('Helvetica-Bold').fontSize(12);
-    doc.text('Nº', tableLeft, currentTop);
-    doc.text('Nome', tableLeft + 30, currentTop);
-    doc.text('Telefone', tableLeft + 250, currentTop);
-    currentTop += rowHeight;
+    // Cabeçalho da tabela com a cor #4b0082
+    doc.rect(40, currentTop - 10, 520, 30).fill('#4b0082');
+    doc.font('Helvetica-Bold').fontSize(14).fillColor('#ffffff');
+    doc.text('Nº', 50, currentTop);
+    doc.text('Nome', 100, currentTop);
+    doc.text('Telefone', 350, currentTop);
+    
+    currentTop += 30;
 
     // Linhas da tabela
-    doc.font('Helvetica').fontSize(10);
+    doc.font('Helvetica').fontSize(12).fillColor('#666666');
     guests.forEach((guest, index) => {
-      if (currentTop > 700) {  // Nova página se necessário
+      if (currentTop > 700) {
         doc.addPage();
         currentTop = 50;
+        doc.rect(0, 0, doc.page.width, doc.page.height).fill('#f0f0f0');
       }
 
-      doc.text(index + 1, tableLeft, currentTop);
-      doc.text(guest.nome, tableLeft + 30, currentTop);
-      doc.text(guest.telefone, tableLeft + 250, currentTop);
-      currentTop += rowHeight;
+      // Alternar cores de fundo para as linhas
+      if (index % 2 === 0) {
+        doc.rect(40, currentTop - 5, 520, 25).fill('#e6e6e6');
+      }
 
+      doc.fillColor('#333333');
+      doc.text(index + 1, 50, currentTop);
+      doc.text(guest.nome, 100, currentTop);
+      doc.text(guest.telefone, 350, currentTop);
+      currentTop += 25;
+
+      // Adicionar acompanhantes
       if (guest.acompanhantes && guest.acompanhantes.length > 0) {
-        guest.acompanhantes.forEach(acompanhante => {
+        doc.fillColor('#666666').fontSize(10);
+        doc.text('Acompanhantes:', 120, currentTop);
+        currentTop += 15;
+        guest.acompanhantes.forEach((acompanhante, acompIndex) => {
           if (currentTop > 700) {
             doc.addPage();
             currentTop = 50;
+            doc.rect(0, 0, doc.page.width, doc.page.height).fill('#f0f0f0');
           }
-          doc.text('', tableLeft, currentTop);
-          doc.text(`- ${acompanhante.nome}`, tableLeft + 40, currentTop);
-          currentTop += rowHeight;
+          doc.text(`${acompIndex + 1}. ${acompanhante.nome}`, 140, currentTop);
+          currentTop += 15;
         });
+        currentTop += 5; // Espaço extra após os acompanhantes
       }
     });
+
+    // Adicionar rodapé
+    doc.font('Helvetica').fontSize(10).fillColor('#999999');
+    doc.text(`Gerado por ConvidaFacil em ${new Date().toLocaleString()}`, 50, 750, { align: 'center' });
 
     doc.end();
 

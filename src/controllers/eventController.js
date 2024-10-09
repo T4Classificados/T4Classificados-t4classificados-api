@@ -4,6 +4,7 @@ const dotenv = require('dotenv');
 const PDFDocument = require('pdfkit');
 const fs = require('fs');
 const path = require('path');
+const { v4: uuidv4 } = require('uuid');
 
 dotenv.config();
 
@@ -458,19 +459,11 @@ exports.generateGuestListPDF = async (req, res) => {
       margins: { top: 50, bottom: 50, left: 50, right: 50 }
     });
 
-    // Criar um buffer para armazenar o PDF
-    let buffers = [];
-    doc.on('data', buffers.push.bind(buffers));
-    doc.on('end', () => {
-      let pdfData = Buffer.concat(buffers);
-      let base64Data = pdfData.toString('base64');
-      let pdfDataUri = `data:application/pdf;base64,${base64Data}`;
+    const fileName = `convidafacil_${eventId}.pdf`;
+    const filePath = path.join(__dirname, '../../uploads', fileName);
 
-      res.json({
-        message: 'PDF gerado com sucesso',
-        pdfDataUri: pdfDataUri
-      });
-    });
+    const writeStream = fs.createWriteStream(filePath);
+    doc.pipe(writeStream);
 
     // Adicionar fundo colorido
     doc.rect(0, 0, doc.page.width, doc.page.height).fill('#f0f0f0');
@@ -551,6 +544,21 @@ exports.generateGuestListPDF = async (req, res) => {
       .link(x, 670, textWidth, 10, "https://www.convitefacil.com");
 
     doc.end();
+
+    writeStream.on('finish', () => {
+      const pdfUrl = `http://api.convitefacil.com:5000/uploads/${fileName}`;
+      res.json({
+        message: 'PDF gerado com sucesso',
+        pdfUrl: pdfUrl
+      });
+
+      // Opcional: Agendar a remoção do arquivo após um tempo
+      setTimeout(() => {
+        fs.unlink(filePath, (err) => {
+          if (err) console.error('Erro ao remover arquivo temporário:', err);
+        });
+      }, 5 * 60 * 1000); // Remove após 5 minutos
+    });
 
   } catch (error) {
     console.error('Erro ao gerar PDF de convidados:', error);

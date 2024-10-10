@@ -56,6 +56,8 @@ router.get('/events/statistics', eventController.getEventStatistics);
  *                 type: string
  *               tipo:
  *                 type: string
+ *               privacidade:
+ *                 type: string
  *               descricao:
  *                 type: string
  *               imagem:
@@ -64,15 +66,6 @@ router.get('/events/statistics', eventController.getEventStatistics);
  *     responses:
  *       201:
  *         description: Evento criado com sucesso
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                 eventId:
- *                   type: integer
  *       401:
  *         description: Não autorizado
  */
@@ -104,6 +97,11 @@ router.post('/events', upload.single('imagem'), authMiddleware, eventController.
  *                   local:
  *                     type: string
  *                   tipo:
+ *                     type: string
+ *                   privacidade:
+ *                     type: string
+ *                     enum: [publico, privado]
+ *                   descricao:
  *                     type: string
  *                   imagemUrl:
  *                     type: string
@@ -151,6 +149,11 @@ router.get('/events', authMiddleware, eventController.getAllEvents);
  *                 local:
  *                   type: string
  *                 tipo:
+ *                   type: string
+ *                 privacidade:
+ *                   type: string
+ *                   enum: [publico, privado]
+ *                 descricao:
  *                   type: string
  *                 imagemUrl:
  *                   type: string
@@ -200,6 +203,9 @@ router.get('/events/:id', authMiddleware, eventController.getEventById);
  *                 type: string
  *               tipo:
  *                 type: string
+ *               privacidade:
+ *                 type: string
+ *                 enum: [publico, privado]
  *               descricao:
  *                 type: string
  *               imagem:
@@ -311,6 +317,11 @@ router.get('/events/user-statistics/:userId', authMiddleware, eventController.ge
  *                   type: string
  *                 tipo:
  *                   type: string
+ *                 privacidade:
+ *                   type: string
+ *                   enum: [publico, privado]
+ *                 descricao:
+ *                   type: string
  *                 imagemUrl:
  *                   type: string
  *                 event_link:
@@ -382,6 +393,11 @@ router.get('/user/:idUser/events', authMiddleware, eventController.getUserEvents
  *               local:
  *                 type: string
  *               tipo:
+ *                 type: string
+ *               privacidade:
+ *                 type: string
+ *                 enum: [publico, privado]
+ *               descricao:
  *                 type: string
  *               imagem:
  *                 type: string
@@ -461,6 +477,8 @@ router.get('/user/:idUser/events/:eventId', authMiddleware, eventController.getU
  *               privacidade:
  *                 type: string
  *                 enum: [publico, privado]
+ *               descricao:
+ *                 type: string
  *               imagem:
  *                 type: string
  *                 format: binary

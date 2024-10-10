@@ -4,24 +4,40 @@ const dotenv = require('dotenv');
 const PDFDocument = require('pdfkit');
 const fs = require('fs');
 const path = require('path');
-const { v4: uuidv4 } = require('uuid');
 
 dotenv.config();
 
 exports.createEvent = async (req, res) => {
-  try {
-    const { nome, data, local, tipo, descricao } = req.body;
-    const imagem = req.file ? req.file.filename : null;
-    const userId = req.userData.userId; // Obtém o ID do usuário do token
 
-    const result = await eventModel.createEvent(nome, data, local, tipo, imagem, userId, 'publico', descricao);
+  try {
+
+    const { nome, data, local, tipo, privacidade, descricao } = req.body;
+    const imagem = req.file
+      ? req.file.filename
+      : `convitefacil.svg`;
+    const userId = req.userData.userId;
+
+    // Use a descrição do corpo da requisição, ou use uma string vazia se for undefined ou null
+    const descricaoFinal = (descricao ?? '').trim();
+
+    const result = await eventModel.createEvent(
+      nome,
+      data,
+      local,
+      tipo,
+      imagem,
+      userId,
+      privacidade,
+      descricaoFinal
+    );
     const eventLink = `${config.baseUrl}/evento/${result.eventLink}`;
 
+ 
     res.status(201).json({ 
       message: 'Evento criado com sucesso', 
       eventId: result.insertId,
       eventLink,
-      descricao
+      descricao: descricaoFinal
     });
   } catch (error) {
     console.error('Erro ao criar evento:', error);
@@ -94,7 +110,7 @@ exports.updateEvent = async (req, res) => {
       local: local || existingEvent.local,
       tipo: tipo || existingEvent.tipo,
       imagem: imagem !== undefined ? imagem : existingEvent.imagem,
-      descricao: descricao || existingEvent.descricao
+      descricao: descricao !== undefined ? descricao : existingEvent.descricao
     };
     
     const result = await eventModel.updateEvent(id, updatedEvent);
@@ -210,12 +226,24 @@ exports.getUserEvents = async (req, res) => {
 };
 
 exports.createUserEvent = async (req, res) => {
+ 
   try {
     const { idUser } = req.params;
-    const { nome, data, local, tipo, privacidade } = req.body;
-    const imagem = req.file ? req.file.filename : null;
+    const { nome, data, local, tipo, privacidade, descricao } = req.body;
+    const imagem = req.file
+      ? req.file.filename
+      : `convitefacil.svg`;
 
-    const result = await eventModel.createEvent(nome, data, local, tipo, imagem, idUser, privacidade);
+    const result = await eventModel.createEvent(
+      nome,
+      data,
+      local,
+      tipo,
+      imagem,
+      idUser,
+      privacidade,
+      descricao
+    );
     const eventLink = `${config.baseUrl}/evento/${result.eventLink}`;
 
     res.status(201).json({ 
@@ -270,7 +298,8 @@ exports.updateUserEvent = async (req, res) => {
       local: local || existingEvent.local,
       tipo: tipo || existingEvent.tipo,
       imagem: imagem !== undefined ? imagem : existingEvent.imagem,
-      privacidade: privacidade || existingEvent.privacidade
+      privacidade: privacidade || existingEvent.privacidade,
+      descricao: descricao || existingEvent.descricao,
     };
     
     const result = await eventModel.updateUserEvent(idUser, eventId, updatedEvent);

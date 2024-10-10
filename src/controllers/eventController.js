@@ -10,17 +10,18 @@ dotenv.config();
 
 exports.createEvent = async (req, res) => {
   try {
-    const { nome, data, local, tipo } = req.body;
+    const { nome, data, local, tipo, descricao } = req.body;
     const imagem = req.file ? req.file.filename : null;
     const userId = req.userData.userId; // Obtém o ID do usuário do token
 
-    const result = await eventModel.createEvent(nome, data, local, tipo, imagem, userId);
+    const result = await eventModel.createEvent(nome, data, local, tipo, imagem, userId, 'publico', descricao);
     const eventLink = `${config.baseUrl}/evento/${result.eventLink}`;
 
     res.status(201).json({ 
       message: 'Evento criado com sucesso', 
       eventId: result.insertId,
-      eventLink
+      eventLink,
+      descricao
     });
   } catch (error) {
     console.error('Erro ao criar evento:', error);
@@ -78,23 +79,22 @@ exports.getEventById = async (req, res) => {
 exports.updateEvent = async (req, res) => {
   try {
     const { id } = req.params;
-    const { nome, data, local, tipo } = req.body;
+    const { nome, data, local, tipo, descricao } = req.body;
     const imagem = req.file ? req.file.filename : undefined;
     
-    // Primeiro, obtemos o evento existente
     const existingEvent = await eventModel.getEventById(id);
     
     if (!existingEvent) {
       return res.status(404).json({ message: 'Evento não encontrado' });
     }
     
-    // Criamos um objeto com os dados atualizados, mantendo os valores originais se não fornecidos
     const updatedEvent = {
       nome: nome || existingEvent.nome,
       data: data || existingEvent.data,
       local: local || existingEvent.local,
       tipo: tipo || existingEvent.tipo,
-      imagem: imagem !== undefined ? imagem : existingEvent.imagem
+      imagem: imagem !== undefined ? imagem : existingEvent.imagem,
+      descricao: descricao || existingEvent.descricao
     };
     
     const result = await eventModel.updateEvent(id, updatedEvent);

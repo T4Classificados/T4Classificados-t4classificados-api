@@ -5,10 +5,10 @@ function generateEventLink() {
   return crypto.randomBytes(8).toString('hex');
 }
 
-exports.createEvent = async (nome, data, local, tipo, imagem, userId, privacidade = 'publico') => {
-  const query = 'INSERT INTO eventos (nome, data, local, tipo, imagem, user_id, event_link, privacidade) VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
+exports.createEvent = async (nome, data, local, tipo, imagem, userId, privacidade = 'publico', descricao = null) => {
+  const query = 'INSERT INTO eventos (nome, data, local, tipo, imagem, user_id, event_link, privacidade, descricao) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)';
   const eventLink = generateEventLink();
-  const [result] = await db.query(query, [nome, data, local, tipo, imagem, userId, eventLink, privacidade]);
+  const [result] = await db.query(query, [nome, data, local, tipo, imagem, userId, eventLink, privacidade, descricao]);
   return { ...result, eventLink };
 };
 
@@ -33,10 +33,10 @@ exports.getEventById = async (id) => {
 };
 
 exports.updateEvent = async (id, eventData) => {
-  const { nome, data, local, tipo, imagem } = eventData;
+  const { nome, data, local, tipo, imagem, descricao } = eventData;
   
-  const query = 'UPDATE eventos SET nome = ?, data = ?, local = ?, tipo = ?, imagem = ? WHERE id = ?';
-  const params = [nome, data, local, tipo, imagem, id];
+  const query = 'UPDATE eventos SET nome = ?, data = ?, local = ?, tipo = ?, imagem = ?, descricao = ? WHERE id = ?';
+  const params = [nome, data, local, tipo, imagem, descricao, id];
 
   const [result] = await db.query(query, params);
   return result;
@@ -139,9 +139,9 @@ exports.getUserEventById = async (userId, eventId) => {
 };
 
 exports.updateUserEvent = async (userId, eventId, eventData) => {
-  const { nome, data, local, tipo, imagem, privacidade } = eventData;
-  const query = 'UPDATE eventos SET nome = ?, data = ?, local = ?, tipo = ?, imagem = ?, privacidade = ? WHERE id = ? AND user_id = ?';
-  const params = [nome, data, local, tipo, imagem, privacidade, eventId, userId];
+  const { nome, data, local, tipo, imagem, privacidade, descricao } = eventData;
+  const query = 'UPDATE eventos SET nome = ?, data = ?, local = ?, tipo = ?, imagem = ?, privacidade = ?, descricao = ? WHERE id = ? AND user_id = ?';
+  const params = [nome, data, local, tipo, imagem, privacidade, descricao, eventId, userId];
   const [result] = await db.query(query, params);
   return result;
 };

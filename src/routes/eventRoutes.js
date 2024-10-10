@@ -56,6 +56,8 @@ router.get('/events/statistics', eventController.getEventStatistics);
  *                 type: string
  *               tipo:
  *                 type: string
+ *               descricao:
+ *                 type: string
  *               imagem:
  *                 type: string
  *                 format: binary
@@ -197,6 +199,8 @@ router.get('/events/:id', authMiddleware, eventController.getEventById);
  *               local:
  *                 type: string
  *               tipo:
+ *                 type: string
+ *               descricao:
  *                 type: string
  *               imagem:
  *                 type: string

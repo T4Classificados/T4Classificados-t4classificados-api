@@ -284,7 +284,7 @@ exports.getUserEventById = async (req, res) => {
 exports.updateUserEvent = async (req, res) => {
   try {
     const { idUser, eventId } = req.params;
-    const { nome, data, local, tipo, privacidade } = req.body;
+    const { nome, data, local, tipo, privacidade, descricao } = req.body;
     const imagem = req.file ? req.file.filename : undefined;
     
     const existingEvent = await eventModel.getUserEventById(idUser, eventId);

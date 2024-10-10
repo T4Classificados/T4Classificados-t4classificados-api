@@ -14,7 +14,7 @@ exports.createEvent = async (req, res) => {
     const { nome, data, local, tipo, privacidade, descricao } = req.body;
     const imagem = req.file
       ? req.file.filename
-      : `convitefacil.svg`;
+      : "convitefacil.png";
     const userId = req.userData.userId;
 
     // Use a descrição do corpo da requisição, ou use uma string vazia se for undefined ou null
@@ -232,7 +232,7 @@ exports.createUserEvent = async (req, res) => {
     const { nome, data, local, tipo, privacidade, descricao } = req.body;
     const imagem = req.file
       ? req.file.filename
-      : `convitefacil.svg`;
+      : "convitefacil.png";
 
     const result = await eventModel.createEvent(
       nome,

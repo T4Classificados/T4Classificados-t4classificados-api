@@ -27,11 +27,13 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpecs));
 const eventRoutes = require('./routes/eventRoutes');
 const guestRoutes = require('./routes/guestRoutes');
 const userRoutes = require('./routes/userRoutes');
+const catalogRoutes = require('./routes/catalogRoutes');
 
 // Use as rotas
 app.use('/api', userRoutes);
 app.use('/api', guestRoutes);
 app.use('/api', eventRoutes);
+app.use('/api/catalogs', catalogRoutes);
 
 app.listen(port, () => {
   console.log(`Servidor rodando na porta ${port}`);

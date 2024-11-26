@@ -36,6 +36,12 @@ class CatalogModel {
     const [result] = await db.execute(query, [status, id]);
     return result;
   }
+
+  async deleteCatalog(id) {
+    const query = 'DELETE FROM catalogs WHERE id = ?';
+    const [result] = await db.execute(query, [id]);
+    return result;
+  }
 }
 
 module.exports = new CatalogModel(); 

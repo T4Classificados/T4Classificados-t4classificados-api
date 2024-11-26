@@ -98,6 +98,38 @@ class CatalogController {
       res.status(500).json({ message: 'Erro ao atualizar status do catálogo' });
     }
   }
+
+  async deleteCatalog(req, res) {
+    try {
+      const { id } = req.params;
+
+      const catalog = await CatalogModel.getCatalogById(id);
+      if (!catalog) {
+        return res.status(404).json({ message: 'Catálogo não encontrado' });
+      }
+
+      // Deletar a imagem do servidor
+      if (catalog.image) {
+        const imagePath = path.join(__dirname, '../../uploads', catalog.image);
+        try {
+          await fs.unlink(imagePath);
+        } catch (error) {
+          console.error('Erro ao deletar imagem:', error);
+        }
+      }
+
+      const result = await CatalogModel.deleteCatalog(id);
+
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ message: 'Catálogo não encontrado' });
+      }
+
+      res.json({ message: 'Catálogo deletado com sucesso' });
+    } catch (error) {
+      console.error('Erro ao deletar catálogo:', error);
+      res.status(500).json({ message: 'Erro ao deletar catálogo' });
+    }
+  }
 }
 
 module.exports = new CatalogController(); 

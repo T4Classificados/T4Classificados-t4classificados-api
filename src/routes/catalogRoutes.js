@@ -174,9 +174,39 @@ const upload = multer({
  *         description: Erro do servidor
  */
 
+/**
+ * @swagger
+ * /catalogs/{id}:
+ *   delete:
+ *     summary: Deletar um catálogo
+ *     tags: [Catalogs]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID do catálogo
+ *     responses:
+ *       200:
+ *         description: Catálogo deletado com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *       404:
+ *         description: Catálogo não encontrado
+ *       500:
+ *         description: Erro do servidor
+ */
+
 router.post('/', upload.single('image'), CatalogController.createCatalog);
 router.get('/', CatalogController.getAllCatalogs);
 router.put('/:id', upload.single('image'), CatalogController.updateCatalog);
 router.patch('/:id/status', CatalogController.updateCatalogStatus);
+router.delete('/:id', CatalogController.deleteCatalog);
 
 module.exports = router; 

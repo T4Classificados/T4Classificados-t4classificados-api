@@ -131,4 +131,31 @@ exports.deleteAnuncio = async (req, res) => {
     console.error('Erro ao deletar anúncio:', error);
     res.status(500).json({ message: 'Erro ao deletar anúncio' });
   }
+};
+
+exports.getAnunciosPublic = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const filters = {
+      categoria: req.query.categoria,
+      modalidade: req.query.modalidade,
+      visibilidade: 'publico' // Garante que só retorna anúncios públicos
+    };
+
+    const anuncios = await anuncioModel.getAnuncios(filters, page, limit);
+
+    res.json({
+      message: 'Anúncios obtidos com sucesso',
+      data: anuncios,
+      pagination: {
+        page,
+        limit,
+        total: anuncios.length
+      }
+    });
+  } catch (error) {
+    console.error('Erro ao listar anúncios:', error);
+    res.status(500).json({ message: 'Erro ao listar anúncios' });
+  }
 }; 

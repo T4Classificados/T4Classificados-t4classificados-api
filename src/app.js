@@ -38,9 +38,14 @@ app.get('/api-docs', swaggerUi.setup(swaggerSpecs, {
   },
 }));
 
-// Rotas
+// Rotas públicas (sem autenticação)
+const publicRoutes = require('./routes/publicRoutes');
+app.use('/api/public', publicRoutes);
+
+// Rotas protegidas
 const userRoutes = require('./routes/userRoutes');
 const anuncioRoutes = require('./routes/anuncioRoutes');
+const empregoRoutes = require('./routes/empregoRoutes');
 
 // Rota de teste
 app.get('/test', (req, res) => {
@@ -50,6 +55,7 @@ app.get('/test', (req, res) => {
 // Prefixo da API
 app.use('/api', userRoutes);
 app.use('/api', anuncioRoutes);
+app.use('/api', empregoRoutes);
 
 // Tratamento de erros
 app.use((err, req, res, next) => {

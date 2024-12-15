@@ -2,11 +2,56 @@ const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/userController');
 const authMiddleware = require('../middleware/auth');
-const guestController = require('../controllers/guestController');
-const contactController = require('../controllers/contactController');
-const isAdminMiddleware = require('../middleware/isAdmin'); // Importe o middleware de admin
-const eventController = require('../controllers/eventController');
-const upload = require('../middleware/upload');
+const userPreferencesController = require('../controllers/userPreferencesController');
+
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     User:
+ *       type: object
+ *       required:
+ *         - nome
+ *         - telefone
+ *         - senha
+ *         - genero
+ *         - provincia
+ *         - zona
+ *         - tipoConta
+ *       properties:
+ *         nome:
+ *           type: string
+ *           description: Nome completo do usuário
+ *         telefone:
+ *           type: string
+ *           description: Número de telefone do usuário
+ *         senha:
+ *           type: string
+ *           description: Senha do usuário
+ *         genero:
+ *           type: string
+ *           enum: [masculino, feminino, outro]
+ *           description: Gênero do usuário
+ *         provincia:
+ *           type: string
+ *           description: Província do usuário
+ *         zona:
+ *           type: string
+ *           description: Zona/Bairro do usuário
+ *         tipoConta:
+ *           type: string
+ *           enum: [pessoal, empresarial]
+ *           description: Tipo de conta do usuário
+ *     UserPreferences:
+ *       type: object
+ *       properties:
+ *         notificacoes_promocoes:
+ *           type: boolean
+ *           description: Receber alertas sobre novas promoções e ofertas especiais
+ *         alertas_emprego:
+ *           type: boolean
+ *           description: Receber notificações sobre novas vagas de emprego
+ */
 
 /**
  * @swagger
@@ -14,38 +59,21 @@ const upload = require('../middleware/upload');
  *   post:
  *     summary: Registra um novo usuário
  *     tags: [Usuários]
- *     security: [] # Remove a necessidade de autenticação
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
- *             type: object
- *             required:
- *               - nome
- *               - sobrenome
- *               - telefone
- *               - senha
- *             properties:
- *               nome:
- *                 type: string
- *               sobrenome:
- *                 type: string
- *               telefone:
- *                 type: string
- *               senha:
- *                 type: string
- *               role:
- *                 type: string
- *                 enum: [user, admin]
- *                 default: user
+ *             $ref: '#/components/schemas/User'
  *     responses:
  *       201:
  *         description: Usuário registrado com sucesso
  *       400:
  *         description: Dados inválidos ou usuário já existe
+ *       500:
+ *         description: Erro no servidor
  */
-router.post('/register', userController.registerUser);
+router.post('/register', userController.register);
 
 /**
  * @swagger
@@ -68,6 +96,9 @@ router.post('/register', userController.registerUser);
  *                 type: string
  *               senha:
  *                 type: string
+ *               lembrar:
+ *                 type: boolean
+ *                 description: Se true, mantém o usuário logado por 30 dias
  *     responses:
  *       200:
  *         description: Login bem-sucedido
@@ -83,26 +114,15 @@ router.post('/register', userController.registerUser);
  *                 refreshToken:
  *                   type: string
  *                 user:
- *                   type: object
- *                   properties:
- *                     id:
- *                       type: integer
- *                     nome:
- *                       type: string
- *                     sobrenome:
- *                       type: string
- *                     telefone:
- *                       type: string
- *                     role:
- *                       type: string
- *                     is_active:
- *                       type: boolean
+ *                   $ref: '#/components/schemas/User'
  *       401:
  *         description: Credenciais inválidas
  *       403:
  *         description: Conta não ativada
  */
-router.post('/login', userController.loginUser);
+router.post('/login', (req, res, next) => {
+  userController.loginUser(req, res, next);
+});
 
 /**
  * @swagger
@@ -359,206 +379,128 @@ router.post('/reset-password', userController.resetPassword);
  */
 router.put('/change-password', authMiddleware, userController.changePassword);
 
-router.get('/:idUser/guests', authMiddleware, guestController.getGuestsByUserId);
 
 /**
  * @swagger
- * /validate-guest-code:
+ * /logout:
  *   post:
- *     summary: Valida o código do convidado
- *     tags: [Convidados]
- *     security: []
+ *     summary: Realiza logout do usuário
+ *     tags: [Usuários]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Logout realizado com sucesso
+ *       500:
+ *         description: Erro ao realizar logout
+ */
+router.post('/logout', authMiddleware, userController.logout);
+
+/**
+ * @swagger
+ * /update-profile:
+ *   patch:
+ *     summary: Atualiza informações do perfil do usuário
+ *     tags: [Usuários]
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             type: object
- *             required:
- *               - telefone
- *               - codigo
  *             properties:
- *               telefone:
+ *               nome:
  *                 type: string
- *               codigo:
+ *                 description: Nome completo do usuário
+ *               genero:
  *                 type: string
+ *                 enum: [masculino, feminino, outro]
+ *                 description: Gênero do usuário
+ *               provincia:
+ *                 type: string
+ *                 description: Província do usuário
+ *               zona:
+ *                 type: string
+ *                 description: Zona/Bairro do usuário
+ *               tipo_conta:
+ *                 type: string
+ *                 enum: [pessoal, empresarial]
+ *                 description: Tipo de conta do usuário
  *     responses:
  *       200:
- *         description: Código validado com sucesso
+ *         description: Informações atualizadas com sucesso
  *         content:
  *           application/json:
  *             schema:
  *               type: object
  *               properties:
- *                 valid:
- *                   type: boolean
  *                 message:
  *                   type: string
- *                 guest:
- *                   type: object
- *                   properties:
- *                     id:
- *                       type: integer
- *                     nome:
- *                       type: string
- *                     telefone:
- *                       type: string
- *                     status:
- *                       type: string
- *                     evento_id:
- *                       type: integer
+ *                 user:
+ *                   $ref: '#/components/schemas/User'
  *       400:
- *         description: Dados inválidos
+ *         description: Dados inválidos fornecidos
+ *       401:
+ *         description: Não autorizado
+ *       404:
+ *         description: Usuário não encontrado
  *       500:
- *         description: Erro ao validar código
+ *         description: Erro ao atualizar informações
  */
-router.post('/validate-guest-code', guestController.validateGuestCode);
+router.patch('/update-profile', authMiddleware, userController.updateUser);
 
 /**
  * @swagger
- * /contact:
- *   post:
- *     summary: Envia formulário de contato
- *     tags: [Contato]
- *     security: [] # Remove a necessidade de autenticação
+ * /preferences:
+ *   get:
+ *     summary: Obtém as preferências do usuário
+ *     tags: [Preferências]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Preferências obtidas com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 preferences:
+ *                   $ref: '#/components/schemas/UserPreferences'
+ */
+router.get('/preferences', authMiddleware, userPreferencesController.getPreferences);
+
+/**
+ * @swagger
+ * /preferences:
+ *   put:
+ *     summary: Atualiza as preferências do usuário
+ *     tags: [Preferências]
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
- *             type: object
- *             required:
- *               - nomeEmpresa
- *               - telefone
- *             properties:
- *               nomeEmpresa:
- *                 type: string
- *               telefone:
- *                 type: string
- *               mensagem:
- *                 type: string
- *     responses:
- *       201:
- *         description: Formulário de contato enviado com sucesso
- *       400:
- *         description: Dados inválidos
- *       500:
- *         description: Erro ao processar formulário de contato
- */
-router.post('/contact', contactController.submitContactForm);
-
-/**
- * @swagger
- * /contacts:
- *   get:
- *     summary: Lista todos os contatos
- *     tags: [Contato]
- *     security:
- *       - bearerAuth: []
+ *             $ref: '#/components/schemas/UserPreferences'
  *     responses:
  *       200:
- *         description: Lista de contatos obtida com sucesso
- *       401:
- *         description: Não autorizado
- *       403:
- *         description: Acesso negado (não é admin)
- *       500:
- *         description: Erro ao buscar contatos
+ *         description: Preferências atualizadas com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 preferences:
+ *                   $ref: '#/components/schemas/UserPreferences'
  */
-router.get('/contacts', authMiddleware, isAdminMiddleware, contactController.getAllContacts);
-
-/**
- * @swagger
- * /contacts/{id}:
- *   get:
- *     summary: Obtém detalhes de um contato específico
- *     tags: [Contato]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: integer
- *         description: ID do contato
- *     responses:
- *       200:
- *         description: Detalhes do contato obtidos com sucesso
- *       401:
- *         description: Não autorizado
- *       403:
- *         description: Acesso negado (não é admin)
- *       404:
- *         description: Contato não encontrado
- *       500:
- *         description: Erro ao buscar contato
- */
-router.get('/contacts/:id', authMiddleware, isAdminMiddleware, contactController.getContactById);
-
-/**
- * @swagger
- * /user/{userId}/events/recent:
- *   get:
- *     summary: Obtém os eventos recentes de um usuário específico
- *     tags: [Eventos]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: userId
- *         required: true
- *         schema:
- *           type: integer
- *         description: ID do usuário
- *     responses:
- *       200:
- *         description: Lista de eventos recentes obtida com sucesso
- *       401:
- *         description: Não autorizado
- *       500:
- *         description: Erro ao buscar eventos recentes
- */
-router.get('/:userId/events/recent', authMiddleware, eventController.getRecentUserEvents);
-
-/**
- * @swagger
- * /events/{eventLink}/guests:
- *   post:
- *     summary: Adiciona um novo convidado a um evento usando o event_link
- *     tags: [Eventos, Convidados]
- *     security: []
- *     parameters:
- *       - in: path
- *         name: eventLink
- *         required: true
- *         schema:
- *           type: string
- *         description: Link único do evento
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - nome
- *               - telefone
- *             properties:
- *               nome:
- *                 type: string
- *               telefone:
- *                 type: string
- *     responses:
- *       201:
- *         description: Convidado adicionado com sucesso
- *       404:
- *         description: Evento não encontrado
- *       500:
- *         description: Erro ao adicionar convidado
- */
-router.post('/events/:eventLink/guests', eventController.addGuestByEventLink);
-
-router.post('/:idUser/events', authMiddleware, upload.single('imagem'), eventController.createUserEvent);
+router.put('/preferences', authMiddleware, userPreferencesController.updatePreferences);
 
 module.exports = router;

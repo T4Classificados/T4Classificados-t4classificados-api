@@ -1,7 +1,6 @@
 const userModel = require('../models/userModel');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const axios = require('axios');
 
 const dotenv = require('dotenv');
 
@@ -36,19 +35,43 @@ if (!process.env.JWT_SECRET) {
   process.exit(1);
 }
 
-exports.registerUser = async (req, res) => {
+exports.register = async (req, res) => {
   try {
-    const { nome, sobrenome, telefone, senha, role = 'user' } = req.body;
+    const { 
+      nome, 
+      telefone, 
+      senha,
+      genero,
+      provincia,
+      zona,
+      tipoConta 
+    } = req.body;
 
+    // Verificar se usuário já existe
     const existingUser = await userModel.getUserByTelefone(telefone);
     if (existingUser) {
-      return res.status(400).json({ message: 'Usuário já cadastrado com este número de telefone' });
+      return res.status(400).json({ message: 'Usuário já cadastrado com este telefone' });
+    }
+
+    // Validar tipo de conta
+    if (!['pessoal', 'empresarial'].includes(tipoConta.toLowerCase())) {
+      return res.status(400).json({ message: 'Tipo de conta inválido. Use "pessoal" ou "empresarial"' });
     }
 
     const hashedPassword = await bcrypt.hash(senha, 10);
     const confirmationCode = generateConfirmationCode();
 
-    const result = await userModel.createUser(nome, sobrenome, telefone, hashedPassword, role, confirmationCode);
+    const result = await userModel.createUser(
+      nome,
+      telefone,
+      hashedPassword,
+      genero,
+      provincia,
+      zona,
+      tipoConta.toLowerCase(),
+      'user',
+      confirmationCode
+    );
 
     // Enviar SMS com o código de confirmação
     const smsMessage = `Seu código de confirmação é: ${confirmationCode}`;
@@ -66,14 +89,14 @@ exports.registerUser = async (req, res) => {
       });
     }
   } catch (error) {
-    console.error('Erro ao cadastrar usuário:', error);
-    res.status(500).json({ message: 'Erro ao cadastrar usuário' });
+    console.error('Erro no registro:', error);
+    res.status(500).json({ message: 'Erro no registro do usuário' });
   }
 };
 
 exports.loginUser = async (req, res) => {
   try {
-    const { telefone, senha } = req.body;
+    const { telefone, senha, lembrar } = req.body;
 
     const user = await userModel.getUserByTelefone(telefone);
     if (!user) {
@@ -90,9 +113,9 @@ exports.loginUser = async (req, res) => {
     }
 
     const accessToken = jwt.sign(
-      { userId: user.id, telefone: user.telefone, role: user.role, nome: user.nome, sobrenome: user.sobrenome },
+      { userId: user.id, telefone: user.telefone, role: user.role },
       process.env.JWT_SECRET,
-      { expiresIn: '30d' }
+      { expiresIn: lembrar ? '30d' : '24h' }
     );
 
     const refreshToken = jwt.sign(
@@ -101,6 +124,21 @@ exports.loginUser = async (req, res) => {
       { expiresIn: '30d' }
     );
 
+    // Configurar cookies
+    const cookieOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict'
+    };
+
+    if (lembrar) {
+      cookieOptions.maxAge = 30 * 24 * 60 * 60 * 1000; // 30 dias em milissegundos
+    }
+
+    // Salvar tokens nos cookies
+    res.cookie('accessToken', accessToken, cookieOptions);
+    res.cookie('refreshToken', refreshToken, cookieOptions);
+
     res.json({ 
       message: 'Login bem-sucedido',
       accessToken,
@@ -108,8 +146,11 @@ exports.loginUser = async (req, res) => {
       user: {
         id: user.id,
         nome: user.nome,
-        sobrenome: user.sobrenome,
+        genero: user.genero,
         telefone: user.telefone,
+        provincia: user.provincia,
+        zona: user.zona,
+        tipoConta: user.tipo_conta,
         role: user.role,
         is_active: user.is_active
       }
@@ -325,5 +366,61 @@ exports.changePassword = async (req, res) => {
   } catch (error) {
     console.error('Erro ao alterar senha:', error);
     res.status(500).json({ message: 'Erro ao alterar senha' });
+  }
+};
+
+exports.logout = async (req, res) => {
+  try {
+    // Limpar cookies
+    res.clearCookie('accessToken');
+    res.clearCookie('refreshToken');
+    
+    res.json({ message: 'Logout realizado com sucesso' });
+  } catch (error) {
+    console.error('Erro ao fazer logout:', error);
+    res.status(500).json({ message: 'Erro ao fazer logout' });
+  }
+};
+
+exports.updateUser = async (req, res) => {
+  try {
+    const userId = req.userData.userId;
+    const updateData = req.body;
+
+    // Verificar se o usuário existe
+    const user = await userModel.getUserById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'Usuário não encontrado' });
+    }
+
+    // Validar tipo de conta se estiver sendo atualizado
+    if (updateData.tipo_conta && !['pessoal', 'empresarial'].includes(updateData.tipo_conta.toLowerCase())) {
+      return res.status(400).json({ message: 'Tipo de conta inválido. Use "pessoal" ou "empresarial"' });
+    }
+
+    // Validar gênero se estiver sendo atualizado
+    if (updateData.genero && !['masculino', 'feminino', 'outro'].includes(updateData.genero.toLowerCase())) {
+      return res.status(400).json({ message: 'Gênero inválido. Use "masculino", "feminino" ou "outro"' });
+    }
+
+    const success = await userModel.updateUser(userId, updateData);
+
+    if (!success) {
+      return res.status(400).json({ 
+        message: 'Nenhuma alteração realizada. Verifique se os campos enviados são válidos para atualização.' 
+      });
+    }
+
+    // Buscar usuário atualizado
+    const updatedUser = await userModel.getUserById(userId);
+    const { senha, confirmation_code, reset_code, ...userInfo } = updatedUser;
+
+    res.json({
+      message: 'Informações atualizadas com sucesso',
+      user: userInfo
+    });
+  } catch (error) {
+    console.error('Erro ao atualizar usuário:', error);
+    res.status(500).json({ message: 'Erro ao atualizar informações do usuário' });
   }
 };

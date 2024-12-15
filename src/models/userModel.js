@@ -1,9 +1,9 @@
 const db = require('../config/database');
 
-exports.createUser = async (nome, sobrenome, telefone, senha, role = 'user', confirmationCode) => {
+exports.createUser = async (nome, telefone, senha, genero, provincia, zona, tipoConta, role = 'user', confirmationCode) => {
   const [result] = await db.query(
-    'INSERT INTO usuarios (nome, sobrenome, telefone, senha, role, confirmation_code, is_active) VALUES (?, ?, ?, ?, ?, ?, ?)',
-    [nome, sobrenome, telefone, senha, role, confirmationCode, false]
+    'INSERT INTO usuarios (nome, telefone, senha, genero, provincia, zona, tipo_conta, role, confirmation_code, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    [nome, telefone, senha, genero, provincia, zona, tipoConta, role, confirmationCode, false]
   );
   return result;
 };
@@ -41,4 +41,35 @@ exports.updatePassword = async (id, newPassword) => {
 exports.clearResetCode = async (id) => {
   const [result] = await db.query('UPDATE usuarios SET reset_code = NULL WHERE id = ?', [id]);
   return result;
+};
+
+exports.updateUser = async (id, updateData) => {
+  // Campos permitidos para atualização
+  const allowedFields = ['nome', 'genero', 'provincia', 'zona', 'tipo_conta'];
+  
+  // Filtrar apenas os campos permitidos que foram fornecidos
+  const validUpdates = Object.keys(updateData)
+    .filter(key => allowedFields.includes(key) && updateData[key] !== undefined)
+    .reduce((obj, key) => {
+      obj[key] = updateData[key];
+      return obj;
+    }, {});
+
+  if (Object.keys(validUpdates).length === 0) {
+    return false;
+  }
+
+  // Construir a query dinamicamente
+  const setClause = Object.keys(validUpdates)
+    .map(field => `${field} = ?`)
+    .join(', ');
+  
+  const values = [...Object.values(validUpdates), id];
+
+  const [result] = await db.query(
+    `UPDATE usuarios SET ${setClause} WHERE id = ?`,
+    values
+  );
+
+  return result.affectedRows > 0;
 };

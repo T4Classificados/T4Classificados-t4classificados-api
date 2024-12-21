@@ -209,4 +209,29 @@ router.put('/anuncios/:id', anuncioController.updateAnuncio);
  */
 router.delete('/anuncios/:id', anuncioController.deleteAnuncio);
 
+/**
+ * @swagger
+ * /anuncios/{id}/semelhantes:
+ *   get:
+ *     summary: Obtém anúncios da mesma categoria
+ *     tags: [Anúncios]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID do anúncio
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 5
+ *         description: Número máximo de anúncios a retornar
+ *     responses:
+ *       200:
+ *         description: Lista de anúncios da mesma categoria
+ */
+router.get('/:id/semelhantes', anuncioController.getAnunciosSemelhantes);
+
 module.exports = router; 

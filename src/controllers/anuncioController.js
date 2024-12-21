@@ -1,4 +1,5 @@
 const anuncioModel = require('../models/anuncioModel');
+const db = require('../config/database');
 const fs = require('fs').promises;
 const path = require('path');
 
@@ -157,5 +158,22 @@ exports.getAnunciosPublic = async (req, res) => {
   } catch (error) {
     console.error('Erro ao listar anúncios:', error);
     res.status(500).json({ message: 'Erro ao listar anúncios' });
+  }
+};
+
+exports.getAnunciosSemelhantes = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const limit = parseInt(req.query.limit) || 5;
+
+    const anuncios = await anuncioModel.getAnunciosSemelhantes(id, limit);
+
+    res.json({
+      message: 'Anúncios semelhantes obtidos com sucesso',
+      data: anuncios
+    });
+  } catch (error) {
+    console.error('Erro ao obter anúncios semelhantes:', error);
+    res.status(500).json({ message: 'Erro ao obter anúncios semelhantes' });
   }
 }; 

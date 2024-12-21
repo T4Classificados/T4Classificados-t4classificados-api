@@ -1,10 +1,22 @@
 const db = require('../config/database');
 const config = require('../config/config');
+const path = require('path');
 
 // Função auxiliar para formatar URLs de imagens
 function formatImageUrls(images) {
   if (!images) return [];
-  return images.split(',').map(image => `${config.baseUrl}${image}`);
+  return images.split(',').map(image => {
+    // Se a imagem já começa com http ou https, retorna como está
+    if (image.startsWith('http')) {
+      return image;
+    }
+    // Se a imagem já começa com /uploads, adiciona apenas a baseUrl
+    if (image.startsWith('/uploads')) {
+      return `${config.baseUrl}${image}`;
+    }
+    // Caso contrário, adiciona o caminho completo
+    return `${config.baseUrl}/uploads/${image}`;
+  });
 }
 
 exports.createAnuncio = async (
@@ -32,7 +44,7 @@ exports.createAnuncio = async (
 
     // Inserir as imagens
     if (imagens && imagens.length > 0) {
-      const imageValues = imagens.map(imagem => [anuncioId, imagem]);
+      const imageValues = imagens.map(imagem => [anuncioId, `/uploads/${path.basename(imagem)}`]);
       await connection.query(
         'INSERT INTO anuncio_imagens (anuncio_id, url) VALUES ?',
         [imageValues]
@@ -159,4 +171,57 @@ exports.deleteAnuncio = async (id, userId) => {
   } finally {
     connection.release();
   }
-}; 
+};
+
+exports.getAnunciosSemelhantes = async (anuncioId, limit = 5) => {
+  // Primeiro, obter a categoria do anúncio atual
+  const [anuncioAtual] = await db.query(
+    `SELECT categoria FROM anuncios WHERE id = ?`,
+    [anuncioId]
+  );
+
+  if (!anuncioAtual[0]) {
+    throw new Error('Anúncio não encontrado');
+  }
+
+  // Buscar anúncios da mesma categoria, excluindo o anúncio atual
+  const [anuncios] = await db.query(
+    `SELECT 
+       a.id,
+       a.titulo,
+       a.categoria,
+       a.modalidade,
+       a.descricao,
+       a.visibilidade,
+       a.disponivel_whatsapp,
+       a.user_id,
+       a.created_at,
+       a.updated_at,
+       u.nome as anunciante_nome,
+       GROUP_CONCAT(DISTINCT ai.url) as imagens
+     FROM anuncios a
+     JOIN usuarios u ON a.user_id = u.id
+     LEFT JOIN anuncio_imagens ai ON a.id = ai.anuncio_id
+     WHERE a.categoria = ? 
+       AND a.id != ?
+     GROUP BY a.id
+     ORDER BY a.created_at DESC
+     LIMIT ?`,
+    [anuncioAtual[0].categoria, anuncioId, limit]
+  );
+
+  return anuncios.map(anuncio => ({
+    id: anuncio.id,
+    titulo: anuncio.titulo,
+    categoria: anuncio.categoria,
+    modalidade: anuncio.modalidade,
+    descricao: anuncio.descricao,
+    visibilidade: anuncio.visibilidade,
+    disponivel_whatsapp: anuncio.disponivel_whatsapp,
+    user_id: anuncio.user_id,
+    anunciante: anuncio.anunciante_nome,
+    imagens: formatImageUrls(anuncio.imagens),
+    created_at: anuncio.created_at,
+    updated_at: anuncio.updated_at
+  }));
+};

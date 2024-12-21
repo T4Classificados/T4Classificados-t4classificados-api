@@ -7,7 +7,7 @@ const denunciaController = require('../controllers/denunciaController');
 
 /**
  * @swagger
- * /api/public/empregos:
+ * /public/empregos:
  *   get:
  *     summary: Lista todas as vagas de emprego
  *     tags: [Empregos]
@@ -30,7 +30,7 @@ router.get('/empregos', empregoController.getEmpregos);
 
 /**
  * @swagger
- * /api/public/anuncios:
+ * /public/anuncios:
  *   get:
  *     summary: Lista todos os anúncios
  *     tags: [Anúncios]

@@ -8,9 +8,9 @@ const options = {
   definition: {
     openapi: '3.0.0',
     info: {
-      title: 'Diretoaqui API',
+      title: 'Node Express API Starter',
       version: '1.0.0',
-      description: 'API para Diretoaqui',
+      description: 'API para Node Express API Starter',
     },
     servers: [
       {

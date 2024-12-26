@@ -39,12 +39,12 @@ exports.register = async (req, res) => {
   try {
     const { 
       nome, 
+      sobrenome,
       telefone, 
+      role,
       senha,
-      genero,
       provincia,
-      zona,
-      tipoConta 
+      municipio, 
     } = req.body;
 
     // Verificar se usuário já existe
@@ -53,23 +53,17 @@ exports.register = async (req, res) => {
       return res.status(400).json({ message: 'Usuário já cadastrado com este telefone' });
     }
 
-    // Validar tipo de conta
-    if (!['pessoal', 'empresarial'].includes(tipoConta.toLowerCase())) {
-      return res.status(400).json({ message: 'Tipo de conta inválido. Use "pessoal" ou "empresarial"' });
-    }
-
     const hashedPassword = await bcrypt.hash(senha, 10);
     const confirmationCode = generateConfirmationCode();
 
     const result = await userModel.createUser(
       nome,
+      sobrenome,
       telefone,
       hashedPassword,
-      genero,
       provincia,
-      zona,
-      tipoConta.toLowerCase(),
-      'user',
+      municipio,
+      role,
       confirmationCode
     );
 
@@ -146,11 +140,10 @@ exports.loginUser = async (req, res) => {
       user: {
         id: user.id,
         nome: user.nome,
-        genero: user.genero,
+        sobrenome: user.sobrenome,
         telefone: user.telefone,
         provincia: user.provincia,
-        zona: user.zona,
-        tipoConta: user.tipo_conta,
+        municipio: user.municipio,
         role: user.role,
         is_active: user.is_active
       }
@@ -391,16 +384,6 @@ exports.updateUser = async (req, res) => {
     const user = await userModel.getUserById(userId);
     if (!user) {
       return res.status(404).json({ message: 'Usuário não encontrado' });
-    }
-
-    // Validar tipo de conta se estiver sendo atualizado
-    if (updateData.tipo_conta && !['pessoal', 'empresarial'].includes(updateData.tipo_conta.toLowerCase())) {
-      return res.status(400).json({ message: 'Tipo de conta inválido. Use "pessoal" ou "empresarial"' });
-    }
-
-    // Validar gênero se estiver sendo atualizado
-    if (updateData.genero && !['masculino', 'feminino', 'outro'].includes(updateData.genero.toLowerCase())) {
-      return res.status(400).json({ message: 'Gênero inválido. Use "masculino", "feminino" ou "outro"' });
     }
 
     const success = await userModel.updateUser(userId, updateData);

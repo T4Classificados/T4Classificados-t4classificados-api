@@ -12,7 +12,7 @@ const swaggerSpecs = require("./config/swagger");
 const cookieParser = require("cookie-parser");
 
 const app = express();
-const port = process.env.PORT || 5000;
+const port = process.env.PORT || 4000;
 
 // Configuração do CORS
 app.use(cors());

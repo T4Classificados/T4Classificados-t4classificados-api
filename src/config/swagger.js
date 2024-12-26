@@ -14,7 +14,7 @@ const options = {
     },
     servers: [
       {
-        url: process.env.BASE_URL + '/api' || 'http://localhost:5000/api  ',
+        url: process.env.BASE_URL + '/api' || 'http://localhost:4000/api  ',
         description: 'Servidor de desenvolvimento',
       },
     ],
@@ -30,35 +30,25 @@ const options = {
         User: {
           type: 'object',
           properties: {
-            id: {
-              type: 'integer',
-              description: 'ID do usuário'
-            },
             nome: {
               type: 'string',
               description: 'Nome completo do usuário'
+            },
+            sobrenome: {
+              type: 'string',
+              description: 'Sobrenome do usuário'
             },
             telefone: {
               type: 'string',
               description: 'Número de telefone do usuário'
             },
-            genero: {
-              type: 'string',
-              enum: ['masculino', 'feminino', 'outro'],
-              description: 'Gênero do usuário'
-            },
             provincia: {
               type: 'string',
               description: 'Província do usuário'
             },
-            zona: {
+            municipio: {
               type: 'string',
-              description: 'Zona/Bairro do usuário'
-            },
-            tipoConta: {
-              type: 'string',
-              enum: ['pessoal', 'empresarial'],
-              description: 'Tipo de conta do usuário'
+              description: 'Municipio do usuário'
             }
           }
         }

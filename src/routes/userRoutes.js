@@ -12,36 +12,30 @@ const userPreferencesController = require('../controllers/userPreferencesControl
  *       type: object
  *       required:
  *         - nome
+ *         - sobrenome
  *         - telefone
  *         - senha
- *         - genero
  *         - provincia
- *         - zona
- *         - tipoConta
+ *         - municipio
  *       properties:
  *         nome:
  *           type: string
- *           description: Nome completo do usuário
+ *           description: Nome do usuário
+ *         sobrenome:
+ *           type: string
+ *           description: Sobrenome do usuário
  *         telefone:
  *           type: string
  *           description: Número de telefone do usuário
  *         senha:
  *           type: string
  *           description: Senha do usuário
- *         genero:
- *           type: string
- *           enum: [masculino, feminino, outro]
- *           description: Gênero do usuário
  *         provincia:
  *           type: string
  *           description: Província do usuário
- *         zona:
+ *         municipio:
  *           type: string
- *           description: Zona/Bairro do usuário
- *         tipoConta:
- *           type: string
- *           enum: [pessoal, empresarial]
- *           description: Tipo de conta do usuário
+ *           description: Municipio do usuário
  *     UserPreferences:
  *       type: object
  *       properties:
@@ -421,13 +415,9 @@ router.post('/logout', authMiddleware, userController.logout);
  *               provincia:
  *                 type: string
  *                 description: Província do usuário
- *               zona:
+ *               municipio:
  *                 type: string
- *                 description: Zona/Bairro do usuário
- *               tipo_conta:
- *                 type: string
- *                 enum: [pessoal, empresarial]
- *                 description: Tipo de conta do usuário
+ *                 description: Municipio do usuário
  *     responses:
  *       200:
  *         description: Informações atualizadas com sucesso

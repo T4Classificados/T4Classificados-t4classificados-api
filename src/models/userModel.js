@@ -1,9 +1,9 @@
 const db = require('../config/database');
 
-exports.createUser = async (nome, telefone, senha, genero, provincia, zona, tipoConta, role = 'user', confirmationCode) => {
+exports.createUser = async (nome, sobrenome, telefone, senha, provincia, municipio, role = 'user', confirmationCode) => {
   const [result] = await db.query(
-    'INSERT INTO usuarios (nome, telefone, senha, genero, provincia, zona, tipo_conta, role, confirmation_code, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-    [nome, telefone, senha, genero, provincia, zona, tipoConta, role, confirmationCode, false]
+    'INSERT INTO usuarios (nome, sobrenome, telefone, senha, provincia, municipio, role, confirmation_code, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    [nome, sobrenome, telefone, senha, provincia, municipio, role, confirmationCode, false]
   );
   return result;
 };
@@ -45,7 +45,7 @@ exports.clearResetCode = async (id) => {
 
 exports.updateUser = async (id, updateData) => {
   // Campos permitidos para atualização
-  const allowedFields = ['nome', 'genero', 'provincia', 'zona', 'tipo_conta'];
+  const allowedFields = ['nome', 'genero', 'provincia', 'municipio', 'role'];
   
   // Filtrar apenas os campos permitidos que foram fornecidos
   const validUpdates = Object.keys(updateData)

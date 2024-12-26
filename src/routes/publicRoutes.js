@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const anuncioController = require('../controllers/anuncioController');
+const AnuncioController = require('../controllers/anuncioController');
 
 /**
  * @swagger
@@ -23,7 +23,7 @@ const anuncioController = require('../controllers/anuncioController');
  *       200:
  *         description: Lista de anúncios
  */
-router.get('/anuncios', anuncioController.getAnuncios);
-
+router.get('/anuncios', AnuncioController.listar);
+router.get('/anuncios/:id', AnuncioController.obterPorId);
 
 module.exports = router; 

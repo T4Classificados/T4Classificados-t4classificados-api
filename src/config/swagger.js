@@ -8,9 +8,9 @@ const options = {
   definition: {
     openapi: '3.0.0',
     info: {
-      title: 'Node Express API Starter',
+      title: 'T4 Classificados API',
       version: '1.0.0',
-      description: 'API para Node Express API Starter',
+      description: 'T4 Classificados API',
     },
     servers: [
       {

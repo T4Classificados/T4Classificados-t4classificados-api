@@ -1,11 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const anuncioController = require('../controllers/anuncioController');
-const authMiddleware = require('../middleware/auth');
+const AnuncioController = require('../controllers/anuncioController');
+const auth = require('../middleware/auth');
 const upload = require('../middleware/upload');
-
-// Aplicar middleware de autenticação para todas as rotas
-router.use(authMiddleware);
 
 /**
  * @swagger
@@ -15,42 +12,49 @@ router.use(authMiddleware);
  *       type: object
  *       required:
  *         - titulo
+ *         - tipo_transacao
  *         - categoria
- *         - modalidade
- *         - descricao
- *         - visibilidade
+ *         - preco
+ *         - provincia
+ *         - municipio
  *       properties:
  *         titulo:
  *           type: string
  *           description: Título do anúncio
+ *         tipo_transacao:
+ *           type: string
+ *           description: Tipo de transação (venda, aluguel, etc)
  *         categoria:
  *           type: string
  *           description: Categoria do anúncio
- *         modalidade:
+ *         preco:
+ *           type: number
+ *           description: Preço do item
+ *         preco_negociavel:
+ *           type: boolean
+ *           description: Se o preço é negociável
+ *         provincia:
  *           type: string
- *           description: Modalidade do anúncio
+ *           description: Província onde está o item
+ *         municipio:
+ *           type: string
+ *           description: Município onde está o item
+ *         zona:
+ *           type: string
+ *           description: Zona/bairro onde está o item
  *         descricao:
  *           type: string
  *           description: Descrição detalhada do anúncio
- *         visibilidade:
+ *         whatsapp:
  *           type: string
- *           enum: [publico, privado]
- *           description: Visibilidade do anúncio
- *         disponivel_whatsapp:
- *           type: boolean
- *           description: Indica se está disponível para contato via WhatsApp
- *         imagens:
- *           type: array
- *           items:
- *             type: string
- *           description: URLs das imagens do anúncio
+ *           description: Número de WhatsApp para contato
  */
 
 /**
  * @swagger
  * /anuncios:
  *   post:
- *     summary: Cria um novo anúncio
+ *     summary: Criar novo anúncio
  *     tags: [Anúncios]
  *     security:
  *       - bearerAuth: []
@@ -63,17 +67,24 @@ router.use(authMiddleware);
  *             properties:
  *               titulo:
  *                 type: string
+ *               tipo_transacao:
+ *                 type: string
  *               categoria:
  *                 type: string
- *               modalidade:
+ *               preco:
+ *                 type: number
+ *               preco_negociavel:
+ *                 type: boolean
+ *               provincia:
+ *                 type: string
+ *               municipio:
+ *                 type: string
+ *               zona:
  *                 type: string
  *               descricao:
  *                 type: string
- *               visibilidade:
+ *               whatsapp:
  *                 type: string
- *                 enum: [publico, privado]
- *               disponivel_whatsapp:
- *                 type: boolean
  *               imagens:
  *                 type: array
  *                 items:
@@ -82,24 +93,48 @@ router.use(authMiddleware);
  *     responses:
  *       201:
  *         description: Anúncio criado com sucesso
- *       400:
- *         description: Dados inválidos
  *       401:
  *         description: Não autorizado
+ *       500:
+ *         description: Erro do servidor
  */
 router.post('/anuncios', 
-  upload.array('imagens', 8), 
-  anuncioController.createAnuncio
+    auth, 
+    upload.array('imagens', 8),
+    AnuncioController.criar
 );
+
+/**
+ * @swagger
+ * /anuncios/{id}:
+ *   get:
+ *     summary: Obter um anúncio específico
+ *     tags: [Anúncios]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID do anúncio
+ *     responses:
+ *       200:
+ *         description: Detalhes do anúncio
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Anuncio'
+ *       404:
+ *         description: Anúncio não encontrado
+ */
+router.get('/anuncios/:id', AnuncioController.obterPorId);
 
 /**
  * @swagger
  * /anuncios:
  *   get:
- *     summary: Lista todos os anúncios
+ *     summary: Listar todos os anúncios
  *     tags: [Anúncios]
- *     security:
- *       - bearerAuth: []
  *     parameters:
  *       - in: query
  *         name: page
@@ -110,60 +145,39 @@ router.post('/anuncios',
  *         name: limit
  *         schema:
  *           type: integer
- *         description: Quantidade de itens por página
+ *         description: Itens por página
  *       - in: query
  *         name: categoria
  *         schema:
  *           type: string
  *         description: Filtrar por categoria
  *       - in: query
- *         name: modalidade
+ *         name: provincia
  *         schema:
  *           type: string
- *         description: Filtrar por modalidade
+ *         description: Filtrar por província
  *     responses:
  *       200:
  *         description: Lista de anúncios
  *         content:
  *           application/json:
  *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/Anuncio'
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Anuncio'
  */
-router.get('/anuncios', anuncioController.getAnuncios);
-
-/**
- * @swagger
- * /anuncios/{id}:
- *   get:
- *     summary: Obtém um anúncio específico
- *     tags: [Anúncios]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: integer
- *     responses:
- *       200:
- *         description: Anúncio encontrado
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Anuncio'
- *       404:
- *         description: Anúncio não encontrado
- */
-router.get('/anuncios/:id', anuncioController.getAnuncioById);
+router.get('/anuncios', AnuncioController.listar);
 
 /**
  * @swagger
  * /anuncios/{id}:
  *   put:
- *     summary: Atualiza um anúncio
+ *     summary: Atualizar um anúncio
  *     tags: [Anúncios]
  *     security:
  *       - bearerAuth: []
@@ -176,22 +190,28 @@ router.get('/anuncios/:id', anuncioController.getAnuncioById);
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             $ref: '#/components/schemas/Anuncio'
  *     responses:
  *       200:
  *         description: Anúncio atualizado com sucesso
+ *       401:
+ *         description: Não autorizado
  *       404:
  *         description: Anúncio não encontrado
  */
-router.put('/anuncios/:id', anuncioController.updateAnuncio);
+router.put('/anuncios/:id', 
+    auth, 
+    upload.array('imagens', 8),
+    AnuncioController.atualizar
+);
 
 /**
  * @swagger
  * /anuncios/{id}:
  *   delete:
- *     summary: Remove um anúncio
+ *     summary: Excluir um anúncio
  *     tags: [Anúncios]
  *     security:
  *       - bearerAuth: []
@@ -203,35 +223,15 @@ router.put('/anuncios/:id', anuncioController.updateAnuncio);
  *           type: integer
  *     responses:
  *       200:
- *         description: Anúncio removido com sucesso
+ *         description: Anúncio excluído com sucesso
+ *       401:
+ *         description: Não autorizado
  *       404:
  *         description: Anúncio não encontrado
  */
-router.delete('/anuncios/:id', anuncioController.deleteAnuncio);
-
-/**
- * @swagger
- * /anuncios/{id}/semelhantes:
- *   get:
- *     summary: Obtém anúncios da mesma categoria
- *     tags: [Anúncios]
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: integer
- *         description: ID do anúncio
- *       - in: query
- *         name: limit
- *         schema:
- *           type: integer
- *           default: 5
- *         description: Número máximo de anúncios a retornar
- *     responses:
- *       200:
- *         description: Lista de anúncios da mesma categoria
- */
-router.get('/:id/semelhantes', anuncioController.getAnunciosSemelhantes);
+router.delete('/anuncios/:id', 
+    auth, 
+    AnuncioController.excluir
+);
 
 module.exports = router; 

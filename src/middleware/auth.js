@@ -1,42 +1,34 @@
 const jwt = require('jsonwebtoken');
 
 module.exports = (req, res, next) => {
-  console.log('Auth Middleware - Headers:', req.headers); // Log para debug
-  try {
-    // Verificar se o header Authorization existe
-    const authHeader = req.headers.authorization;
-    console.log('Auth Header:', authHeader); // Log para debug
-    if (!authHeader) {
-      return res.status(401).json({ 
-        message: 'Acesso negado. Nenhum utilizador autenticado.',
-        code: 'NO_TOKEN'
-      });
-    }
+    try {
+        // Check for token in headers
+        const authHeader = req.headers.authorization;
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            return res.status(401).json({
+                success: false,
+                message: 'Autenticação necessária'
+            });
+        }
 
-    // Verificar se o formato do token está correto
-    if (!authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({ 
-        message: 'Formato de token inválido',
-        code: 'INVALID_TOKEN_FORMAT'
-      });
-    }
+        // Extract token
+        const token = authHeader.split(' ')[1];
+        
+        // Verify token
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        
+        // Add user data to request
+        req.user = {
+            id: decoded.userId,
+            telefone: decoded.telefone,
+            role: decoded.role
+        };
 
-    const token = authHeader.split(' ')[1];
-    
-    // Verificar se o token é válido
-    const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
-    
-    // Adicionar informações do usuário ao request
-    req.userData = { 
-      userId: decodedToken.userId, 
-      role: decodedToken.role 
-    };
-    
-    next();
-  } catch (error) {
-    return res.status(401).json({ 
-      message: 'Autenticação falhou - Token inválido ou expirado',
-      code: 'INVALID_TOKEN'
-    });
-  }
+        next();
+    } catch (error) {
+        return res.status(401).json({
+            success: false,
+            message: 'Token inválido ou expirado'
+        });
+    }
 };

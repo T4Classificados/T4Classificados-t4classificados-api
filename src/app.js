@@ -61,10 +61,6 @@ app.get("/test", (req, res) => {
 app.use("/api", userRoutes);
 app.use("/api", anuncioRoutes);
 
-// Registrar as rotas
-app.use('/api/usuarios', userRoutes);
-app.use('/api/anuncios', anuncioRoutes);
-
 // Middleware global para logging de erros
 app.use((err, req, res, next) => {
   res.status(500).json({

@@ -269,6 +269,34 @@ class CampanhaController {
             });
         }
     }
+
+    static async listarAdmin(req, res) {
+        try {
+            const { 
+                page = 1, 
+                limit = 10,
+                status = 'todos'
+            } = req.query;
+
+            const campanhas = await CampanhaModel.listarAdmin(
+                parseInt(page), 
+                parseInt(limit),
+                status
+            );
+
+            res.json({
+                success: true,
+                data: campanhas
+            });
+        } catch (error) {
+            console.error('Erro ao listar campanhas:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Erro ao listar campanhas',
+                error: error.message
+            });
+        }
+    }
 }
 
 module.exports = CampanhaController; 

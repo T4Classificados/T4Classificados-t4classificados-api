@@ -242,6 +242,87 @@ class CampanhaModel {
             throw error;
         }
     }
+
+    static async listarAdmin(page = 1, limit = 10, status = 'todos') {
+        try {
+            const offset = (page - 1) * limit;
+            let whereClause = '';
+            let params = [];
+
+            // Filtro de status
+            if (status !== 'todos') {
+                whereClause = ' AND c.status = ?';
+                params.push(status);
+            }
+
+            // Query principal
+            const [campanhas] = await db.query(
+                `SELECT 
+                    c.*,
+                    u.nome as usuario_nome,
+                    u.telefone as usuario_telefone,
+                    e.nome as empresa_nome,
+                    GROUP_CONCAT(DISTINCT ci.url_imagem) as imagens
+                FROM campanhas c
+                LEFT JOIN usuarios u ON c.usuario_id = u.id
+                LEFT JOIN empresas e ON u.empresa_id = e.id
+                LEFT JOIN campanha_imagens ci ON c.id = ci.campanha_id
+                WHERE 1=1 ${whereClause}
+                GROUP BY c.id
+                ORDER BY c.created_at DESC
+                LIMIT ? OFFSET ?`,
+                [...params, parseInt(limit), offset]
+            );
+
+            // Contagem total para paginação
+            const [total] = await db.query(
+                `SELECT COUNT(*) as total 
+                FROM campanhas c 
+                WHERE 1=1 ${whereClause}`,
+                params
+            );
+
+            // Formatar URLs e estruturar dados
+            const baseUrl = process.env.BASE_URL || 'http://localhost:4000';
+            const campanhasFormatadas = campanhas.map(campanha => ({
+                id: campanha.id,
+                tipo_exibicao: campanha.tipo_exibicao,
+                espaco: campanha.espaco,
+                descricao: campanha.descricao,
+                logo_url: campanha.logo_url ? `${baseUrl}${campanha.logo_url}` : null,
+                botao_texto: campanha.botao_texto,
+                num_visualizacoes: campanha.num_visualizacoes,
+                valor_visualizacao: campanha.valor_visualizacao,
+                total_pagar: campanha.total_pagar,
+                status: campanha.status,
+                created_at: campanha.created_at,
+                updated_at: campanha.updated_at,
+                usuario: {
+                    id: campanha.usuario_id,
+                    nome: campanha.usuario_nome,
+                    telefone: campanha.usuario_telefone
+                },
+                empresa: campanha.empresa_nome ? {
+                    nome: campanha.empresa_nome
+                } : null,
+                imagens: campanha.imagens 
+                    ? campanha.imagens.split(',').map(img => `${baseUrl}${img}`)
+                    : []
+            }));
+
+            return {
+                campanhas: campanhasFormatadas,
+                pagination: {
+                    total: total[0].total,
+                    page: parseInt(page),
+                    limit: parseInt(limit),
+                    pages: Math.ceil(total[0].total / limit)
+                }
+            };
+        } catch (error) {
+            throw error;
+        }
+    }
 }
 
 module.exports = CampanhaModel; 

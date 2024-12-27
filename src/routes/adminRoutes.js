@@ -4,6 +4,7 @@ const UserController = require('../controllers/userController');
 const AnuncioController = require('../controllers/anuncioController');
 const auth = require('../middleware/auth');
 const adminAuth = require('../middleware/adminAuth');
+const CampanhaController = require('../controllers/campanhaController');
 
 /**
  * @swagger
@@ -128,5 +129,39 @@ router.get('/anuncios', auth, adminAuth, AnuncioController.listar);
  *         description: Anúncio não encontrado
  */
 router.delete('/anuncios/:id', auth, adminAuth, AnuncioController.excluir);
+
+/**
+ * @swagger
+ * /admin/campanhas:
+ *   get:
+ *     summary: Listar todas as campanhas (Admin)
+ *     description: Lista todas as campanhas com informações detalhadas. Apenas para administradores.
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *         description: Número da página
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *         description: Itens por página
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [ativa, inativa, pendente, todos]
+ *         description: Filtrar por status
+ *     responses:
+ *       200:
+ *         description: Lista de campanhas
+ *       403:
+ *         description: Acesso negado
+ */
+router.get('/campanhas', auth, adminAuth, CampanhaController.listarAdmin);
 
 module.exports = router; 

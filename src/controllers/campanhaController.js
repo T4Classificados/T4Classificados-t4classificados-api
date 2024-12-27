@@ -217,6 +217,53 @@ class CampanhaController {
             });
         }
     }
+
+    static async promoverNovamente(req, res) {
+        try {
+            const { id } = req.params;
+            
+            // Primeiro busca a campanha
+            const campanhaExistente = await CampanhaModel.obterPorId(id, req.user.id);
+            if (!campanhaExistente) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Campanha não encontrada'
+                });
+            }
+
+            // Cria uma nova campanha baseada na existente
+            const novaCampanha = {
+                tipo_exibicao: campanhaExistente.tipo_exibicao,
+                espaco: campanhaExistente.espaco,
+                descricao: campanhaExistente.descricao,
+                logo_url: campanhaExistente.logo_url?.replace(`${process.env.BASE_URL || 'http://localhost:4000'}`, ''),
+                botao_texto: campanhaExistente.botao_texto,
+                num_visualizacoes: campanhaExistente.num_visualizacoes,
+                valor_visualizacao: campanhaExistente.valor_visualizacao,
+                total_pagar: campanhaExistente.total_pagar,
+                imagens: campanhaExistente.imagens?.map(img => 
+                    img.replace(`${process.env.BASE_URL || 'http://localhost:4000'}`, '')
+                )
+            };
+
+            // Cria a nova campanha
+            const novaCampanhaId = await CampanhaModel.criar(req.user.id, novaCampanha);
+            const campanhaPromovida = await CampanhaModel.obterPorId(novaCampanhaId, req.user.id);
+
+            res.status(201).json({
+                success: true,
+                message: 'Campanha promovida novamente com sucesso',
+                data: campanhaPromovida
+            });
+        } catch (error) {
+            console.error('Erro ao promover campanha:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Erro ao promover campanha',
+                error: error.message
+            });
+        }
+    }
 }
 
 module.exports = CampanhaController; 

@@ -277,4 +277,47 @@ router.put('/:id', auth, validateId, uploadFields, CampanhaController.atualizar)
  */
 router.delete('/:id', auth, validateId, CampanhaController.excluir);
 
+/**
+ * @swagger
+ * /campanhas/{id}/promover:
+ *   post:
+ *     summary: Promover novamente uma campanha
+ *     description: Cria uma nova campanha baseada em uma existente
+ *     tags: [Campanhas]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID da campanha a ser promovida novamente
+ *     responses:
+ *       201:
+ *         description: Campanha promovida com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Campanha promovida novamente com sucesso
+ *                 data:
+ *                   $ref: '#/components/schemas/Campanha'
+ *       400:
+ *         description: Usuário sem empresa vinculada
+ *       401:
+ *         description: Não autorizado
+ *       404:
+ *         description: Campanha não encontrada
+ *       500:
+ *         description: Erro do servidor
+ */
+router.post('/:id/promover', auth, validateId, CampanhaController.promoverNovamente);
+
 module.exports = router; 

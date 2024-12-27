@@ -1,0 +1,240 @@
+const express = require('express');
+const router = express.Router();
+const CampanhaController = require('../controllers/campanhaController');
+const auth = require('../middleware/auth');
+const upload = require('../middleware/upload');
+
+const uploadFields = upload.fields([
+    { name: 'imagens', maxCount: 8 },
+    { name: 'logo', maxCount: 1 }
+]);
+
+// Validação do parâmetro id
+const validateId = (req, res, next) => {
+    const { id } = req.params;
+    if (!id || isNaN(id)) {
+        return res.status(400).json({
+            success: false,
+            message: 'ID inválido'
+        });
+    }
+    next();
+};
+
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     Campanha:
+ *       type: object
+ *       required:
+ *         - tipo_exibicao
+ *         - espaco
+ *         - num_visualizacoes
+ *         - valor_visualizacao
+ *       properties:
+ *         tipo_exibicao:
+ *           type: string
+ *           enum: [computador, telemóvel, ambos]
+ *         espaco:
+ *           type: string
+ *         descricao:
+ *           type: string
+ *         botao_texto:
+ *           type: string
+ *         num_visualizacoes:
+ *           type: integer
+ *         valor_visualizacao:
+ *           type: number
+ *         total_pagar:
+ *           type: number
+ */
+
+/**
+ * @swagger
+ * /campanhas:
+ *   post:
+ *     summary: Criar nova campanha
+ *     tags: [Campanhas]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               tipo_exibicao:
+ *                 type: string
+ *                 enum: [computador, telemóvel, ambos]
+ *               espaco:
+ *                 type: string
+ *               descricao:
+ *                 type: string
+ *               botao_texto:
+ *                 type: string
+ *               num_visualizacoes:
+ *                 type: integer
+ *               valor_visualizacao:
+ *                 type: number
+ *               total_pagar:
+ *                 type: number
+ *               imagens:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                   format: binary
+ *               logo:
+ *                 type: string
+ *                 format: binary
+ *     responses:
+ *       201:
+ *         description: Campanha criada com sucesso
+ *       401:
+ *         description: Não autorizado
+ *       500:
+ *         description: Erro do servidor
+ */
+router.post('/', auth, uploadFields, CampanhaController.criar);
+
+/**
+ * @swagger
+ * /campanhas:
+ *   get:
+ *     summary: Listar campanhas do usuário
+ *     tags: [Campanhas]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *         description: Número da página
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *         description: Itens por página
+ *     responses:
+ *       200:
+ *         description: Lista de campanhas
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Campanha'
+ */
+router.get('/', auth, CampanhaController.listar);
+
+/**
+ * @swagger
+ * /campanhas/{id}:
+ *   get:
+ *     summary: Obter uma campanha específica
+ *     tags: [Campanhas]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Detalhes da campanha
+ *       404:
+ *         description: Campanha não encontrada
+ */
+router.get('/:id', auth, validateId, CampanhaController.obterPorId);
+
+/**
+ * @swagger
+ * /campanhas/{id}:
+ *   put:
+ *     summary: Atualizar uma campanha
+ *     tags: [Campanhas]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: ID da campanha
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               tipo_exibicao:
+ *                 type: string
+ *                 enum: [computador, telemóvel, ambos]
+ *               espaco:
+ *                 type: string
+ *               descricao:
+ *                 type: string
+ *               botao_texto:
+ *                 type: string
+ *               num_visualizacoes:
+ *                 type: integer
+ *               valor_visualizacao:
+ *                 type: number
+ *               total_pagar:
+ *                 type: number
+ *               imagens:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                   format: binary
+ *               logo:
+ *                 type: string
+ *                 format: binary
+ *     responses:
+ *       200:
+ *         description: Campanha atualizada com sucesso
+ *       400:
+ *         description: Dados inválidos
+ *       404:
+ *         description: Campanha não encontrada
+ *       500:
+ *         description: Erro do servidor
+ */
+router.put('/:id', auth, validateId, uploadFields, CampanhaController.atualizar);
+
+/**
+ * @swagger
+ * /campanhas/{id}:
+ *   delete:
+ *     summary: Excluir uma campanha
+ *     tags: [Campanhas]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Campanha excluída com sucesso
+ *       404:
+ *         description: Campanha não encontrada
+ *       500:
+ *         description: Erro do servidor
+ */
+router.delete('/:id', auth, validateId, CampanhaController.excluir);
+
+module.exports = router; 

@@ -51,6 +51,7 @@ app.use("/api/public", publicRoutes);
 // Rotas protegidas
 const userRoutes = require("./routes/userRoutes");
 const anuncioRoutes = require("./routes/anuncioRoutes");
+const campanhaRoutes = require('./routes/campanhaRoutes');
 
 // Rota de teste
 app.get("/test", (req, res) => {
@@ -60,6 +61,7 @@ app.get("/test", (req, res) => {
 // Prefixo da API
 app.use("/api", userRoutes);
 app.use("/api", anuncioRoutes);
+app.use('/api/campanhas', campanhaRoutes);
 
 // Middleware global para logging de erros
 app.use((err, req, res, next) => {

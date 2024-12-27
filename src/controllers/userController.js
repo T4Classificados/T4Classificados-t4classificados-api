@@ -68,6 +68,7 @@ exports.register = async (req, res) => {
     );
 
     // Enviar SMS com o código de confirmação
+    
     const smsMessage = `Seu código de confirmação é: ${confirmationCode}`;
     const smsSent = await sendSMS(telefone, smsMessage);
 
@@ -172,6 +173,22 @@ exports.confirmAccount = async (req, res) => {
     }
 
     await userModel.activateUser(user.id);
+
+   
+    const smsMessage =  "A tua conta foi criada com sucesso. Podes publicar anúncios todos os dias sem pagar nada";
+    const smsSent = await sendSMS(telefone, smsMessage);
+
+    if (smsSent) {
+      res.status(201).json({ 
+        message: 'Conta ativada com sucesso', 
+        userId: user.id 
+      });
+    } else {
+      res.status(201).json({ 
+        message: 'Conta ativada com sucesso, mas houve um problema ao enviar o SMS. Por favor, tente novamente mais tarde.', 
+        userId: user.id 
+      });
+    }
 
     res.json({ message: 'Conta ativada com sucesso' });
   } catch (error) {
@@ -486,4 +503,62 @@ exports.updateUser = async (req, res) => {
     console.error('Erro ao atualizar usuário:', error);
     res.status(500).json({ message: 'Erro ao atualizar informações do usuário' });
   }
+};
+
+exports.listarAdmin = async (req, res) => {
+    try {
+        const { 
+            page = 1, 
+            limit = 10, 
+            status = 'todos',
+            search = '' 
+        } = req.query;
+
+        const usuarios = await userModel.listarAdmin(
+            parseInt(page), 
+            parseInt(limit), 
+            status,
+            search
+        );
+
+        res.json({
+            success: true,
+            data: usuarios
+        });
+    } catch (error) {
+        console.error('Erro ao listar usuários:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao listar usuários',
+            error: error.message
+        });
+    }
+};
+
+exports.alterarStatus = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { is_active } = req.body;
+
+        const atualizado = await userModel.alterarStatus(id, is_active);
+        
+        if (!atualizado) {
+            return res.status(404).json({
+                success: false,
+                message: 'Usuário não encontrado'
+            });
+        }
+
+        res.json({
+            success: true,
+            message: 'Status do usuário atualizado com sucesso'
+        });
+    } catch (error) {
+        console.error('Erro ao alterar status do usuário:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao alterar status do usuário',
+            error: error.message
+        });
+    }
 };

@@ -33,13 +33,15 @@ class CampanhaController {
                 num_visualizacoes: parseInt(req.body.num_visualizacoes),
                 valor_visualizacao: parseFloat(req.body.valor_visualizacao),
                 total_pagar: parseFloat(req.body.total_pagar),
-                imagens: imagens
+                imagens: imagens,
+                usuario_id: req.userData.userId,
+                preco_negociavel: req.body.preco_negociavel === 'true'
             };
 
             // Tenta criar a campanha
             try {
-                const campanhaId = await CampanhaModel.criar(req.user.id, campanha);
-                const campanhaCreated = await CampanhaModel.obterPorId(campanhaId, req.user.id);
+                const campanhaId = await CampanhaModel.criar(req.userData.userId, campanha);
+                const campanhaCreated = await CampanhaModel.obterPorId(campanhaId, req.userData.userId);
 
                 res.status(201).json({
                     success: true,
@@ -69,13 +71,14 @@ class CampanhaController {
     static async listar(req, res) {
         try {
             const { page = 1, limit = 10 } = req.query;
-            const campanhas = await CampanhaModel.listar(req.user.id, page, limit);
+            const campanhas = await CampanhaModel.listar(req.userData.userId, page, limit);
             
             res.json({
                 success: true,
                 data: campanhas
             });
         } catch (error) {
+            console.error('Erro ao listar campanhas:', error);
             res.status(500).json({
                 success: false,
                 message: 'Erro ao listar campanhas',
@@ -87,7 +90,7 @@ class CampanhaController {
     static async obterPorId(req, res) {
         try {
             const { id } = req.params;
-            const campanha = await CampanhaModel.obterPorId(id, req.user.id);
+            const campanha = await CampanhaModel.obterPorId(id, req.userData.userId);
             
             if (!campanha) {
                 return res.status(404).json({
@@ -148,7 +151,9 @@ class CampanhaController {
                 valor_visualizacao: req.body.valor_visualizacao ? parseFloat(req.body.valor_visualizacao) : undefined,
                 total_pagar: req.body.total_pagar ? parseFloat(req.body.total_pagar) : undefined,
                 imagens: imagens,
-                logo_url: logo ? logo[0] : undefined
+                logo_url: logo ? logo[0] : undefined,
+                usuario_id: req.userData.userId,
+                preco_negociavel: req.body.preco_negociavel === 'true'
             };
 
             // Remove campos undefined
@@ -157,7 +162,7 @@ class CampanhaController {
             );
 
             // Atualiza a campanha
-            const campanhaAtualizada = await CampanhaModel.atualizar(id, req.user.id, dadosAtualizacao);
+            const campanhaAtualizada = await CampanhaModel.atualizar(id, req.userData.userId, dadosAtualizacao);
 
             if (!campanhaAtualizada) {
                 return res.status(404).json({
@@ -187,7 +192,7 @@ class CampanhaController {
             const { id } = req.params;
             
             // Busca a campanha antes de excluir para retornar seus dados
-            const campanha = await CampanhaModel.obterPorId(id, req.user.id);
+            const campanha = await CampanhaModel.obterPorId(id, req.userData.userId);
             if (!campanha) {
                 return res.status(404).json({
                     success: false,
@@ -196,7 +201,7 @@ class CampanhaController {
             }
 
             // Tenta excluir
-            const excluido = await CampanhaModel.excluir(id, req.user.id);
+            const excluido = await CampanhaModel.excluir(id, req.userData.userId);
             if (!excluido) {
                 return res.status(404).json({
                     success: false,
@@ -223,7 +228,7 @@ class CampanhaController {
             const { id } = req.params;
             
             // Primeiro busca a campanha
-            const campanhaExistente = await CampanhaModel.obterPorId(id, req.user.id);
+            const campanhaExistente = await CampanhaModel.obterPorId(id, req.userData.userId);
             if (!campanhaExistente) {
                 return res.status(404).json({
                     success: false,
@@ -247,8 +252,8 @@ class CampanhaController {
             };
 
             // Cria a nova campanha
-            const novaCampanhaId = await CampanhaModel.criar(req.user.id, novaCampanha);
-            const campanhaPromovida = await CampanhaModel.obterPorId(novaCampanhaId, req.user.id);
+            const novaCampanhaId = await CampanhaModel.criar(req.userData.userId, novaCampanha);
+            const campanhaPromovida = await CampanhaModel.obterPorId(novaCampanhaId, req.userData.userId);
 
             res.status(201).json({
                 success: true,

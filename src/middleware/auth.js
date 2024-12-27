@@ -2,30 +2,36 @@ const jwt = require('jsonwebtoken');
 
 module.exports = (req, res, next) => {
     try {
-        // Check for token in headers
         const authHeader = req.headers.authorization;
         if (!authHeader || !authHeader.startsWith('Bearer ')) {
             return res.status(401).json({
                 success: false,
-                message: 'Autenticação necessária'
+                message: 'Não autenticado'
             });
         }
 
-        // Extract token
         const token = authHeader.split(' ')[1];
-        
-        // Verify token
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         
-        // Add user data to request
+        // Garantir que o role seja incluído
+        req.userData = {
+            userId: decoded.userId,
+            telefone: decoded.telefone,
+            role: decoded.role || 'user'
+        };
+
+        // Manter compatibilidade com código existente
         req.user = {
             id: decoded.userId,
             telefone: decoded.telefone,
-            role: decoded.role
+            role: decoded.role || 'user'
         };
+
+        console.log('Auth middleware - User data:', { userData: req.userData, user: req.user }); // Debug log
 
         next();
     } catch (error) {
+        console.error('Auth middleware error:', error);
         return res.status(401).json({
             success: false,
             message: 'Token inválido ou expirado'

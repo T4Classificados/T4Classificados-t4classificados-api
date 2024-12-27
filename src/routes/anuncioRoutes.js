@@ -261,7 +261,9 @@ router.delete('/anuncios/:id',
  *     responses:
  *       200:
  *         description: Interação registrada com sucesso
+ *       400:
+ *         description: Tipo de interação inválido
  */
-router.post('/:id/interacao', AnuncioController.registrarInteracao);
+router.post('/:id/interacao', auth, AnuncioController.registrarInteracao);
 
 module.exports = router; 

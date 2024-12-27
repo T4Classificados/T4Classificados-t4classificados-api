@@ -166,12 +166,40 @@ class AnuncioModel {
         }
     }
 
+    static async excluirAdmin(id) {
+        try {
+            // Primeiro exclui as imagens relacionadas
+            await db.query(
+                'DELETE FROM anuncio_imagens WHERE anuncio_id = ?',
+                [id]
+            );
+
+            // Depois exclui o anúncio
+            const [result] = await db.query(
+                'DELETE FROM anuncios WHERE id = ?',
+                [id]
+            );
+            
+            return result.affectedRows > 0;
+        } catch (error) {
+            throw error;
+        }
+    }
+
     static async excluir(id, usuarioId) {
         try {
+            // Primeiro exclui as imagens relacionadas
+            await db.query(
+                'DELETE FROM anuncio_imagens WHERE anuncio_id = ? AND EXISTS (SELECT 1 FROM anuncios WHERE id = ? AND usuario_id = ?)',
+                [id, id, usuarioId]
+            );
+
+            // Depois exclui o anúncio
             const [result] = await db.query(
                 'DELETE FROM anuncios WHERE id = ? AND usuario_id = ?',
                 [id, usuarioId]
             );
+            
             return result.affectedRows > 0;
         } catch (error) {
             throw error;
@@ -197,6 +225,176 @@ class AnuncioModel {
             throw error;
         }
     }
+
+    static async listarTodos(page = 1, limit = 10) {
+        try {
+            const offset = (page - 1) * limit;
+
+            // Query para buscar todos os anúncios com informações do usuário
+            const [anuncios] = await db.query(
+                `SELECT 
+                    a.*,
+                    u.nome as usuario_nome,
+                    u.telefone as usuario_telefone,
+                    GROUP_CONCAT(DISTINCT ai.url_imagem) as imagens
+                FROM anuncios a
+                LEFT JOIN usuarios u ON a.usuario_id = u.id
+                LEFT JOIN anuncio_imagens ai ON a.id = ai.anuncio_id
+                GROUP BY a.id
+                ORDER BY a.created_at DESC
+                LIMIT ? OFFSET ?`,
+                [parseInt(limit), offset]
+            );
+
+            // Buscar total de anúncios para paginação
+            const [total] = await db.query(
+                'SELECT COUNT(*) as total FROM anuncios'
+            );
+
+            // Formatar URLs das imagens
+            const baseUrl = process.env.BASE_URL || 'http://localhost:4000';
+            const anunciosFormatados = anuncios.map(anuncio => ({
+                id: anuncio.id,
+                titulo: anuncio.titulo,
+                descricao: anuncio.descricao,
+                preco: anuncio.preco,
+                categoria: anuncio.categoria,
+                subcategoria: anuncio.subcategoria,
+                condicao: anuncio.condicao,
+                status: anuncio.status,
+                visualizacoes: anuncio.visualizacoes,
+                chamadas: anuncio.chamadas,
+                mensagens_whatsapp: anuncio.mensagens_whatsapp,
+                compartilhamentos: anuncio.compartilhamentos,
+                created_at: anuncio.created_at,
+                updated_at: anuncio.updated_at,
+                usuario: {
+                    id: anuncio.usuario_id,
+                    nome: anuncio.usuario_nome,
+                    telefone: anuncio.usuario_telefone
+                },
+                imagens: anuncio.imagens 
+                    ? anuncio.imagens.split(',').map(img => `${baseUrl}${img}`)
+                    : [],
+                total_favoritos: anuncio.total_favoritos || 0
+            }));
+
+            return {
+                anuncios: anunciosFormatados,
+                pagination: {
+                    total: total[0].total,
+                    page: parseInt(page),
+                    limit: parseInt(limit),
+                    pages: Math.ceil(total[0].total / limit)
+                }
+            };
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    static async listarPublicos(page = 1, limit = 10) {
+        try {
+            const offset = (page - 1) * limit;
+
+            // Query para buscar apenas anúncios ativos
+            const [anuncios] = await db.query(
+                `SELECT 
+                    a.*,
+                    u.nome as usuario_nome,
+                    u.telefone as usuario_telefone,
+                    GROUP_CONCAT(DISTINCT ai.url_imagem) as imagens
+                FROM anuncios a
+                LEFT JOIN usuarios u ON a.usuario_id = u.id
+                LEFT JOIN anuncio_imagens ai ON a.id = ai.anuncio_id
+                GROUP BY a.id
+                ORDER BY a.created_at DESC
+                LIMIT ? OFFSET ?`,
+                [parseInt(limit), offset]
+            );
+
+            // Buscar total de anúncios ativos para paginação
+            const [total] = await db.query(
+                "SELECT COUNT(*) as total FROM anuncios WHERE status = 'ativo'"
+            );
+
+            // Formatar URLs das imagens
+            const baseUrl = process.env.BASE_URL || 'http://localhost:4000';
+            const anunciosFormatados = anuncios.map(anuncio => ({
+                id: anuncio.id,
+                titulo: anuncio.titulo,
+                descricao: anuncio.descricao,
+                preco: anuncio.preco,
+                categoria: anuncio.categoria,
+                subcategoria: anuncio.subcategoria,
+                condicao: anuncio.condicao,
+                visualizacoes: anuncio.visualizacoes,
+                chamadas: anuncio.chamadas,
+                mensagens_whatsapp: anuncio.mensagens_whatsapp,
+                compartilhamentos: anuncio.compartilhamentos,
+                created_at: anuncio.created_at,
+                usuario: {
+                    nome: anuncio.usuario_nome,
+                    telefone: anuncio.usuario_telefone
+                },
+                imagens: anuncio.imagens 
+                    ? anuncio.imagens.split(',').map(img => `${baseUrl}${img}`)
+                    : [],
+                total_favoritos: anuncio.total_favoritos || 0
+            }));
+
+            return {
+                anuncios: anunciosFormatados,
+                pagination: {
+                    total: total[0].total,
+                    page: parseInt(page),
+                    limit: parseInt(limit),
+                    pages: Math.ceil(total[0].total / limit)
+                }
+            };
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    static async incrementarInteracao(id, tipo) {
+        try {
+            // Verificar se o tipo é válido
+            if (!Object.values(TipoInteracao).includes(tipo)) {
+                throw new Error('Tipo de interação inválido');
+            }
+
+            const campo = camposPorTipo[tipo];
+            
+            const [result] = await db.query(
+                `UPDATE anuncios SET ${campo} = ${campo} + 1 WHERE id = ?`,
+                [id]
+            );
+
+            return result.affectedRows > 0;
+        } catch (error) {
+            throw error;
+        }
+    }
 }
+
+// Enum para tipos de interação
+const TipoInteracao = {
+    VISUALIZACAO: 'visualizacao',
+    CHAMADA: 'chamada',
+    MENSAGEM: 'mensagem',
+    COMPARTILHAMENTO: 'compartilhamento'
+};
+
+// Mapeamento de tipos para campos no banco
+const camposPorTipo = {
+    [TipoInteracao.VISUALIZACAO]: 'visualizacoes',
+    [TipoInteracao.CHAMADA]: 'chamadas',
+    [TipoInteracao.MENSAGEM]: 'mensagens_whatsapp',
+    [TipoInteracao.COMPARTILHAMENTO]: 'compartilhamentos'
+};
+
+// Exportar o enum para uso no controller
+exports.TipoInteracao = TipoInteracao;
 
 module.exports = AnuncioModel;

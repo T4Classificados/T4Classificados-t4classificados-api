@@ -31,14 +31,23 @@ class AnuncioController {
 
     static async listar(req, res) {
         try {
-            const { page = 1, limit = 10, ...filtros } = req.query;
-            const anuncios = await AnuncioModel.listar(page, limit, filtros);
-            
+            const { page = 1, limit = 10 } = req.query;
+            let anuncios;
+
+            // Se for admin, lista todos os anúncios
+            if (req.userData && req.userData.role === 'admin') {
+                anuncios = await AnuncioModel.listarTodos(page, limit);
+            } else {
+                // Se não for admin, lista apenas anúncios públicos
+                anuncios = await AnuncioModel.listarPublicos(page, limit);
+            }
+
             res.json({
                 success: true,
                 data: anuncios
             });
         } catch (error) {
+            console.error('Erro ao listar anúncios:', error);
             res.status(500).json({
                 success: false,
                 message: 'Erro ao listar anúncios',
@@ -109,7 +118,25 @@ class AnuncioController {
     static async excluir(req, res) {
         try {
             const { id } = req.params;
-            const excluido = await AnuncioModel.excluir(id, req.user.id);
+            
+            // Verificar se o usuário está autenticado
+            if (!req.userData) {
+                return res.status(401).json({
+                    success: false,
+                    message: 'Não autenticado'
+                });
+            }
+
+            let excluido;
+            console.log('User role:', req.userData.role); // Debug log
+
+            // Se for admin, pode excluir qualquer anúncio
+            if (req.userData.role === 'admin') {
+                excluido = await AnuncioModel.excluirAdmin(id);
+            } else {
+                // Se não for admin, só pode excluir seus próprios anúncios
+                excluido = await AnuncioModel.excluir(id, req.userData.userId);
+            }
             
             if (!excluido) {
                 return res.status(404).json({
@@ -123,6 +150,7 @@ class AnuncioController {
                 message: 'Anúncio excluído com sucesso'
             });
         } catch (error) {
+            console.error('Erro ao excluir anúncio:', error);
             res.status(500).json({
                 success: false,
                 message: 'Erro ao excluir anúncio',
@@ -136,21 +164,22 @@ class AnuncioController {
             const { id } = req.params;
             const { tipo } = req.body;
 
-            if (!['visualizacao', 'chamada', 'mensagem', 'compartilhamento'].includes(tipo)) {
+            // Verificar se o tipo é válido usando o enum
+            if (!Object.values(AnuncioModel.TipoInteracao).includes(tipo)) {
                 return res.status(400).json({
                     success: false,
-                    message: 'Tipo de interação inválido'
+                    message: 'Tipo de interação inválido. Tipos válidos: visualizacao, chamada, mensagem, compartilhamento'
                 });
             }
 
-            const campoMap = {
-                'visualizacao': 'visualizacoes',
-                'chamada': 'chamadas',
-                'mensagem': 'mensagens_whatsapp',
-                'compartilhamento': 'compartilhamentos'
-            };
+            const sucesso = await AnuncioModel.incrementarInteracao(id, tipo);
 
-            await AnuncioModel.incrementarEstatistica(id, campoMap[tipo]);
+            if (!sucesso) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Anúncio não encontrado'
+                });
+            }
 
             res.json({
                 success: true,

@@ -73,3 +73,107 @@ exports.updateUser = async (id, updateData) => {
 
   return result.affectedRows > 0;
 };
+
+exports.listarAdmin = async (page = 1, limit = 10, status = 'todos', search = '') => {
+    try {
+        const offset = (page - 1) * limit;
+        let whereClause = '';
+        let params = [];
+
+        // Filtro de status
+        if (status !== 'todos') {
+            whereClause += ' AND u.status = ?';
+            params.push(status);
+        }
+
+        // Filtro de busca
+        if (search) {
+            whereClause += ` AND (
+                u.nome LIKE ? OR 
+                u.telefone LIKE ?
+            )`;
+            const searchTerm = `%${search}%`;
+            params.push(searchTerm, searchTerm);
+        }
+
+        // Query principal
+        const [usuarios] = await db.query(
+            `SELECT 
+                u.id,
+                u.nome,
+                u.sobrenome,
+                u.telefone,
+                u.provincia,
+                u.municipio,
+                u.role,
+                u.is_active,
+                u.created_at,
+                e.nome as empresa_nome,
+                e.nif as empresa_nif,
+                e.logo_url as empresa_logo,
+                ca.iban as conta_afiliada_iban
+            FROM usuarios u
+            LEFT JOIN empresas e ON u.empresa_id = e.id
+            LEFT JOIN contas_afiliadas ca ON u.conta_afiliada_id = ca.id
+            WHERE 1=1 ${whereClause}
+            ORDER BY u.created_at DESC
+            LIMIT ? OFFSET ?`,
+            [...params, parseInt(limit), offset]
+        );
+
+        // Contagem total para paginação
+        const [total] = await db.query(
+            `SELECT COUNT(*) as total 
+            FROM usuarios u 
+            WHERE 1=1 ${whereClause}`,
+            params
+        );
+
+        // Formatar URLs e estruturar dados
+        const baseUrl = process.env.BASE_URL || 'http://localhost:4000';
+        const usuariosFormatados = usuarios.map(usuario => ({
+            id: usuario.id,
+            nome: usuario.nome,
+            sobrenome: usuario.sobrenome,
+            telefone: usuario.telefone,
+            provincia: usuario.provincia,
+            municipio: usuario.municipio,
+            role: usuario.role,
+            is_active: usuario.is_active,
+            created_at: usuario.created_at,
+            empresa: usuario.empresa_nome ? {
+                nome: usuario.empresa_nome,
+                nif: usuario.empresa_nif,
+                logo_url: usuario.empresa_logo ? `${baseUrl}${usuario.empresa_logo}` : null
+            } : null,
+            conta_afiliada: usuario.conta_afiliada_iban ? {
+                iban: usuario.conta_afiliada_iban
+            } : null
+        }));
+
+        return {
+            usuarios: usuariosFormatados,
+            pagination: {
+                total: total[0].total,
+                page: parseInt(page),
+                limit: parseInt(limit),
+                pages: Math.ceil(total[0].total / limit)
+            }
+        };
+    } catch (error) {
+        throw error;
+    }
+};
+
+exports.alterarStatus = async (id, is_active) => {
+    try {
+        const [result] = await db.query(
+            'UPDATE usuarios SET is_active = ? WHERE id = ?',
+            [is_active, id]
+        );
+        
+        return result.affectedRows > 0;
+    } catch (error) {
+        throw error;
+    }
+};

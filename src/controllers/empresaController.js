@@ -1,10 +1,24 @@
 const EmpresaModel = require('../models/empresaModel');
 const UsuarioModel = require('../models/usuarioModel');
 const { uploadImagens } = require('../utils/upload');
+const db = require('../config/database');
 
 class EmpresaController {
     static async vincularEmpresa(req, res) {
         try {
+            // Verifica se o usuário já tem conta afiliada
+            const [usuario] = await db.query(
+                'SELECT conta_afiliada_id FROM usuarios WHERE id = ?',
+                [req.user.id]
+            );
+
+            if (usuario[0]?.conta_afiliada_id) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Usuários com conta afiliada não podem vincular empresa'
+                });
+            }
+
             // Verifica se já existe empresa com este NIF
             const empresaExistente = await EmpresaModel.obterPorNif(req.body.nif);
             if (empresaExistente) {
@@ -14,7 +28,6 @@ class EmpresaController {
                 });
             }
 
-            // Processa o upload do logo
             const logo = req.files?.logo ? await uploadImagens([req.files.logo[0]]) : null;
             
             // Cria nova empresa

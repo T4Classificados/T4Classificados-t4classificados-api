@@ -12,6 +12,18 @@ class UsuarioModel {
             throw error;
         }
     }
+
+    static async atualizarContaAfiliada(userId, contaAfiliadaId) {
+        try {
+            await db.query(
+                'UPDATE usuarios SET conta_afiliada_id = ? WHERE id = ?',
+                [contaAfiliadaId, userId]
+            );
+            return true;
+        } catch (error) {
+            throw error;
+        }
+    }
 }
 
 module.exports = UsuarioModel; 

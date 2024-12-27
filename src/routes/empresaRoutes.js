@@ -29,7 +29,7 @@ const uploadFields = upload.fields([
  * /empresa:
  *   post:
  *     summary: Vincular empresa ao usuário (opcional)
- *     description: Permite vincular uma empresa ao usuário. Um usuário pode existir sem empresa vinculada.
+ *     description: Permite vincular uma empresa ao usuário. Não é possível vincular empresa se o usuário já tiver conta afiliada.
  *     tags: [Empresa]
  *     security:
  *       - bearerAuth: []
@@ -80,7 +80,7 @@ const uploadFields = upload.fields([
  *                       type: string
  *                       nullable: true
  *       400:
- *         description: Dados inválidos ou NIF já cadastrado
+ *         description: Dados inválidos, NIF já cadastrado ou usuário com conta afiliada
  *         content:
  *           application/json:
  *             schema:
@@ -91,7 +91,7 @@ const uploadFields = upload.fields([
  *                   example: false
  *                 message:
  *                   type: string
- *                   example: Já existe uma empresa cadastrada com este NIF
+ *                   example: Usuários com conta afiliada não podem vincular empresa
  *       500:
  *         description: Erro do servidor
  */

@@ -25,6 +25,18 @@ const validateId = (req, res, next) => {
  * @swagger
  * components:
  *   schemas:
+ *     Empresa:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: integer
+ *         nome:
+ *           type: string
+ *         nif:
+ *           type: string
+ *         logo_url:
+ *           type: string
+ *           nullable: true
  *     Campanha:
  *       type: object
  *       required:
@@ -33,6 +45,8 @@ const validateId = (req, res, next) => {
  *         - num_visualizacoes
  *         - valor_visualizacao
  *       properties:
+ *         id:
+ *           type: integer
  *         tipo_exibicao:
  *           type: string
  *           enum: [computador, telemóvel, ambos]
@@ -40,6 +54,9 @@ const validateId = (req, res, next) => {
  *           type: string
  *         descricao:
  *           type: string
+ *         logo_url:
+ *           type: string
+ *           nullable: true
  *         botao_texto:
  *           type: string
  *         num_visualizacoes:
@@ -48,6 +65,21 @@ const validateId = (req, res, next) => {
  *           type: number
  *         total_pagar:
  *           type: number
+ *         status:
+ *           type: string
+ *           enum: [pendente, ativa, pausada, concluida, rejeitada]
+ *         created_at:
+ *           type: string
+ *           format: date-time
+ *         updated_at:
+ *           type: string
+ *           format: date-time
+ *         imagens:
+ *           type: array
+ *           items:
+ *             type: string
+ *         empresa:
+ *           $ref: '#/components/schemas/Empresa'
  */
 
 /**
@@ -55,6 +87,7 @@ const validateId = (req, res, next) => {
  * /campanhas:
  *   post:
  *     summary: Criar nova campanha
+ *     description: Cria uma nova campanha vinculada à empresa do usuário. É necessário ter uma empresa vinculada.
  *     tags: [Campanhas]
  *     security:
  *       - bearerAuth: []
@@ -64,6 +97,11 @@ const validateId = (req, res, next) => {
  *         multipart/form-data:
  *           schema:
  *             type: object
+ *             required:
+ *               - tipo_exibicao
+ *               - espaco
+ *               - num_visualizacoes
+ *               - valor_visualizacao
  *             properties:
  *               tipo_exibicao:
  *                 type: string
@@ -91,6 +129,8 @@ const validateId = (req, res, next) => {
  *     responses:
  *       201:
  *         description: Campanha criada com sucesso
+ *       400:
+ *         description: Dados inválidos ou usuário sem empresa vinculada
  *       401:
  *         description: Não autorizado
  *       500:

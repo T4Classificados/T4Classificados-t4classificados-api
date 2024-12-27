@@ -1,16 +1,37 @@
 const db = require('../config/database');
 
 class CampanhaModel {
-    static async criar(campanha) {
+    static async criar(userId, campanha) {
         try {
+            // Primeiro verifica se o usuário tem empresa vinculada
+            const [usuario] = await db.query(
+                'SELECT empresa_id FROM usuarios WHERE id = ?',
+                [userId]
+            );
+
+            if (!usuario[0] || !usuario[0].empresa_id) {
+                throw new Error('Usuário não possui empresa vinculada');
+            }
+
+            const empresaId = usuario[0].empresa_id;
+
+            // Insere a campanha vinculada à empresa
             const [result] = await db.query(
                 `INSERT INTO campanhas (
-                    usuario_id, tipo_exibicao, espaco, descricao,
-                    logo_url, botao_texto, num_visualizacoes,
-                    valor_visualizacao, total_pagar, status
+                    empresa_id,
+                    usuario_id,
+                    tipo_exibicao,
+                    espaco,
+                    descricao,
+                    logo_url,
+                    botao_texto,
+                    num_visualizacoes,
+                    valor_visualizacao,
+                    total_pagar
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                 [
-                    campanha.usuario_id,
+                    empresaId,
+                    userId,
                     campanha.tipo_exibicao,
                     campanha.espaco,
                     campanha.descricao,
@@ -18,21 +39,23 @@ class CampanhaModel {
                     campanha.botao_texto,
                     campanha.num_visualizacoes,
                     campanha.valor_visualizacao,
-                    campanha.total_pagar,
-                    'pendente'
+                    campanha.total_pagar
                 ]
             );
 
+            const campanhaId = result.insertId;
+
+            // Insere as imagens se houver
             if (campanha.imagens && campanha.imagens.length > 0) {
                 for (const imagem of campanha.imagens) {
                     await db.query(
                         'INSERT INTO campanha_imagens (campanha_id, url_imagem) VALUES (?, ?)',
-                        [result.insertId, imagem]
+                        [campanhaId, imagem]
                     );
                 }
             }
 
-            return result.insertId;
+            return campanhaId;
         } catch (error) {
             throw error;
         }
@@ -42,9 +65,14 @@ class CampanhaModel {
         try {
             const offset = (page - 1) * limit;
             const [rows] = await db.query(
-                `SELECT c.*, GROUP_CONCAT(ci.url_imagem) as imagens
+                `SELECT c.*, 
+                    GROUP_CONCAT(ci.url_imagem) as imagens,
+                    e.nome as empresa_nome,
+                    e.nif as empresa_nif,
+                    e.logo_url as empresa_logo
                 FROM campanhas c
                 LEFT JOIN campanha_imagens ci ON c.id = ci.campanha_id
+                LEFT JOIN empresas e ON c.empresa_id = e.id
                 WHERE c.usuario_id = ?
                 GROUP BY c.id
                 ORDER BY c.created_at DESC
@@ -58,7 +86,13 @@ class CampanhaModel {
                 logo_url: row.logo_url ? `${baseUrl}${row.logo_url}` : null,
                 imagens: row.imagens 
                     ? row.imagens.split(',').map(img => `${baseUrl}${img}`)
-                    : []
+                    : [],
+                empresa: {
+                    id: row.empresa_id,
+                    nome: row.empresa_nome,
+                    nif: row.empresa_nif,
+                    logo_url: row.empresa_logo ? `${baseUrl}${row.empresa_logo}` : null
+                }
             }));
         } catch (error) {
             throw error;
@@ -68,9 +102,14 @@ class CampanhaModel {
     static async obterPorId(id, userId) {
         try {
             const [rows] = await db.query(
-                `SELECT c.*, GROUP_CONCAT(ci.url_imagem) as imagens
+                `SELECT c.*, 
+                    GROUP_CONCAT(ci.url_imagem) as imagens,
+                    e.nome as empresa_nome,
+                    e.nif as empresa_nif,
+                    e.logo_url as empresa_logo
                 FROM campanhas c
                 LEFT JOIN campanha_imagens ci ON c.id = ci.campanha_id
+                LEFT JOIN empresas e ON c.empresa_id = e.id
                 WHERE c.id = ? AND c.usuario_id = ?
                 GROUP BY c.id`,
                 [id, userId]
@@ -86,7 +125,13 @@ class CampanhaModel {
                 logo_url: campanha.logo_url ? `${baseUrl}${campanha.logo_url}` : null,
                 imagens: campanha.imagens 
                     ? campanha.imagens.split(',').map(img => `${baseUrl}${img}`)
-                    : []
+                    : [],
+                empresa: {
+                    id: campanha.empresa_id,
+                    nome: campanha.empresa_nome,
+                    nif: campanha.empresa_nif,
+                    logo_url: campanha.empresa_logo ? `${baseUrl}${campanha.empresa_logo}` : null
+                }
             };
         } catch (error) {
             throw error;

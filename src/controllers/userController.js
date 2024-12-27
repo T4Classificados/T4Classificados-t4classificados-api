@@ -1,7 +1,7 @@
 const userModel = require('../models/userModel');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-
+const db = require('../config/database');
 const dotenv = require('dotenv');
 
 dotenv.config();
@@ -231,23 +231,103 @@ exports.refreshToken = async (req, res) => {
 
 exports.getCurrentUser = async (req, res) => {
   try {
-    const userId = req.userData.userId;
-    const user = await userModel.getUserById(userId);
-
-    if (!user) {
-      return res.status(404).json({ message: 'Usuário não encontrado' });
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({
+        success: false,
+        message: 'Usuário não autenticado'
+      });
     }
 
-    // Remova informações sensíveis antes de enviar
-    const { senha, confirmation_code, ...userInfo } = user;
+    const [rows] = await db.query(
+      `SELECT 
+        u.*,
+        e.nome as empresa_nome,
+        e.nif as empresa_nif,
+        e.logo_url as empresa_logo,
+        GROUP_CONCAT(DISTINCT c.id) as campanha_ids,
+        GROUP_CONCAT(DISTINCT c.tipo_exibicao) as campanha_tipos,
+        GROUP_CONCAT(DISTINCT c.espaco) as campanha_espacos,
+        GROUP_CONCAT(DISTINCT c.status) as campanha_status,
+        GROUP_CONCAT(DISTINCT c.created_at) as campanha_datas
+      FROM usuarios u
+      LEFT JOIN empresas e ON u.empresa_id = e.id
+      LEFT JOIN campanhas c ON e.id = c.empresa_id
+      WHERE u.id = ?
+      GROUP BY u.id`,
+      [req.user.id]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Usuário não encontrado'
+      });
+    }
+
+    const user = rows[0];
+    const baseUrl = process.env.BASE_URL || 'http://localhost:4000';
+
+    // Busca detalhes das campanhas se existirem
+    let campanhas = [];
+    if (user.campanha_ids) {
+      const campanhaIds = user.campanha_ids.split(',');
+      const [campanhasRows] = await db.query(
+        `SELECT c.*, GROUP_CONCAT(ci.url_imagem) as imagens
+        FROM campanhas c
+        LEFT JOIN campanha_imagens ci ON c.id = ci.campanha_id
+        WHERE c.id IN (?)
+        GROUP BY c.id`,
+        [campanhaIds]
+      );
+
+      campanhas = campanhasRows.map(campanha => ({
+        id: campanha.id,
+        tipo_exibicao: campanha.tipo_exibicao,
+        espaco: campanha.espaco,
+        descricao: campanha.descricao,
+        logo_url: campanha.logo_url ? `${baseUrl}${campanha.logo_url}` : null,
+        botao_texto: campanha.botao_texto,
+        num_visualizacoes: campanha.num_visualizacoes,
+        valor_visualizacao: campanha.valor_visualizacao,
+        total_pagar: campanha.total_pagar,
+        status: campanha.status,
+        created_at: campanha.created_at,
+        updated_at: campanha.updated_at,
+        imagens: campanha.imagens 
+          ? campanha.imagens.split(',').map(img => `${baseUrl}${img}`)
+          : []
+      }));
+    }
+
+    // Formata os dados do usuário
+    const userData = {
+      id: user.id,
+      nome: user.nome,
+      sobrenome: user.sobrenome,
+      telefone: user.telefone,
+      provincia: user.provincia,
+      municipio: user.municipio,
+      created_at: user.created_at,
+      empresa: user.empresa_id ? {
+        id: user.empresa_id,
+        nome: user.empresa_nome,
+        nif: user.empresa_nif,
+        logo_url: user.empresa_logo ? `${baseUrl}${user.empresa_logo}` : null,
+        campanhas: campanhas
+      } : null
+    };
 
     res.json({
-      message: 'Informações do usuário obtidas com sucesso',
-      user: userInfo
+      success: true,
+      data: userData
     });
   } catch (error) {
     console.error('Erro ao obter informações do usuário:', error);
-    res.status(500).json({ message: 'Erro ao obter informações do usuário' });
+    res.status(500).json({
+      success: false,
+      message: 'Erro ao obter informações do usuário',
+      error: error.message
+    });
   }
 };
 

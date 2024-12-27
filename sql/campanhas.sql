@@ -1,21 +1,26 @@
-CREATE TABLE IF NOT EXISTS campanhas (
+DROP TABLE IF EXISTS campanha_imagens;
+DROP TABLE IF EXISTS campanhas;
+
+CREATE TABLE campanhas (
     id INT AUTO_INCREMENT PRIMARY KEY,
     usuario_id INT NOT NULL,
+    empresa_id INT NOT NULL,
     tipo_exibicao ENUM('computador', 'telemóvel', 'ambos') NOT NULL,
     espaco VARCHAR(100) NOT NULL,
     descricao TEXT,
     logo_url VARCHAR(255),
-    botao_texto VARCHAR(100),
+    botao_texto VARCHAR(50),
     num_visualizacoes INT NOT NULL,
     valor_visualizacao DECIMAL(10,2) NOT NULL,
-    total_pagar DECIMAL(10,2) NOT NULL,
-    status ENUM('pendente', 'ativa', 'pausada', 'encerrada') DEFAULT 'pendente',
+    total_pagar DECIMAL(10,2),
+    status ENUM('pendente', 'ativa', 'pausada', 'concluida', 'rejeitada') DEFAULT 'pendente',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id),
+    FOREIGN KEY (empresa_id) REFERENCES empresas(id)
 );
 
-CREATE TABLE IF NOT EXISTS campanha_imagens (
+CREATE TABLE campanha_imagens (
     id INT AUTO_INCREMENT PRIMARY KEY,
     campanha_id INT NOT NULL,
     url_imagem VARCHAR(255) NOT NULL,

@@ -207,21 +207,22 @@ router.post('/refresh-token', userController.refreshToken);
  * @swagger
  * /me:
  *   get:
- *     summary: Obtém informações do usuário logado
+ *     summary: Obter dados do usuário atual
  *     tags: [Usuários]
  *     security:
  *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: Informações do usuário obtidas com sucesso
+ *         description: Dados do usuário
  *         content:
  *           application/json:
  *             schema:
  *               type: object
  *               properties:
- *                 message:
- *                   type: string
- *                 user:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
  *                   type: object
  *                   properties:
  *                     id:
@@ -232,14 +233,30 @@ router.post('/refresh-token', userController.refreshToken);
  *                       type: string
  *                     telefone:
  *                       type: string
- *                     role:
+ *                     provincia:
  *                       type: string
- *                     is_active:
- *                       type: boolean
- *       401:
- *         description: Não autorizado
- *       404:
- *         description: Usuário não encontrado
+ *                     municipio:
+ *                       type: string
+ *                     created_at:
+ *                       type: string
+ *                       format: date-time
+ *                     empresa:
+ *                       type: object
+ *                       nullable: true
+ *                       properties:
+ *                         id:
+ *                           type: integer
+ *                         nome:
+ *                           type: string
+ *                         nif:
+ *                           type: string
+ *                         logo_url:
+ *                           type: string
+ *                           nullable: true
+ *                         campanhas:
+ *                           type: array
+ *                           items:
+ *                             $ref: '#/components/schemas/Campanha'
  */
 router.get('/me', authMiddleware, userController.getCurrentUser);
 

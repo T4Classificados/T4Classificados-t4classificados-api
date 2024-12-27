@@ -39,7 +39,7 @@ class AnuncioController {
                 anuncios = await AnuncioModel.listarTodos(page, limit);
             } else {
                 // Se não for admin, lista apenas anúncios públicos
-                anuncios = await AnuncioModel.listarPublicos(page, limit);
+                anuncios = await AnuncioModel.listarPorUsuario(req.userData.userId, page, limit);
             }
 
             res.json({
@@ -59,7 +59,7 @@ class AnuncioController {
     static async obterPorId(req, res) {
         try {
             const { id } = req.params;
-            const anuncio = await AnuncioModel.obterPorId(id);
+            const anuncio = await AnuncioModel.obterPorId(id, req.userData.userId);
             
             if (!anuncio) {
                 return res.status(404).json({
@@ -128,8 +128,7 @@ class AnuncioController {
             }
 
             let excluido;
-            console.log('User role:', req.userData.role); // Debug log
-
+           
             // Se for admin, pode excluir qualquer anúncio
             if (req.userData.role === 'admin') {
                 excluido = await AnuncioModel.excluirAdmin(id);

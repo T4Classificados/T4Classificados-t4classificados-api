@@ -127,7 +127,7 @@ router.post('/anuncios',
  *       404:
  *         description: Anúncio não encontrado
  */
-router.get('/anuncios/:id', AnuncioController.obterPorId);
+router.get('/anuncios/:id', auth, AnuncioController.obterPorId);
 
 /**
  * @swagger
@@ -135,6 +135,8 @@ router.get('/anuncios/:id', AnuncioController.obterPorId);
  *   get:
  *     summary: Listar todos os anúncios
  *     tags: [Anúncios]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: query
  *         name: page
@@ -171,7 +173,7 @@ router.get('/anuncios/:id', AnuncioController.obterPorId);
  *                   items:
  *                     $ref: '#/components/schemas/Anuncio'
  */
-router.get('/anuncios', AnuncioController.listar);
+router.get('/anuncios',auth, AnuncioController.listar);
 
 /**
  * @swagger

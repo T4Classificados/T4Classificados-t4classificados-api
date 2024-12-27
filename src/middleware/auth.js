@@ -27,8 +27,7 @@ module.exports = (req, res, next) => {
             role: decoded.role || 'user'
         };
 
-        console.log('Auth middleware - User data:', { userData: req.userData, user: req.user }); // Debug log
-
+        
         next();
     } catch (error) {
         console.error('Auth middleware error:', error);

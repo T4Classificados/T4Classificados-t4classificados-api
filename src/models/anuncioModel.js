@@ -85,15 +85,15 @@ class AnuncioModel {
         }
     }
 
-    static async obterPorId(id) {
+    static async obterPorId(id, userId) {
         try {
             const [rows] = await db.query(`
                 SELECT a.*, GROUP_CONCAT(ai.url_imagem) as imagens
                 FROM anuncios a
                 LEFT JOIN anuncio_imagens ai ON a.id = ai.anuncio_id
-                WHERE a.id = ?
+                WHERE a.id = ? AND a.usuario_id = ?
                 GROUP BY a.id
-            `, [id]);
+            `, [id, userId]);
 
             if (rows.length === 0) {
                 return null;
@@ -372,6 +372,93 @@ class AnuncioModel {
             );
 
             return result.affectedRows > 0;
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    static async listarPorUsuario(usuarioId, page = 1, limit = 10, filtros = {}) {
+        try {
+            const offset = (page - 1) * limit;
+
+            // Query para buscar anúncios do usuário com informações completas
+            let query = `
+                SELECT 
+                    a.*,
+                    u.nome as usuario_nome,
+                    u.telefone as usuario_telefone,
+                    GROUP_CONCAT(DISTINCT ai.url_imagem) as imagens
+                FROM anuncios a
+                LEFT JOIN usuarios u ON a.usuario_id = u.id
+                LEFT JOIN anuncio_imagens ai ON a.id = ai.anuncio_id
+                WHERE a.usuario_id = ?
+            `;
+            
+            const values = [usuarioId];
+            
+            if (filtros.categoria) {
+                query += ' AND a.categoria = ?';
+                values.push(filtros.categoria);
+            }
+            
+            if (filtros.provincia) {
+                query += ' AND a.provincia = ?';
+                values.push(filtros.provincia);
+            }
+            
+            query += `
+                GROUP BY a.id
+                ORDER BY a.created_at DESC
+                LIMIT ? OFFSET ?
+            `;
+            
+            values.push(parseInt(limit), offset);
+            
+            const [anuncios] = await db.query(query, values);
+
+            // Buscar total de anúncios do usuário para paginação
+            const [total] = await db.query(
+                'SELECT COUNT(*) as total FROM anuncios WHERE usuario_id = ?',
+                [usuarioId]
+            );
+
+            // Formatar URLs das imagens e estruturar resposta
+            const baseUrl = process.env.BASE_URL || 'http://localhost:4000';
+            const anunciosFormatados = anuncios.map(anuncio => ({
+                id: anuncio.id,
+                titulo: anuncio.titulo,
+                descricao: anuncio.descricao,
+                preco: anuncio.preco,
+                categoria: anuncio.categoria,
+                subcategoria: anuncio.subcategoria,
+                condicao: anuncio.condicao,
+                status: anuncio.status,
+                visualizacoes: anuncio.visualizacoes,
+                chamadas: anuncio.chamadas,
+                mensagens_whatsapp: anuncio.mensagens_whatsapp,
+                compartilhamentos: anuncio.compartilhamentos,
+                created_at: anuncio.created_at,
+                updated_at: anuncio.updated_at,
+                usuario: {
+                    id: anuncio.usuario_id,
+                    nome: anuncio.usuario_nome,
+                    telefone: anuncio.usuario_telefone
+                },
+                imagens: anuncio.imagens 
+                    ? anuncio.imagens.split(',').map(img => `${baseUrl}${img}`)
+                    : [],
+                total_favoritos: anuncio.total_favoritos || 0
+            }));
+
+            return {
+                anuncios: anunciosFormatados,
+                pagination: {
+                    total: total[0].total,
+                    page: parseInt(page),
+                    limit: parseInt(limit),
+                    pages: Math.ceil(total[0].total / limit)
+                }
+            };
         } catch (error) {
             throw error;
         }

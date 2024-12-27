@@ -234,4 +234,34 @@ router.delete('/anuncios/:id',
     AnuncioController.excluir
 );
 
+/**
+ * @swagger
+ * /anuncios/{id}/interacao:
+ *   post:
+ *     summary: Registrar uma interação com o anúncio
+ *     tags: [Anúncios]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - tipo
+ *             properties:
+ *               tipo:
+ *                 type: string
+ *                 enum: [visualizacao, chamada, mensagem, compartilhamento]
+ *     responses:
+ *       200:
+ *         description: Interação registrada com sucesso
+ */
+router.post('/:id/interacao', AnuncioController.registrarInteracao);
+
 module.exports = router; 

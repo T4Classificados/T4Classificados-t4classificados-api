@@ -54,6 +54,7 @@ const anuncioRoutes = require("./routes/anuncioRoutes");
 const campanhaRoutes = require('./routes/campanhaRoutes');
 const empresaRoutes = require('./routes/empresaRoutes');
 const contaAfiliadaRoutes = require('./routes/contaAfiliadaRoutes');
+const estatisticasRoutes = require('./routes/estatisticasRoutes');
 
 // Rota de teste
 app.get("/test", (req, res) => {
@@ -66,6 +67,7 @@ app.use("/api", anuncioRoutes);
 app.use('/api/campanhas', campanhaRoutes);
 app.use('/api/empresa', empresaRoutes);
 app.use('/api/conta-afiliada', contaAfiliadaRoutes);
+app.use('/api/estatisticas', estatisticasRoutes);
 
 // Middleware global para logging de erros
 app.use((err, req, res, next) => {

@@ -177,6 +177,26 @@ class AnuncioModel {
             throw error;
         }
     }
+
+    static async incrementarEstatistica(anuncioId, campo) {
+        try {
+            const campos = ['visualizacoes', 'chamadas', 'mensagens_whatsapp', 'compartilhamentos'];
+            if (!campos.includes(campo)) {
+                throw new Error('Campo de estatística inválido');
+            }
+
+            await db.query(
+                `UPDATE anuncios 
+                SET ${campo} = ${campo} + 1 
+                WHERE id = ?`,
+                [anuncioId]
+            );
+            return true;
+        } catch (error) {
+            console.error(`Erro ao incrementar ${campo}:`, error);
+            throw error;
+        }
+    }
 }
 
 module.exports = AnuncioModel;

@@ -130,6 +130,41 @@ class AnuncioController {
             });
         }
     }
+
+    static async registrarInteracao(req, res) {
+        try {
+            const { id } = req.params;
+            const { tipo } = req.body;
+
+            if (!['visualizacao', 'chamada', 'mensagem', 'compartilhamento'].includes(tipo)) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Tipo de interação inválido'
+                });
+            }
+
+            const campoMap = {
+                'visualizacao': 'visualizacoes',
+                'chamada': 'chamadas',
+                'mensagem': 'mensagens_whatsapp',
+                'compartilhamento': 'compartilhamentos'
+            };
+
+            await AnuncioModel.incrementarEstatistica(id, campoMap[tipo]);
+
+            res.json({
+                success: true,
+                message: 'Interação registrada com sucesso'
+            });
+        } catch (error) {
+            console.error('Erro ao registrar interação:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Erro ao registrar interação',
+                error: error.message
+            });
+        }
+    }
 }
 
 module.exports = AnuncioController; 

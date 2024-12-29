@@ -20,6 +20,7 @@ class CampanhaModel {
                 `INSERT INTO campanhas (
                     empresa_id,
                     usuario_id,
+                    nome,
                     tipo_exibicao,
                     espaco,
                     descricao,
@@ -27,11 +28,15 @@ class CampanhaModel {
                     botao_texto,
                     num_visualizacoes,
                     valor_visualizacao,
-                    total_pagar
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                    total_pagar,
+                    views,
+                    chamadas,
+                    cliques
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0, 0)`,
                 [
                     empresaId,
                     userId,
+                    campanha.nome,
                     campanha.tipo_exibicao,
                     campanha.espaco,
                     campanha.descricao,
@@ -286,6 +291,7 @@ class CampanhaModel {
             const baseUrl = process.env.BASE_URL || 'http://localhost:4000';
             const campanhasFormatadas = campanhas.map(campanha => ({
                 id: campanha.id,
+                nome: campanha.nome,
                 tipo_exibicao: campanha.tipo_exibicao,
                 espaco: campanha.espaco,
                 descricao: campanha.descricao,
@@ -294,6 +300,9 @@ class CampanhaModel {
                 num_visualizacoes: campanha.num_visualizacoes,
                 valor_visualizacao: campanha.valor_visualizacao,
                 total_pagar: campanha.total_pagar,
+                views: campanha.views || 0,
+                chamadas: campanha.chamadas || 0,
+                cliques: campanha.cliques || 0,
                 status: campanha.status,
                 created_at: campanha.created_at,
                 updated_at: campanha.updated_at,
@@ -319,6 +328,23 @@ class CampanhaModel {
                     pages: Math.ceil(total[0].total / limit)
                 }
             };
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    static async incrementarEstatistica(id, tipo) {
+        try {
+            const campo = tipo === 'view' ? 'views' : 
+                         tipo === 'chamada' ? 'chamadas' : 
+                         'cliques';
+            
+            const [result] = await db.query(
+                `UPDATE campanhas SET ${campo} = ${campo} + 1 WHERE id = ?`,
+                [id]
+            );
+
+            return result.affectedRows > 0;
         } catch (error) {
             throw error;
         }

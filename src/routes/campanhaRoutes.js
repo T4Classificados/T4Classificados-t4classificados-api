@@ -40,6 +40,7 @@ const validateId = (req, res, next) => {
  *     Campanha:
  *       type: object
  *       required:
+ *         - nome
  *         - tipo_exibicao
  *         - espaco
  *         - num_visualizacoes
@@ -47,6 +48,9 @@ const validateId = (req, res, next) => {
  *       properties:
  *         id:
  *           type: integer
+ *         nome:
+ *           type: string
+ *           description: Nome da campanha
  *         tipo_exibicao:
  *           type: string
  *           enum: [computador, telemóvel, ambos]
@@ -65,6 +69,15 @@ const validateId = (req, res, next) => {
  *           type: number
  *         total_pagar:
  *           type: number
+ *         views:
+ *           type: integer
+ *           description: Número de visualizações recebidas
+ *         chamadas:
+ *           type: integer
+ *           description: Número de chamadas recebidas
+ *         cliques:
+ *           type: integer
+ *           description: Número de cliques recebidos
  *         status:
  *           type: string
  *           enum: [pendente, ativa, pausada, concluida, rejeitada]
@@ -98,11 +111,15 @@ const validateId = (req, res, next) => {
  *           schema:
  *             type: object
  *             required:
+ *               - nome
  *               - tipo_exibicao
  *               - espaco
  *               - num_visualizacoes
  *               - valor_visualizacao
  *             properties:
+ *               nome:
+ *                 type: string
+ *                 description: Nome da campanha
  *               tipo_exibicao:
  *                 type: string
  *                 enum: [computador, telemóvel, ambos]
@@ -110,25 +127,41 @@ const validateId = (req, res, next) => {
  *                 type: string
  *               descricao:
  *                 type: string
+ *               logo:
+ *                 type: string
+ *                 format: binary
  *               botao_texto:
  *                 type: string
  *               num_visualizacoes:
  *                 type: integer
+ *                 minimum: 1
  *               valor_visualizacao:
  *                 type: number
+ *                 format: float
  *               total_pagar:
  *                 type: number
+ *                 format: float
  *               imagens:
  *                 type: array
  *                 items:
  *                   type: string
  *                   format: binary
- *               logo:
- *                 type: string
- *                 format: binary
  *     responses:
  *       201:
  *         description: Campanha criada com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Campanha criada com sucesso
+ *                 data:
+ *                   $ref: '#/components/schemas/Campanha'
  *       400:
  *         description: Dados inválidos ou usuário sem empresa vinculada
  *       401:
@@ -319,5 +352,37 @@ router.delete('/:id', auth, validateId, CampanhaController.excluir);
  *         description: Erro do servidor
  */
 router.post('/:id/promover', auth, validateId, CampanhaController.promoverNovamente);
+
+/**
+ * @swagger
+ * /campanhas/{id}/interacao:
+ *   post:
+ *     summary: Registrar uma interação com a campanha
+ *     tags: [Campanhas]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - tipo
+ *             properties:
+ *               tipo:
+ *                 type: string
+ *                 enum: [view, chamada, clique]
+ *     responses:
+ *       200:
+ *         description: Interação registrada com sucesso
+ *       400:
+ *         description: Tipo de interação inválido
+ */
+router.post('/:id/interacao', auth, CampanhaController.registrarInteracao);
 
 module.exports = router; 

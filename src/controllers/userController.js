@@ -45,6 +45,7 @@ exports.register = async (req, res) => {
       senha,
       provincia,
       municipio, 
+      bilhete
     } = req.body;
 
     // Verificar se usuário já existe
@@ -64,7 +65,8 @@ exports.register = async (req, res) => {
       provincia,
       municipio,
       role,
-      confirmationCode
+      confirmationCode,
+      bilhete
     );
 
     // Enviar SMS com o código de confirmação
@@ -324,6 +326,7 @@ exports.getCurrentUser = async (req, res) => {
       telefone: user.telefone,
       provincia: user.provincia,
       municipio: user.municipio,
+      bilhete: user.bilhete,
       created_at: user.created_at,
       empresa: user.empresa_id ? {
         id: user.empresa_id,
@@ -561,4 +564,20 @@ exports.alterarStatus = async (req, res) => {
             error: error.message
         });
     }
+};
+
+exports.updateProfile = async (req, res) => {
+  try {
+    const updateData = {
+      nome: req.body.nome,
+      sobrenome: req.body.sobrenome,
+      provincia: req.body.provincia,
+      municipio: req.body.municipio,
+      bilhete: req.body.bilhete
+    };
+
+    // ... resto do código ...
+  } catch (error) {
+    // ... tratamento de erro ...
+  }
 };

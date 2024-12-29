@@ -1,9 +1,9 @@
 const db = require('../config/database');
 
-exports.createUser = async (nome, sobrenome, telefone, senha, provincia, municipio, role = 'user', confirmationCode) => {
+exports.createUser = async (nome, sobrenome, telefone, senha, provincia, municipio, role = 'user', confirmationCode, bilhete = null) => {
   const [result] = await db.query(
-    'INSERT INTO usuarios (nome, sobrenome, telefone, senha, provincia, municipio, role, confirmation_code, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-    [nome, sobrenome, telefone, senha, provincia, municipio, role, confirmationCode, false]
+    'INSERT INTO usuarios (nome, sobrenome, telefone, senha, provincia, municipio, role, confirmation_code, is_active, bilhete) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    [nome, sobrenome, telefone, senha, provincia, municipio, role, confirmationCode, false, bilhete]
   );
   return result;
 };
@@ -45,7 +45,7 @@ exports.clearResetCode = async (id) => {
 
 exports.updateUser = async (id, updateData) => {
   // Campos permitidos para atualização
-  const allowedFields = ['nome', 'genero', 'provincia', 'municipio', 'role'];
+  const allowedFields = ['nome', 'sobrenome', 'genero', 'provincia', 'municipio', 'role', 'bilhete'];
   
   // Filtrar apenas os campos permitidos que foram fornecidos
   const validUpdates = Object.keys(updateData)
@@ -105,6 +105,7 @@ exports.listarAdmin = async (page = 1, limit = 10, status = 'todos', search = ''
                 u.telefone,
                 u.provincia,
                 u.municipio,
+                u.bilhete,
                 u.role,
                 u.is_active,
                 u.created_at,
@@ -139,6 +140,7 @@ exports.listarAdmin = async (page = 1, limit = 10, status = 'todos', search = ''
             provincia: usuario.provincia,
             municipio: usuario.municipio,
             role: usuario.role,
+            bilhete: usuario.bilhete,
             is_active: usuario.is_active,
             created_at: usuario.created_at,
             empresa: usuario.empresa_nome ? {

@@ -25,6 +25,7 @@ class CampanhaController {
 
             // Prepara os dados da campanha
             const campanha = {
+                nome: req.body.nome,
                 tipo_exibicao: req.body.tipo_exibicao,
                 espaco: req.body.espaco,
                 descricao: req.body.descricao,
@@ -32,10 +33,7 @@ class CampanhaController {
                 botao_texto: req.body.botao_texto,
                 num_visualizacoes: parseInt(req.body.num_visualizacoes),
                 valor_visualizacao: parseFloat(req.body.valor_visualizacao),
-                total_pagar: parseFloat(req.body.total_pagar),
-                imagens: imagens,
-                usuario_id: req.userData.userId,
-                preco_negociavel: req.body.preco_negociavel === 'true'
+                total_pagar: parseFloat(req.body.total_pagar)
             };
 
             // Tenta criar a campanha
@@ -293,6 +291,41 @@ class CampanhaController {
             res.status(500).json({
                 success: false,
                 message: 'Erro ao listar campanhas',
+                error: error.message
+            });
+        }
+    }
+
+    static async registrarInteracao(req, res) {
+        try {
+            const { id } = req.params;
+            const { tipo } = req.body;
+
+            if (!['view', 'chamada', 'clique'].includes(tipo)) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Tipo de interação inválido'
+                });
+            }
+
+            const sucesso = await CampanhaModel.incrementarEstatistica(id, tipo);
+
+            if (!sucesso) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Campanha não encontrada'
+                });
+            }
+
+            res.json({
+                success: true,
+                message: 'Interação registrada com sucesso'
+            });
+        } catch (error) {
+            console.error('Erro ao registrar interação:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Erro ao registrar interação',
                 error: error.message
             });
         }

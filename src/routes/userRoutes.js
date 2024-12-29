@@ -29,13 +29,17 @@ const userPreferencesController = require('../controllers/userPreferencesControl
  *           description: Número de telefone do usuário
  *         senha:
  *           type: string
+ *           format: password
  *           description: Senha do usuário
  *         provincia:
  *           type: string
  *           description: Província do usuário
  *         municipio:
  *           type: string
- *           description: Municipio do usuário
+ *           description: Município do usuário
+ *         bilhete:
+ *           type: string
+ *           description: Número do bilhete de identidade (opcional)
  *     UserPreferences:
  *       type: object
  *       properties:
@@ -425,6 +429,9 @@ router.post('/logout', authMiddleware, userController.logout);
  *               nome:
  *                 type: string
  *                 description: Nome completo do usuário
+ *               sobrenome:
+ *                 type: string
+ *                 description: Sobrenome do usuário
  *               genero:
  *                 type: string
  *                 enum: [masculino, feminino, outro]
@@ -509,5 +516,43 @@ router.get('/preferences', authMiddleware, userPreferencesController.getPreferen
  *                   $ref: '#/components/schemas/UserPreferences'
  */
 router.put('/preferences', authMiddleware, userPreferencesController.updatePreferences);
+
+/**
+ * @swagger
+ * /users:
+ *   post:
+ *     summary: Criar novo usuário
+ *     tags: [Users]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - nome
+ *               - sobrenome
+ *               - telefone
+ *               - senha
+ *               - provincia
+ *               - municipio
+ *             properties:
+ *               nome:
+ *                 type: string
+ *               sobrenome:
+ *                 type: string
+ *               telefone:
+ *                 type: string
+ *               senha:
+ *                 type: string
+ *                 format: password
+ *               provincia:
+ *                 type: string
+ *               municipio:
+ *                 type: string
+ *               bilhete:
+ *                 type: string
+ *                 description: Número do bilhete de identidade (opcional)
+ */
 
 module.exports = router;

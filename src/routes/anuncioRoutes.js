@@ -48,6 +48,15 @@ const upload = require('../middleware/upload');
  *         whatsapp:
  *           type: string
  *           description: Número de WhatsApp para contato
+ *         imagem_principal:
+ *           type: string
+ *           description: URL da imagem principal do anúncio
+ *         imagens:
+ *           type: array
+ *           items:
+ *             type: string
+ *             format: binary
+ *           description: Array de imagens do anúncio
  */
 
 /**
@@ -85,6 +94,9 @@ const upload = require('../middleware/upload');
  *                 type: string
  *               whatsapp:
  *                 type: string
+ *               imagem_principal:
+ *                 type: string
+ *                 format: binary
  *               imagens:
  *                 type: array
  *                 items:
@@ -100,7 +112,10 @@ const upload = require('../middleware/upload');
  */
 router.post('/anuncios', 
     auth, 
-    upload.array('imagens', 8),
+    upload.fields([
+        { name: 'imagens', maxCount: 8 },
+        { name: 'imagem_principal', maxCount: 1 }
+    ]),
     AnuncioController.criar
 );
 
@@ -194,7 +209,36 @@ router.get('/anuncios',auth, AnuncioController.listar);
  *       content:
  *         multipart/form-data:
  *           schema:
- *             $ref: '#/components/schemas/Anuncio'
+ *             type: object
+ *             properties:
+ *               titulo:
+ *                 type: string
+ *               tipo_transacao:
+ *                 type: string
+ *               categoria:
+ *                 type: string
+ *               preco:
+ *                 type: number
+ *               preco_negociavel:
+ *                 type: boolean
+ *               provincia:
+ *                 type: string
+ *               municipio:
+ *                 type: string
+ *               zona:
+ *                 type: string
+ *               descricao:
+ *                 type: string
+ *               whatsapp:
+ *                 type: string
+ *               imagem_principal:
+ *                 type: string
+ *                 format: binary
+ *               imagens:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                   format: binary
  *     responses:
  *       200:
  *         description: Anúncio atualizado com sucesso
@@ -205,7 +249,10 @@ router.get('/anuncios',auth, AnuncioController.listar);
  */
 router.put('/anuncios/:id', 
     auth, 
-    upload.array('imagens', 8),
+    upload.fields([
+        { name: 'imagens', maxCount: 8 },
+        { name: 'imagem_principal', maxCount: 1 }
+    ]),
     AnuncioController.atualizar
 );
 

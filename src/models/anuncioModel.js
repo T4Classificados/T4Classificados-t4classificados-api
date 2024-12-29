@@ -1,41 +1,50 @@
 const db = require('../config/database');
 
 class AnuncioModel {
-    static async criar(anuncio) {
+    static async criar(dados) {
         try {
             const [result] = await db.query(
                 `INSERT INTO anuncios (
-                    titulo, tipo_transacao, categoria, preco, preco_negociavel,
-                    provincia, municipio, zona, descricao, whatsapp, status,
-                    usuario_id
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                    titulo, tipo_transacao, categoria, preco, 
+                    preco_negociavel, provincia, municipio, zona, 
+                    descricao, whatsapp, status, usuario_id, imagem_principal
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                 [
-                    anuncio.titulo,
-                    anuncio.tipo_transacao,
-                    anuncio.categoria,
-                    anuncio.preco,
-                    anuncio.preco_negociavel,
-                    anuncio.provincia,
-                    anuncio.municipio,
-                    anuncio.zona,
-                    anuncio.descricao,
-                    anuncio.whatsapp,
-                    anuncio.status || 'Disponível',
-                    anuncio.usuario_id
+                    dados.titulo,
+                    dados.tipo_transacao,
+                    dados.categoria,
+                    dados.preco,
+                    dados.preco_negociavel,
+                    dados.provincia,
+                    dados.municipio,
+                    dados.zona,
+                    dados.descricao,
+                    dados.whatsapp,
+                    'ativo',
+                    dados.usuario_id,
+                    dados.imagem_principal
                 ]
             );
 
-            if (anuncio.imagens && anuncio.imagens.length > 0) {
-                for (const imagem of anuncio.imagens) {
-                    await db.query(
-                        'INSERT INTO anuncio_imagens (anuncio_id, url_imagem) VALUES (?, ?)',
-                        [result.insertId, imagem]
-                    );
-                }
-            }
-
             return result.insertId;
         } catch (error) {
+            throw error;
+        }
+    }
+
+    static async salvarImagens(anuncioId, imagens) {
+        try {
+            // Preparar a query para inserção múltipla
+            const values = imagens.map(url => [anuncioId, url]);
+            
+            await db.query(
+                'INSERT INTO anuncio_imagens (anuncio_id, url_imagem) VALUES ?',
+                [values]
+            );
+
+            return true;
+        } catch (error) {
+            console.error('Erro ao salvar imagens:', error);
             throw error;
         }
     }
@@ -76,6 +85,7 @@ class AnuncioModel {
             const baseUrl = process.env.BASE_URL || 'http://localhost:4000';
             return rows.map(row => ({
                 ...row,
+                imagem_principal: row.imagem_principal ? `${baseUrl}${row.imagem_principal}` : null,
                 imagens: row.imagens 
                     ? row.imagens.split(',').map(img => `${baseUrl}${img}`)
                     : []
@@ -236,6 +246,7 @@ class AnuncioModel {
                     a.*,
                     u.nome as usuario_nome,
                     u.telefone as usuario_telefone,
+                    a.imagem_principal,
                     GROUP_CONCAT(DISTINCT ai.url_imagem) as imagens
                 FROM anuncios a
                 LEFT JOIN usuarios u ON a.usuario_id = u.id
@@ -268,6 +279,7 @@ class AnuncioModel {
                 compartilhamentos: anuncio.compartilhamentos,
                 created_at: anuncio.created_at,
                 updated_at: anuncio.updated_at,
+                imagem_principal: anuncio.imagem_principal ? `${baseUrl}${anuncio.imagem_principal}` : null,
                 usuario: {
                     id: anuncio.usuario_id,
                     nome: anuncio.usuario_nome,
@@ -293,65 +305,47 @@ class AnuncioModel {
         }
     }
 
-    static async listarPublicos(page = 1, limit = 10) {
+    static async listarPublicos(page = 1, limit = 10, filtros = {}) {
         try {
             const offset = (page - 1) * limit;
-
-            // Query para buscar apenas anúncios ativos
-            const [anuncios] = await db.query(
-                `SELECT 
-                    a.*,
-                    u.nome as usuario_nome,
-                    u.telefone as usuario_telefone,
-                    GROUP_CONCAT(DISTINCT ai.url_imagem) as imagens
+            let query = `
+                SELECT a.*, 
+                       GROUP_CONCAT(ai.url_imagem) as imagens
                 FROM anuncios a
-                LEFT JOIN usuarios u ON a.usuario_id = u.id
                 LEFT JOIN anuncio_imagens ai ON a.id = ai.anuncio_id
+                WHERE a.status = 'ativo'
+            `;
+            
+            const values = [];
+            
+            if (filtros.categoria) {
+                query += ' AND a.categoria = ?';
+                values.push(filtros.categoria);
+            }
+            
+            if (filtros.provincia) {
+                query += ' AND a.provincia = ?';
+                values.push(filtros.provincia);
+            }
+            
+            query += `
                 GROUP BY a.id
                 ORDER BY a.created_at DESC
-                LIMIT ? OFFSET ?`,
-                [parseInt(limit), offset]
-            );
-
-            // Buscar total de anúncios ativos para paginação
-            const [total] = await db.query(
-                "SELECT COUNT(*) as total FROM anuncios WHERE status = 'ativo'"
-            );
-
-            // Formatar URLs das imagens
+                LIMIT ? OFFSET ?
+            `;
+            
+            values.push(parseInt(limit), offset);
+            
+            const [rows] = await db.query(query, values);
+            
             const baseUrl = process.env.BASE_URL || 'http://localhost:4000';
-            const anunciosFormatados = anuncios.map(anuncio => ({
-                id: anuncio.id,
-                titulo: anuncio.titulo,
-                descricao: anuncio.descricao,
-                preco: anuncio.preco,
-                categoria: anuncio.categoria,
-                subcategoria: anuncio.subcategoria,
-                condicao: anuncio.condicao,
-                visualizacoes: anuncio.visualizacoes,
-                chamadas: anuncio.chamadas,
-                mensagens_whatsapp: anuncio.mensagens_whatsapp,
-                compartilhamentos: anuncio.compartilhamentos,
-                created_at: anuncio.created_at,
-                usuario: {
-                    nome: anuncio.usuario_nome,
-                    telefone: anuncio.usuario_telefone
-                },
-                imagens: anuncio.imagens 
-                    ? anuncio.imagens.split(',').map(img => `${baseUrl}${img}`)
-                    : [],
-                total_favoritos: anuncio.total_favoritos || 0
+            return rows.map(row => ({
+                ...row,
+                imagem_principal: row.imagem_principal ? `${baseUrl}${row.imagem_principal}` : null,
+                imagens: row.imagens 
+                    ? row.imagens.split(',').map(img => `${baseUrl}${img}`)
+                    : []
             }));
-
-            return {
-                anuncios: anunciosFormatados,
-                pagination: {
-                    total: total[0].total,
-                    page: parseInt(page),
-                    limit: parseInt(limit),
-                    pages: Math.ceil(total[0].total / limit)
-                }
-            };
         } catch (error) {
             throw error;
         }
@@ -387,6 +381,7 @@ class AnuncioModel {
                     a.*,
                     u.nome as usuario_nome,
                     u.telefone as usuario_telefone,
+                    a.imagem_principal,
                     GROUP_CONCAT(DISTINCT ai.url_imagem) as imagens
                 FROM anuncios a
                 LEFT JOIN usuarios u ON a.usuario_id = u.id
@@ -444,6 +439,7 @@ class AnuncioModel {
                     nome: anuncio.usuario_nome,
                     telefone: anuncio.usuario_telefone
                 },
+                imagem_principal: anuncio.imagem_principal ? `${baseUrl}${anuncio.imagem_principal}` : null,
                 imagens: anuncio.imagens 
                     ? anuncio.imagens.split(',').map(img => `${baseUrl}${img}`)
                     : [],
@@ -458,6 +454,35 @@ class AnuncioModel {
                     limit: parseInt(limit),
                     pages: Math.ceil(total[0].total / limit)
                 }
+            };
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    static async obterPorId(id) {
+        try {
+            const [rows] = await db.query(`
+                SELECT a.*, 
+                       GROUP_CONCAT(ai.url_imagem) as imagens
+                FROM anuncios a
+                LEFT JOIN anuncio_imagens ai ON a.id = ai.anuncio_id
+                WHERE a.id = ?
+                GROUP BY a.id
+            `, [id]);
+
+            if (rows.length === 0) {
+                return null;
+            }
+
+            const anuncio = rows[0];
+            const baseUrl = process.env.BASE_URL || 'http://localhost:4000';
+            return {
+                ...anuncio,
+                imagem_principal: anuncio.imagem_principal ? `${baseUrl}${anuncio.imagem_principal}` : null,
+                imagens: anuncio.imagens 
+                    ? anuncio.imagens.split(',').map(img => `${baseUrl}${img}`)
+                    : []
             };
         } catch (error) {
             throw error;

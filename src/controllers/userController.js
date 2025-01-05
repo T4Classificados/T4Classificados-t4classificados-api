@@ -30,6 +30,33 @@ async function sendSMS(phoneNumber, smsMessage) {
   }
 }
 
+  /* async function sendSMS(phoneNumber, smsMessage) {
+    const urlToSendMessage = process.env.URL_TO_SEND_MESSAGE;
+    const API_KEY = process.env.API_TELCOSMS_KEY;
+
+    const payload = {
+      message: {
+        api_key_app: API_KEY,
+        phone_number: phoneNumber,
+        message_body: smsMessage,
+      },
+    };
+    try {
+      const message = await fetch(urlToSendMessage, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+      console.log("SMS enviado com sucesso:", message.sid);
+      return true;
+    } catch (error) {
+      console.error("Erro ao enviar SMS:", error);
+      return false;
+    }
+  } */
+
 if (!process.env.JWT_SECRET) {
   console.error('JWT_SECRET não está definido. Verifique seu arquivo .env');
   process.exit(1);
@@ -327,6 +354,10 @@ exports.getCurrentUser = async (req, res) => {
       provincia: user.provincia,
       municipio: user.municipio,
       bilhete: user.bilhete,
+      role: user.role,
+      genero: user.genero,
+      is_active: user.is_active,
+      foto_url: user.foto_url ? `${baseUrl}${user.foto_url}` : null,
       created_at: user.created_at,
       empresa: user.empresa_id ? {
         id: user.empresa_id,
@@ -573,11 +604,79 @@ exports.updateProfile = async (req, res) => {
       sobrenome: req.body.sobrenome,
       provincia: req.body.provincia,
       municipio: req.body.municipio,
-      bilhete: req.body.bilhete
+      bilhete: req.body.bilhete,
+      genero: req.body.genero
     };
 
-    // ... resto do código ...
+    const updated = await userModel.updateUser(req.userData.userId, updateData);
+
+    if (!updated) {
+      return res.status(400).json({
+        success: false,
+        message: 'Nenhum dado válido para atualização'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Perfil atualizado com sucesso'
+    });
   } catch (error) {
-    // ... tratamento de erro ...
+    console.error('Erro ao atualizar perfil:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro ao atualizar perfil',
+      error: error.message
+    });
   }
+};
+
+exports.atualizarFoto = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        // Verifica se o usuário tem permissão (é o próprio usuário ou é admin)
+        if (req.userData.userId != id && req.userData.role !== 'admin') {
+            return res.status(403).json({
+                success: false,
+                message: 'Sem permissão para atualizar foto de outro usuário'
+            });
+        }
+
+        if (!req.file) {
+            return res.status(400).json({
+                success: false,
+                message: 'Nenhuma foto enviada'
+            });
+        }
+
+        const fotoUrl = '/uploads/' + req.file.filename;
+        
+        // Atualizar foto no banco de dados
+        const atualizado = await userModel.atualizarFoto(id, fotoUrl);
+        
+        if (!atualizado) {
+            return res.status(404).json({
+                success: false,
+                message: 'Usuário não encontrado'
+            });
+        }
+
+        const baseUrl = process.env.BASE_URL || 'http://localhost:4000';
+        
+        res.json({
+            success: true,
+            message: 'Foto atualizada com sucesso',
+            data: {
+                foto_url: `${baseUrl}${fotoUrl}`
+            }
+        });
+    } catch (error) {
+        console.error('Erro ao atualizar foto:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao atualizar foto',
+            error: error.message
+        });
+    }
 };

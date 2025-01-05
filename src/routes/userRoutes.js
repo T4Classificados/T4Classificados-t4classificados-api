@@ -3,6 +3,7 @@ const router = express.Router();
 const userController = require('../controllers/userController');
 const authMiddleware = require('../middleware/auth');
 const userPreferencesController = require('../controllers/userPreferencesController');
+const upload = require('../middleware/upload');
 
 /**
  * @swagger
@@ -40,6 +41,10 @@ const userPreferencesController = require('../controllers/userPreferencesControl
  *         bilhete:
  *           type: string
  *           description: Número do bilhete de identidade (opcional)
+ *         genero:
+ *           type: string
+ *           enum: [masculino, feminino, outro]
+ *           description: Gênero do usuário (opcional)
  *     UserPreferences:
  *       type: object
  *       properties:
@@ -234,6 +239,10 @@ router.post('/refresh-token', userController.refreshToken);
  *                     nome:
  *                       type: string
  *                     sobrenome:
+ *                       type: string
+ *                     bilhete:
+ *                       type: string
+ *                     genero:
  *                       type: string
  *                     telefone:
  *                       type: string
@@ -432,16 +441,18 @@ router.post('/logout', authMiddleware, userController.logout);
  *               sobrenome:
  *                 type: string
  *                 description: Sobrenome do usuário
- *               genero:
+ *               bilhete:
  *                 type: string
- *                 enum: [masculino, feminino, outro]
- *                 description: Gênero do usuário
+ *                 description: Número do bilhete de identidade
  *               provincia:
  *                 type: string
  *                 description: Província do usuário
  *               municipio:
  *                 type: string
  *                 description: Municipio do usuário
+ *               genero:
+ *                 type: string
+ *                 enum: [masculino, feminino, outro]
  *     responses:
  *       200:
  *         description: Informações atualizadas com sucesso
@@ -519,40 +530,44 @@ router.put('/preferences', authMiddleware, userPreferencesController.updatePrefe
 
 /**
  * @swagger
- * /users:
- *   post:
- *     summary: Criar novo usuário
+ * /users/{id}/foto:
+ *   put:
+ *     summary: Atualizar foto do usuário
  *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID do usuário
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
  *             required:
- *               - nome
- *               - sobrenome
- *               - telefone
- *               - senha
- *               - provincia
- *               - municipio
+ *               - foto
  *             properties:
- *               nome:
+ *               foto:
  *                 type: string
- *               sobrenome:
- *                 type: string
- *               telefone:
- *                 type: string
- *               senha:
- *                 type: string
- *                 format: password
- *               provincia:
- *                 type: string
- *               municipio:
- *                 type: string
- *               bilhete:
- *                 type: string
- *                 description: Número do bilhete de identidade (opcional)
+ *                 format: binary
+ *                 description: Arquivo de imagem (JPG, PNG)
+ *     responses:
+ *       200:
+ *         description: Foto atualizada com sucesso
+ *       400:
+ *         description: Arquivo inválido ou muito grande
+ *       401:
+ *         description: Não autorizado
+ *       403:
+ *         description: Sem permissão para atualizar foto de outro usuário
+ *       404:
+ *         description: Usuário não encontrado
  */
+router.put('/:id/foto', authMiddleware, upload.single('foto'), userController.atualizarFoto);
 
 module.exports = router;

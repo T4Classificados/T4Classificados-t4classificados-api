@@ -20,7 +20,7 @@ class AnuncioModel {
                     dados.zona,
                     dados.descricao,
                     dados.whatsapp,
-                    'ativo',
+                    'Disponível',
                     dados.usuario_id,
                     dados.imagem_principal
                 ]
@@ -313,7 +313,7 @@ class AnuncioModel {
                        GROUP_CONCAT(ai.url_imagem) as imagens
                 FROM anuncios a
                 LEFT JOIN anuncio_imagens ai ON a.id = ai.anuncio_id
-                WHERE a.status = 'ativo'
+                WHERE a.status = 'Disponível'
             `;
             
             const values = [];

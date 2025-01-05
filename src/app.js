@@ -64,6 +64,7 @@ app.get("/test", (req, res) => {
 
 // Prefixo da API
 app.use("/api", userRoutes);
+app.use("/api/users", userRoutes);
 app.use("/api", anuncioRoutes);
 app.use('/api/campanhas', campanhaRoutes);
 app.use('/api/empresa', empresaRoutes);

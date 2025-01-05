@@ -14,8 +14,30 @@ exports.getUserByTelefone = async (telefone) => {
 };
 
 exports.getUserById = async (id) => {
-  const [rows] = await db.query('SELECT * FROM usuarios WHERE id = ?', [id]);
-  return rows[0];
+  const [rows] = await db.query(
+    `SELECT 
+        u.*,
+        e.id as empresa_id,
+        e.nome as empresa_nome,
+        e.nif as empresa_nif,
+        e.logo_url as empresa_logo
+    FROM usuarios u
+    LEFT JOIN empresas e ON u.empresa_id = e.id
+    WHERE u.id = ?`,
+    [id]
+  );
+  
+  if (rows.length === 0) {
+    return null;
+  }
+
+  const user = rows[0];
+  const baseUrl = process.env.BASE_URL || 'http://localhost:4000';
+
+  return {
+    ...user,
+    foto_url: user.foto_url ? `${baseUrl}${user.foto_url}` : null
+  };
 };
 
 exports.activateUser = async (id) => {
@@ -105,9 +127,11 @@ exports.listarAdmin = async (page = 1, limit = 10, status = 'todos', search = ''
                 u.telefone,
                 u.provincia,
                 u.municipio,
+                u.genero,
                 u.bilhete,
                 u.role,
                 u.is_active,
+                u.foto_url,
                 u.created_at,
                 e.nome as empresa_nome,
                 e.nif as empresa_nif,
@@ -139,9 +163,11 @@ exports.listarAdmin = async (page = 1, limit = 10, status = 'todos', search = ''
             telefone: usuario.telefone,
             provincia: usuario.provincia,
             municipio: usuario.municipio,
-            role: usuario.role,
+            genero: usuario.genero,
             bilhete: usuario.bilhete,
+            role: usuario.role,
             is_active: usuario.is_active,
+            foto_url: usuario.foto_url ? `${baseUrl}${usuario.foto_url}` : null,
             created_at: usuario.created_at,
             empresa: usuario.empresa_nome ? {
                 nome: usuario.empresa_nome,
@@ -172,6 +198,19 @@ exports.alterarStatus = async (id, is_active) => {
         const [result] = await db.query(
             'UPDATE usuarios SET is_active = ? WHERE id = ?',
             [is_active, id]
+        );
+        
+        return result.affectedRows > 0;
+    } catch (error) {
+        throw error;
+    }
+};
+
+exports.atualizarFoto = async (userId, fotoUrl) => {
+    try {
+        const [result] = await db.query(
+            'UPDATE usuarios SET foto_url = ? WHERE id = ?',
+            [fotoUrl, userId]
         );
         
         return result.affectedRows > 0;

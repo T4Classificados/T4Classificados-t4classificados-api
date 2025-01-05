@@ -6,12 +6,9 @@ class AnuncioController {
       const dados = req.body;
       dados.usuario_id = req.userData.userId;
 
-      console.log('Files recebidos:', req.files); // Debug
-
       // Processar imagem principal
       if (req.files && req.files.imagem_principal && req.files.imagem_principal.length > 0) {
         const imagemPrincipalPath = '/uploads/' + req.files.imagem_principal[0].filename;
-        console.log('Caminho da imagem principal:', imagemPrincipalPath); // Debug
         dados.imagem_principal = imagemPrincipalPath;
       }
 
@@ -23,7 +20,6 @@ class AnuncioController {
         });
       }
 
-      console.log('Dados antes de criar:', dados); // Debug
 
       // Criar o anúncio
       const anuncioId = await AnuncioModel.criar(dados);

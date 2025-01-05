@@ -37,13 +37,12 @@ class EstatisticasController {
                     a.categoria,
                     COUNT(DISTINCT a.id) as total_anuncios,
                     COALESCE(SUM(a.visualizacoes), 0) as visualizacoes,
-                    ROUND((COUNT(DISTINCT a.id) * 100.0 / total.total), 1) as porcentagem
+                    ROUND((COUNT(DISTINCT a.id) * 100.0 / (
+                        SELECT COUNT(DISTINCT id) 
+                        FROM anuncios 
+                        WHERE usuario_id = ? ${dateFilter}
+                    )), 1) as porcentagem
                 FROM anuncios a
-                CROSS JOIN (
-                    SELECT COUNT(DISTINCT id) as total 
-                    FROM anuncios 
-                    WHERE usuario_id = ? ${dateFilter}
-                ) total
                 WHERE a.usuario_id = ? ${dateFilter}
                 GROUP BY a.categoria
                 ORDER BY visualizacoes DESC`,

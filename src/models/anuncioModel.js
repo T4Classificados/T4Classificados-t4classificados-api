@@ -507,6 +507,128 @@ class AnuncioModel {
             throw error;
         }
     }
+
+    static async buscarSimilares(id, limit = 4) {
+        try {
+            // Primeiro obtém o anúncio de referência
+            const [anuncioRef] = await db.query(
+                'SELECT categoria, tipo_transacao, id FROM anuncios WHERE id = ?',
+                [id]
+            );
+
+            if (!anuncioRef[0]) {
+                return [];
+            }
+
+            // Busca anúncios similares
+            const [rows] = await db.query(`
+                SELECT a.*, 
+                       GROUP_CONCAT(ai.url_imagem) as imagens
+                FROM anuncios a
+                LEFT JOIN anuncio_imagens ai ON a.id = ai.anuncio_id
+                WHERE a.categoria = ? 
+                AND a.tipo_transacao = ?
+                AND a.id != ?
+                AND a.status = 'Disponível'
+                GROUP BY a.id
+                ORDER BY RAND()
+                LIMIT ?`,
+                [
+                    anuncioRef[0].categoria,
+                    anuncioRef[0].tipo_transacao,
+                    id,
+                    limit
+                ]
+            );
+
+            // Formatar URLs das imagens
+            const baseUrl = process.env.BASE_URL || 'http://localhost:4000';
+            return rows.map(anuncio => ({
+                id: anuncio.id,
+                titulo: anuncio.titulo,
+                preco: anuncio.preco,
+                provincia: anuncio.provincia,
+                municipio: anuncio.municipio,
+                tipo_transacao: anuncio.tipo_transacao,
+                categoria: anuncio.categoria,
+                imagem_principal: anuncio.imagem_principal ? `${baseUrl}${anuncio.imagem_principal}` : null,
+                imagens: anuncio.imagens 
+                    ? anuncio.imagens.split(',').map(img => `${baseUrl}${img}`)
+                    : []
+            }));
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    static async buscarSimilaresDoUsuario(anuncioId, limit = 4) {
+        try {
+            // Primeiro obtém o anúncio de referência
+            const [anuncioRef] = await db.query(
+                'SELECT categoria, tipo_transacao, id, usuario_id FROM anuncios WHERE id = ?',
+                [anuncioId]
+            );
+
+            if (!anuncioRef[0]) {
+                return [];
+            }
+
+            // Busca anúncios similares do mesmo usuário
+            const [rows] = await db.query(`
+                SELECT a.*, 
+                       GROUP_CONCAT(ai.url_imagem) as imagens
+                FROM anuncios a
+                LEFT JOIN anuncio_imagens ai ON a.id = ai.anuncio_id
+                WHERE a.usuario_id = ?
+                AND a.id != ?
+                AND a.status = 'Disponível'
+                AND (
+                    a.categoria = ? OR 
+                    a.tipo_transacao = ?
+                )
+                GROUP BY a.id
+                ORDER BY 
+                    CASE 
+                        WHEN a.categoria = ? AND a.tipo_transacao = ? THEN 1
+                        WHEN a.categoria = ? THEN 2
+                        WHEN a.tipo_transacao = ? THEN 3
+                        ELSE 4
+                    END,
+                    a.created_at DESC
+                LIMIT ?`,
+                [
+                    anuncioRef[0].usuario_id,
+                    anuncioId,
+                    anuncioRef[0].categoria,
+                    anuncioRef[0].tipo_transacao,
+                    anuncioRef[0].categoria,
+                    anuncioRef[0].tipo_transacao,
+                    anuncioRef[0].categoria,
+                    anuncioRef[0].tipo_transacao,
+                    limit
+                ]
+            );
+
+            // Formatar URLs das imagens
+            const baseUrl = process.env.BASE_URL || 'http://localhost:4000';
+            return rows.map(anuncio => ({
+                id: anuncio.id,
+                titulo: anuncio.titulo,
+                preco: anuncio.preco,
+                provincia: anuncio.provincia,
+                municipio: anuncio.municipio,
+                tipo_transacao: anuncio.tipo_transacao,
+                categoria: anuncio.categoria,
+                created_at: anuncio.created_at,
+                imagem_principal: anuncio.imagem_principal ? `${baseUrl}${anuncio.imagem_principal}` : null,
+                imagens: anuncio.imagens 
+                    ? anuncio.imagens.split(',').map(img => `${baseUrl}${img}`)
+                    : []
+            }));
+        } catch (error) {
+            throw error;
+        }
+    }
 }
 
 // Enum para tipos de interação

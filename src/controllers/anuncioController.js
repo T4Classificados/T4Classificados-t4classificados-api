@@ -262,6 +262,48 @@ class AnuncioController {
         });
     }
   }
+
+  static async buscarSimilares(req, res) {
+    try {
+        const { id } = req.params;
+        const { limit = 4 } = req.query;
+
+        const anuncios = await AnuncioModel.buscarSimilares(id, parseInt(limit));
+
+        res.json({
+            success: true,
+            data: anuncios
+        });
+    } catch (error) {
+        console.error('Erro ao buscar anúncios similares:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao buscar anúncios similares',
+            error: error.message
+        });
+    }
+  }
+
+  static async buscarSimilaresDoUsuario(req, res) {
+    try {
+        const { id } = req.params;
+        const { limit = 4 } = req.query;
+
+        const anuncios = await AnuncioModel.buscarSimilaresDoUsuario(id, parseInt(limit));
+
+        res.json({
+            success: true,
+            data: anuncios
+        });
+    } catch (error) {
+        console.error('Erro ao buscar anúncios similares do usuário:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao buscar anúncios similares do usuário',
+            error: error.message
+        });
+    }
+  }
 }
 
 module.exports = AnuncioController; 

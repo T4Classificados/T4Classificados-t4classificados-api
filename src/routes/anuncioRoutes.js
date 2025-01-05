@@ -314,7 +314,7 @@ router.delete('/anuncios/:id',
  *       400:
  *         description: Tipo de interação inválido
  */
-router.post('/:id/interacao', auth, AnuncioController.registrarInteracao);
+// router.post('/:id/interacao', auth, AnuncioController.registrarInteracao);
 
 /**
  * @swagger

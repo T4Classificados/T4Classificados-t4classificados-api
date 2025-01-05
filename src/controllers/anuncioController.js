@@ -1,4 +1,5 @@
 const AnuncioModel = require('../models/anuncioModel');
+const db = require('../config/database');
 
 class AnuncioController {
   static async criar(req, res) {
@@ -195,34 +196,48 @@ class AnuncioController {
       const { id } = req.params;
       const { tipo } = req.body;
 
-      // Verificar se o tipo é válido usando o enum
-      if (!Object.values(AnuncioModel.TipoInteracao).includes(tipo)) {
+      // Validar tipo de interação
+      const tiposValidos = ['visualizacao', 'chamada', 'mensagem', 'compartilhamento'];
+      if (!tiposValidos.includes(tipo)) {
         return res.status(400).json({
           success: false,
-          message:
-            "Tipo de interação inválido. Tipos válidos: visualizacao, chamada, mensagem, compartilhamento",
+          message: 'Tipo de interação inválido'
         });
       }
 
-      const sucesso = await AnuncioModel.incrementarInteracao(id, tipo);
+      // Mapear tipo para campo no banco
+      const camposPorTipo = {
+        'visualizacao': 'visualizacoes',
+        'chamada': 'chamadas',
+        'mensagem': 'mensagens_whatsapp',
+        'compartilhamento': 'compartilhamentos'
+      };
 
-      if (!sucesso) {
+      const campo = camposPorTipo[tipo];
+      
+      // Atualizar o contador apropriado
+      const [result] = await db.query(
+        `UPDATE anuncios SET ${campo} = ${campo} + 1 WHERE id = ?`,
+        [id]
+      );
+
+      if (result.affectedRows === 0) {
         return res.status(404).json({
           success: false,
-          message: "Anúncio não encontrado",
+          message: 'Anúncio não encontrado'
         });
       }
 
       res.json({
         success: true,
-        message: "Interação registrada com sucesso",
+        message: 'Interação registrada com sucesso'
       });
     } catch (error) {
-      console.error("Erro ao registrar interação:", error);
+      console.error('Erro ao registrar interação:', error);
       res.status(500).json({
         success: false,
-        message: "Erro ao registrar interação",
-        error: error.message,
+        message: 'Erro ao registrar interação',
+        error: error.message
       });
     }
   }

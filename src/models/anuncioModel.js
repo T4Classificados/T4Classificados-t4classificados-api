@@ -95,15 +95,27 @@ class AnuncioModel {
         }
     }
 
-    static async obterPorId(id, userId) {
+    static async obterPorId(id) {
         try {
             const [rows] = await db.query(`
-                SELECT a.*, GROUP_CONCAT(ai.url_imagem) as imagens
+                SELECT 
+                    a.*,
+                    GROUP_CONCAT(ai.url_imagem) as imagens,
+                    u.id as usuario_id,
+                    u.nome as usuario_nome,
+                    u.sobrenome as usuario_sobrenome,
+                    u.telefone as usuario_telefone,
+                    u.provincia as usuario_provincia,
+                    u.municipio as usuario_municipio,
+                    u.foto_url as usuario_foto,
+                    u.genero as usuario_genero,
+                    u.created_at as usuario_created_at
                 FROM anuncios a
                 LEFT JOIN anuncio_imagens ai ON a.id = ai.anuncio_id
-                WHERE a.id = ? AND a.usuario_id = ?
+                LEFT JOIN usuarios u ON a.usuario_id = u.id
+                WHERE a.id = ?
                 GROUP BY a.id
-            `, [id, userId]);
+            `, [id]);
 
             if (rows.length === 0) {
                 return null;
@@ -111,10 +123,39 @@ class AnuncioModel {
 
             const anuncio = rows[0];
             const baseUrl = process.env.BASE_URL || 'http://localhost:4000';
-            anuncio.imagens = anuncio.imagens 
-                ? anuncio.imagens.split(',').map(img => `${baseUrl}${img}`)
-                : [];
-            return anuncio;
+
+            // Formatar dados do usuário
+            const usuario = {
+                id: anuncio.usuario_id,
+                nome: anuncio.usuario_nome,
+                sobrenome: anuncio.usuario_sobrenome,
+                telefone: anuncio.usuario_telefone,
+                provincia: anuncio.usuario_provincia,
+                municipio: anuncio.usuario_municipio,
+                genero: anuncio.usuario_genero,
+                foto_url: anuncio.usuario_foto ? `${baseUrl}${anuncio.usuario_foto}` : null,
+                created_at: anuncio.usuario_created_at
+            };
+
+            // Remover campos do usuário do objeto principal
+            delete anuncio.usuario_id;
+            delete anuncio.usuario_nome;
+            delete anuncio.usuario_sobrenome;
+            delete anuncio.usuario_telefone;
+            delete anuncio.usuario_provincia;
+            delete anuncio.usuario_municipio;
+            delete anuncio.usuario_foto;
+            delete anuncio.usuario_genero;
+            delete anuncio.usuario_created_at;
+
+            return {
+                ...anuncio,
+                imagem_principal: anuncio.imagem_principal ? `${baseUrl}${anuncio.imagem_principal}` : null,
+                imagens: anuncio.imagens 
+                    ? anuncio.imagens.split(',').map(img => `${baseUrl}${img}`)
+                    : [],
+                usuario
+            };
         } catch (error) {
             throw error;
         }
@@ -460,35 +501,6 @@ class AnuncioModel {
         }
     }
 
-    static async obterPorId(id) {
-        try {
-            const [rows] = await db.query(`
-                SELECT a.*, 
-                       GROUP_CONCAT(ai.url_imagem) as imagens
-                FROM anuncios a
-                LEFT JOIN anuncio_imagens ai ON a.id = ai.anuncio_id
-                WHERE a.id = ?
-                GROUP BY a.id
-            `, [id]);
-
-            if (rows.length === 0) {
-                return null;
-            }
-
-            const anuncio = rows[0];
-            const baseUrl = process.env.BASE_URL || 'http://localhost:4000';
-            return {
-                ...anuncio,
-                imagem_principal: anuncio.imagem_principal ? `${baseUrl}${anuncio.imagem_principal}` : null,
-                imagens: anuncio.imagens 
-                    ? anuncio.imagens.split(',').map(img => `${baseUrl}${img}`)
-                    : []
-            };
-        } catch (error) {
-            throw error;
-        }
-    }
-
     static async alterarStatus(id, userId, status) {
         try {
             // Verifica se o status é válido
@@ -546,11 +558,17 @@ class AnuncioModel {
             return rows.map(anuncio => ({
                 id: anuncio.id,
                 titulo: anuncio.titulo,
+                descricao: anuncio.descricao,
                 preco: anuncio.preco,
                 provincia: anuncio.provincia,
                 municipio: anuncio.municipio,
                 tipo_transacao: anuncio.tipo_transacao,
                 categoria: anuncio.categoria,
+                status: anuncio.status,
+                visualizacoes: anuncio.visualizacoes || 0,
+                chamadas: anuncio.chamadas || 0,
+                mensagens_whatsapp: anuncio.mensagens_whatsapp || 0,
+                compartilhamentos: anuncio.compartilhamentos || 0,
                 imagem_principal: anuncio.imagem_principal ? `${baseUrl}${anuncio.imagem_principal}` : null,
                 imagens: anuncio.imagens 
                     ? anuncio.imagens.split(',').map(img => `${baseUrl}${img}`)
@@ -614,11 +632,17 @@ class AnuncioModel {
             return rows.map(anuncio => ({
                 id: anuncio.id,
                 titulo: anuncio.titulo,
+                descricao: anuncio.descricao,
                 preco: anuncio.preco,
                 provincia: anuncio.provincia,
                 municipio: anuncio.municipio,
                 tipo_transacao: anuncio.tipo_transacao,
                 categoria: anuncio.categoria,
+                status: anuncio.status,
+                visualizacoes: anuncio.visualizacoes || 0,
+                chamadas: anuncio.chamadas || 0,
+                mensagens_whatsapp: anuncio.mensagens_whatsapp || 0,
+                compartilhamentos: anuncio.compartilhamentos || 0,
                 created_at: anuncio.created_at,
                 imagem_principal: anuncio.imagem_principal ? `${baseUrl}${anuncio.imagem_principal}` : null,
                 imagens: anuncio.imagens 

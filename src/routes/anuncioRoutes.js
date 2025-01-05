@@ -358,4 +358,102 @@ router.delete('/anuncios/:id',
  */
 router.patch("/anuncios/:id/status", auth, AnuncioController.alterarStatus);
 
+/**
+ * @swagger
+ * /anuncios/usuarios/{userId}/estatisticas:
+ *   get:
+ *     summary: Obter estatísticas dos anúncios de um usuário
+ *     description: Retorna estatísticas detalhadas dos anúncios de um usuário específico
+ *     tags: [Anúncios]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID do usuário
+ *     responses:
+ *       200:
+ *         description: Estatísticas obtidas com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     resumo:
+ *                       type: object
+ *                       properties:
+ *                         total_anuncios:
+ *                           type: integer
+ *                         total_visualizacoes:
+ *                           type: integer
+ *                         total_chamadas:
+ *                           type: integer
+ *                         total_mensagens:
+ *                           type: integer
+ *                         total_compartilhamentos:
+ *                           type: integer
+ *                         total_vendidos:
+ *                           type: integer
+ *                         total_disponiveis:
+ *                           type: integer
+ *                         total_reservados:
+ *                           type: integer
+ *                     categorias:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           categoria:
+ *                             type: string
+ *                           total_anuncios:
+ *                             type: integer
+ *                           visualizacoes:
+ *                             type: integer
+ *                           chamadas:
+ *                             type: integer
+ *                           mensagens:
+ *                             type: integer
+ *                           compartilhamentos:
+ *                             type: integer
+ *                     evolucao_mensal:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           mes:
+ *                             type: string
+ *                             format: YYYY-MM
+ *                           total_anuncios:
+ *                             type: integer
+ *                           visualizacoes:
+ *                             type: integer
+ *                           chamadas:
+ *                             type: integer
+ *                           mensagens:
+ *                             type: integer
+ *                           compartilhamentos:
+ *                             type: integer
+ *       401:
+ *         description: Não autorizado
+ *       403:
+ *         description: Sem permissão para acessar estatísticas de outro usuário
+ *       404:
+ *         description: Usuário não encontrado
+ *       500:
+ *         description: Erro do servidor
+ */
+router.get(
+  "/anuncios/usuarios/:userId/estatisticas",
+  auth,
+  AnuncioController.obterEstatisticasUsuario
+);
+
 module.exports = router; 

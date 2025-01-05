@@ -703,6 +703,90 @@ class AnuncioModel {
             throw error;
         }
     }
+
+    static async obterEstatisticasUsuario(usuarioId) {
+        try {
+            // Estatísticas gerais
+            const [estatisticas] = await db.query(`
+                SELECT 
+                    COUNT(*) as total_anuncios,
+                    SUM(visualizacoes) as total_visualizacoes,
+                    SUM(chamadas) as total_chamadas,
+                    SUM(mensagens_whatsapp) as total_mensagens,
+                    SUM(compartilhamentos) as total_compartilhamentos,
+                    COUNT(CASE WHEN status = 'Vendido' THEN 1 END) as total_vendidos,
+                    COUNT(CASE WHEN status = 'Disponível' THEN 1 END) as total_disponiveis,
+                    COUNT(CASE WHEN status = 'Reservado' THEN 1 END) as total_reservados
+                FROM anuncios 
+                WHERE usuario_id = ?`,
+                [usuarioId]
+            );
+
+            // Estatísticas por categoria
+            const [categorias] = await db.query(`
+                SELECT 
+                    categoria,
+                    COUNT(*) as total_anuncios,
+                    SUM(visualizacoes) as visualizacoes,
+                    SUM(chamadas) as chamadas,
+                    SUM(mensagens_whatsapp) as mensagens,
+                    SUM(compartilhamentos) as compartilhamentos
+                FROM anuncios
+                WHERE usuario_id = ?
+                GROUP BY categoria
+                ORDER BY total_anuncios DESC`,
+                [usuarioId]
+            );
+
+            // Estatísticas por mês (últimos 6 meses)
+            const [evolucaoMensal] = await db.query(`
+                SELECT 
+                    DATE_FORMAT(created_at, '%Y-%m') as mes,
+                    COUNT(*) as total_anuncios,
+                    SUM(visualizacoes) as visualizacoes,
+                    SUM(chamadas) as chamadas,
+                    SUM(mensagens_whatsapp) as mensagens,
+                    SUM(compartilhamentos) as compartilhamentos
+                FROM anuncios
+                WHERE usuario_id = ?
+                AND created_at >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
+                GROUP BY mes
+                ORDER BY mes DESC`,
+                [usuarioId]
+            );
+
+            return {
+                resumo: {
+                    total_anuncios: estatisticas[0].total_anuncios || 0,
+                    total_visualizacoes: estatisticas[0].total_visualizacoes || 0,
+                    total_chamadas: estatisticas[0].total_chamadas || 0,
+                    total_mensagens: estatisticas[0].total_mensagens || 0,
+                    total_compartilhamentos: estatisticas[0].total_compartilhamentos || 0,
+                    total_vendidos: estatisticas[0].total_vendidos || 0,
+                    total_disponiveis: estatisticas[0].total_disponiveis || 0,
+                    total_reservados: estatisticas[0].total_reservados || 0
+                },
+                categorias: categorias.map(cat => ({
+                    categoria: cat.categoria,
+                    total_anuncios: cat.total_anuncios || 0,
+                    visualizacoes: cat.visualizacoes || 0,
+                    chamadas: cat.chamadas || 0,
+                    mensagens: cat.mensagens || 0,
+                    compartilhamentos: cat.compartilhamentos || 0
+                })),
+                evolucao_mensal: evolucaoMensal.map(mes => ({
+                    mes: mes.mes,
+                    total_anuncios: mes.total_anuncios || 0,
+                    visualizacoes: mes.visualizacoes || 0,
+                    chamadas: mes.chamadas || 0,
+                    mensagens: mes.mensagens || 0,
+                    compartilhamentos: mes.compartilhamentos || 0
+                }))
+            };
+        } catch (error) {
+            throw error;
+        }
+    }
 }
 
 // Enum para tipos de interação

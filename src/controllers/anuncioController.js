@@ -340,6 +340,35 @@ class AnuncioController {
         });
     }
   }
+
+  static async obterEstatisticasUsuario(req, res) {
+    try {
+        const { userId } = req.params;
+        
+        // Verifica se o usuário está tentando acessar suas próprias estatísticas
+        // ou se é um admin
+        if (req.userData.userId != userId && req.userData.role !== 'admin') {
+            return res.status(403).json({
+                success: false,
+                message: 'Sem permissão para acessar estatísticas de outro usuário'
+            });
+        }
+        
+        const estatisticas = await AnuncioModel.obterEstatisticasUsuario(userId);
+
+        res.json({
+            success: true,
+            data: estatisticas
+        });
+    } catch (error) {
+        console.error('Erro ao obter estatísticas do usuário:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao obter estatísticas do usuário',
+            error: error.message
+        });
+    }
+  }
 }
 
 module.exports = AnuncioController; 

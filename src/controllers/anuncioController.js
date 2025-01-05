@@ -226,6 +226,42 @@ class AnuncioController {
       });
     }
   }
+
+  static async alterarStatus(req, res) {
+    try {
+        const { id } = req.params;
+        const { status } = req.body;
+        const userId = req.userData.userId;
+
+        const atualizado = await AnuncioModel.alterarStatus(id, userId, status);
+
+        if (!atualizado) {
+            return res.status(404).json({
+                success: false,
+                message: 'Anúncio não encontrado ou sem permissão para alterar'
+            });
+        }
+
+        res.json({
+            success: true,
+            message: 'Status do anúncio atualizado com sucesso'
+        });
+    } catch (error) {
+        if (error.message === 'Status inválido') {
+            return res.status(400).json({
+                success: false,
+                message: 'Status inválido'
+            });
+        }
+
+        console.error('Erro ao alterar status do anúncio:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao alterar status do anúncio',
+            error: error.message
+        });
+    }
+  }
 }
 
 module.exports = AnuncioController; 

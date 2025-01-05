@@ -22,8 +22,9 @@ const upload = require('../middleware/upload');
  *           type: string
  *           description: Título do anúncio
  *         tipo_transacao:
- *           type: string
+ *           enum: [Vender, Alugar, Arrendar, Precisa-se]
  *           description: Tipo de transação (venda, aluguel, etc)
+ *      
  *         categoria:
  *           type: string
  *           description: Categoria do anúncio
@@ -314,5 +315,47 @@ router.delete('/anuncios/:id',
  *         description: Tipo de interação inválido
  */
 router.post('/:id/interacao', auth, AnuncioController.registrarInteracao);
+
+/**
+ * @swagger
+ * /anuncios/{id}/status:
+ *   patch:
+ *     summary: Alterar status de um anúncio
+ *     tags: [Anúncios]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID do anúncio
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - status
+ *             properties:
+ *               status:
+ *                 type: string
+ *                 enum: [Disponível, Vendido, Reservado, Indisponível]
+ *                 description: Novo status do anúncio
+ *     responses:
+ *       200:
+ *         description: Status atualizado com sucesso
+ *       400:
+ *         description: Status inválido
+ *       401:
+ *         description: Não autorizado
+ *       403:
+ *         description: Sem permissão para alterar este anúncio
+ *       404:
+ *         description: Anúncio não encontrado
+ */
+router.patch("/anuncios/:id/status", auth, AnuncioController.alterarStatus);
 
 module.exports = router; 

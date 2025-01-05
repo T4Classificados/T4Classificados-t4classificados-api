@@ -488,6 +488,25 @@ class AnuncioModel {
             throw error;
         }
     }
+
+    static async alterarStatus(id, userId, status) {
+        try {
+            // Verifica se o status é válido
+            const statusValidos = ['Disponível', 'Vendido', 'Reservado', 'Indisponível'];
+            if (!statusValidos.includes(status)) {
+                throw new Error('Status inválido');
+            }
+
+            const [result] = await db.query(
+                'UPDATE anuncios SET status = ? WHERE id = ? AND usuario_id = ?',
+                [status, id, userId]
+            );
+            
+            return result.affectedRows > 0;
+        } catch (error) {
+            throw error;
+        }
+    }
 }
 
 // Enum para tipos de interação

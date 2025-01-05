@@ -319,6 +319,27 @@ class AnuncioController {
         });
     }
   }
+
+  static async buscarRecentesDoUsuario(req, res) {
+    try {
+        const { userId } = req.params;
+        const { limit = 4 } = req.query;
+
+        const anuncios = await AnuncioModel.buscarRecentesDoUsuario(userId, parseInt(limit));
+
+        res.json({
+            success: true,
+            data: anuncios
+        });
+    } catch (error) {
+        console.error('Erro ao buscar anúncios recentes do usuário:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao buscar anúncios recentes do usuário',
+            error: error.message
+        });
+    }
+  }
 }
 
 module.exports = AnuncioController; 

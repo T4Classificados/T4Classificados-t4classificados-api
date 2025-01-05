@@ -353,36 +353,7 @@ router.delete('/:id', auth, validateId, CampanhaController.excluir);
  */
 router.post('/:id/promover', auth, validateId, CampanhaController.promoverNovamente);
 
-/**
- * @swagger
- * /campanhas/{id}/interacao:
- *   post:
- *     summary: Registrar uma interação com a campanha
- *     tags: [Campanhas]
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: integer
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - tipo
- *             properties:
- *               tipo:
- *                 type: string
- *                 enum: [view, chamada, clique]
- *     responses:
- *       200:
- *         description: Interação registrada com sucesso
- *       400:
- *         description: Tipo de interação inválido
- */
-router.post('/:id/interacao', auth, CampanhaController.registrarInteracao);
+// Remover ou comentar esta rota
+// router.post('/:id/interacao', auth, CampanhaController.registrarInteracao);
 
 module.exports = router; 

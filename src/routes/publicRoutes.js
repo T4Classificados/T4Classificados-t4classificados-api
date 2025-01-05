@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const AnuncioController = require('../controllers/anuncioController');
+const CampanhaController = require('../controllers/campanhaController');
 
 /**
  * @swagger
@@ -315,5 +316,133 @@ router.get('/anuncios/:id/usuario-similares', AnuncioController.buscarSimilaresD
  *         description: Anúncio não encontrado
  */
 router.post('/anuncios/:id/interacao', AnuncioController.registrarInteracao);
+
+/**
+ * @swagger
+ * /public/usuarios/{userId}/anuncios/recentes:
+ *   get:
+ *     summary: Buscar anúncios recentes de um usuário específico
+ *     description: Retorna os anúncios mais recentes de um usuário, ordenados por data de criação
+ *     tags: [Anúncios]
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID do usuário
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 4
+ *         description: Número máximo de anúncios a retornar
+ *     responses:
+ *       200:
+ *         description: Lista de anúncios recentes do usuário
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                       titulo:
+ *                         type: string
+ *                       descricao:
+ *                         type: string
+ *                       preco:
+ *                         type: number
+ *                       provincia:
+ *                         type: string
+ *                       municipio:
+ *                         type: string
+ *                       tipo_transacao:
+ *                         type: string
+ *                       categoria:
+ *                         type: string
+ *                       status:
+ *                         type: string
+ *                       visualizacoes:
+ *                         type: integer
+ *                       chamadas:
+ *                         type: integer
+ *                       mensagens_whatsapp:
+ *                         type: integer
+ *                       compartilhamentos:
+ *                         type: integer
+ *                       created_at:
+ *                         type: string
+ *                         format: date-time
+ *                       imagem_principal:
+ *                         type: string
+ *                         format: uri
+ *                       imagens:
+ *                         type: array
+ *                         items:
+ *                           type: string
+ *                           format: uri
+ *                       usuario:
+ *                         type: object
+ *                         properties:
+ *                           nome:
+ *                             type: string
+ *                           sobrenome:
+ *                             type: string
+ *                           foto_url:
+ *                             type: string
+ *                             format: uri
+ *       404:
+ *         description: Usuário não encontrado
+ *       500:
+ *         description: Erro do servidor
+ */
+router.get('/usuarios/:userId/anuncios/recentes', AnuncioController.buscarRecentesDoUsuario);
+
+/**
+ * @swagger
+ * /public/campanhas/{id}/interacao:
+ *   post:
+ *     summary: Registrar uma interação com a campanha
+ *     description: Registra visualizações, chamadas ou cliques em uma campanha
+ *     tags: [Campanhas]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID da campanha
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - tipo
+ *             properties:
+ *               tipo:
+ *                 type: string
+ *                 enum: [view, chamada, clique]
+ *                 description: Tipo de interação com a campanha
+ *     responses:
+ *       200:
+ *         description: Interação registrada com sucesso
+ *       400:
+ *         description: Tipo de interação inválido
+ *       404:
+ *         description: Campanha não encontrada
+ *       500:
+ *         description: Erro do servidor
+ */
+router.post('/campanhas/:id/interacao', CampanhaController.registrarInteracao);
 
 module.exports = router; 

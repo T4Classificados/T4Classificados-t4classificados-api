@@ -653,6 +653,56 @@ class AnuncioModel {
             throw error;
         }
     }
+
+    static async buscarRecentesDoUsuario(usuarioId, limit = 4) {
+        try {
+            const [rows] = await db.query(`
+                SELECT a.*, 
+                       GROUP_CONCAT(ai.url_imagem) as imagens,
+                       u.nome as usuario_nome,
+                       u.sobrenome as usuario_sobrenome,
+                       u.foto_url as usuario_foto
+                FROM anuncios a
+                LEFT JOIN anuncio_imagens ai ON a.id = ai.anuncio_id
+                LEFT JOIN usuarios u ON a.usuario_id = u.id
+                WHERE a.usuario_id = ?
+                AND a.status = 'Disponível'
+                GROUP BY a.id
+                ORDER BY a.created_at DESC
+                LIMIT ?`,
+                [usuarioId, limit]
+            );
+
+            const baseUrl = process.env.BASE_URL || 'http://localhost:4000';
+            return rows.map(anuncio => ({
+                id: anuncio.id,
+                titulo: anuncio.titulo,
+                descricao: anuncio.descricao,
+                preco: anuncio.preco,
+                provincia: anuncio.provincia,
+                municipio: anuncio.municipio,
+                tipo_transacao: anuncio.tipo_transacao,
+                categoria: anuncio.categoria,
+                status: anuncio.status,
+                visualizacoes: anuncio.visualizacoes || 0,
+                chamadas: anuncio.chamadas || 0,
+                mensagens_whatsapp: anuncio.mensagens_whatsapp || 0,
+                compartilhamentos: anuncio.compartilhamentos || 0,
+                created_at: anuncio.created_at,
+                imagem_principal: anuncio.imagem_principal ? `${baseUrl}${anuncio.imagem_principal}` : null,
+                imagens: anuncio.imagens 
+                    ? anuncio.imagens.split(',').map(img => `${baseUrl}${img}`)
+                    : [],
+                usuario: {
+                    nome: anuncio.usuario_nome,
+                    sobrenome: anuncio.usuario_sobrenome,
+                    foto_url: anuncio.usuario_foto ? `${baseUrl}${anuncio.usuario_foto}` : null
+                }
+            }));
+        } catch (error) {
+            throw error;
+        }
+    }
 }
 
 // Enum para tipos de interação

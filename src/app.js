@@ -10,6 +10,7 @@ const cors = require("cors");
 const swaggerUi = require("swagger-ui-express");
 const swaggerSpecs = require("./config/swagger");
 const cookieParser = require("cookie-parser");
+const campanhaStatusJob = require('./jobs/campanhaStatusJob');
 
 const app = express();
 const port = process.env.PORT || 4000;
@@ -84,6 +85,9 @@ app.use((err, req, res, next) => {
 app.use((req, res) => {
   res.status(404).json({ message: "Endpoint não encontrado" });
 });
+
+// Inicia o cronjob
+campanhaStatusJob.start();
 
 app.listen(port, () => {
   console.log(`Servidor rodando na porta ${port}`);

@@ -356,6 +356,34 @@ router.delete('/:id', auth, validateId, CampanhaController.excluir);
  */
 router.post('/:id/promover', auth, validateId, CampanhaController.promoverNovamente);
 
+/**
+ * @swagger
+ * /campanhas/{id}/confirmar-pagamento:
+ *   post:
+ *     summary: Confirmar pagamento e ativar campanha
+ *     description: Confirma o pagamento e muda o status da campanha para Ativa
+ *     tags: [Campanhas]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID da campanha
+ *     responses:
+ *       200:
+ *         description: Pagamento confirmado e campanha ativada
+ *       401:
+ *         description: Não autorizado
+ *       404:
+ *         description: Campanha não encontrada ou já ativada
+ *       500:
+ *         description: Erro do servidor
+ */
+router.post('/:id/confirmar-pagamento', auth, validateId, CampanhaController.confirmarPagamento);
+
 // Remover ou comentar esta rota
 // router.post('/:id/interacao', auth, CampanhaController.registrarInteracao);
 

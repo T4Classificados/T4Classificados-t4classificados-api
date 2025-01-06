@@ -15,7 +15,7 @@ class CampanhaModel {
 
             const empresaId = usuario[0].empresa_id;
 
-            // Insere a campanha vinculada à empresa
+            // Insere a campanha com status inicial 'Pendente'
             const [result] = await db.query(
                 `INSERT INTO campanhas (
                     empresa_id,
@@ -31,8 +31,9 @@ class CampanhaModel {
                     total_pagar,
                     views,
                     chamadas,
-                    cliques
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0, 0)`,
+                    cliques,
+                    status
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0, 0, 'Pendente')`,
                 [
                     empresaId,
                     userId,
@@ -340,7 +341,51 @@ class CampanhaModel {
                          'cliques';
             
             const [result] = await db.query(
-                `UPDATE campanhas SET ${campo} = ${campo} + 1 WHERE id = ?`,
+                `UPDATE campanhas 
+                SET ${campo} = ${campo} + 1 
+                WHERE id = ? 
+                AND status = 'Ativa'`,
+                [id]
+            );
+
+            return result.affectedRows > 0;
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    static async incrementarVisualizacao(id) {
+        try {
+            const [result] = await db.query(`
+                UPDATE campanhas 
+                SET 
+                    views = views + 1,
+                    status = CASE 
+                        WHEN views + 1 >= num_visualizacoes THEN 'Concluída'
+                        ELSE status 
+                    END,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id = ? 
+                AND status = 'Ativa'`,
+                [id]
+            );
+
+            return result.affectedRows > 0;
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    static async confirmarPagamento(id) {
+        try {
+            const [result] = await db.query(
+                `UPDATE campanhas 
+                SET 
+                    status = 'Ativa',
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE 
+                    id = ? 
+                    AND status = 'Pendente'`,
                 [id]
             );
 

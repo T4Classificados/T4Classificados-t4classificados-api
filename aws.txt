@@ -1,0 +1,11 @@
+sudo rsync -avz --exclude 'node_modules' --exclude '.git' --exclude '.env' --exclude 'uploads' --exclude 'db.txt' --exclude 'aws.txt' --exclude 'diretoaqui.pem' \
+-e "ssh -i ./t4classificados.pem" \
+. ubuntu@ec2-34-224-40-247.compute-1.amazonaws.com:~/app
+
+
+
+ssh -i "t4classificados.pem" ubuntu@ec2-34-224-40-247.compute-1.amazonaws.com
+
+sudo systemctl restart apache2
+sudo systemctl restart myapp.service
+sudo systemctl daemon-reload

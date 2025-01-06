@@ -330,6 +330,33 @@ class CampanhaController {
             });
         }
     }
+
+    static async confirmarPagamento(req, res) {
+        try {
+            const { id } = req.params;
+            
+            const sucesso = await CampanhaModel.confirmarPagamento(id);
+
+            if (!sucesso) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Campanha não encontrada ou já ativada'
+                });
+            }
+
+            res.json({
+                success: true,
+                message: 'Pagamento confirmado e campanha ativada com sucesso'
+            });
+        } catch (error) {
+            console.error('Erro ao confirmar pagamento:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Erro ao confirmar pagamento',
+                error: error.message
+            });
+        }
+    }
 }
 
 module.exports = CampanhaController; 

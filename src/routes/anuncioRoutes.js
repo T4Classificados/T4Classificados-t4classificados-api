@@ -456,4 +456,41 @@ router.get(
   AnuncioController.obterEstatisticasUsuario
 );
 
+/**
+ * @swagger
+ * /anuncios/mais-visualizados:
+ *   get:
+ *     summary: Listar os 5 anúncios mais visualizados
+ *     description: Retorna os anúncios com maior número de visualizações
+ *     tags: [Anúncios]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 5
+ *         description: Número máximo de anúncios a retornar
+ *     responses:
+ *       200:
+ *         description: Lista dos anúncios mais visualizados
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Anuncio'
+ *       401:
+ *         description: Não autorizado
+ *       500:
+ *         description: Erro do servidor
+ */
+router.get('/mais-visualizados', auth, AnuncioController.listarMaisVisualizados);
+
 module.exports = router; 

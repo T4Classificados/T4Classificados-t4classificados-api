@@ -42,7 +42,7 @@ const validateId = (req, res, next) => {
  *       required:
  *         - nome
  *         - tipo_exibicao
- *         - espaco
+ *         - espaco_exibicao
  *         - num_visualizacoes
  *         - valor_visualizacao
  *       properties:
@@ -54,8 +54,9 @@ const validateId = (req, res, next) => {
  *         tipo_exibicao:
  *           type: string
  *           enum: [computador, telemóvel, ambos]
- *         espaco:
+ *         espaco_exibicao:
  *           type: string
+ *           enum: [cabecalho_pagina_principal, pagina_principal, pagina_princiapl_ver_anuncios, pagina_imoveis_carros_desapego, paganina_bebe, pagina_tecnologia]
  *         descricao:
  *           type: string
  *         logo_url:
@@ -113,7 +114,7 @@ const validateId = (req, res, next) => {
  *             required:
  *               - nome
  *               - tipo_exibicao
- *               - espaco
+ *               - espaco_exibicao
  *               - num_visualizacoes
  *               - valor_visualizacao
  *             properties:
@@ -123,8 +124,9 @@ const validateId = (req, res, next) => {
  *               tipo_exibicao:
  *                 type: string
  *                 enum: [computador, telemóvel, ambos]
- *               espaco:
+ *               espaco_exibicao:
  *                 type: string
+ *                 enum: [cabecalho_pagina_principal, pagina_principal, pagina_princiapl_ver_anuncios, pagina_imoveis_carros_desapego, paganina_bebe, pagina_tecnologia]
  *               descricao:
  *                 type: string
  *               logo:
@@ -254,8 +256,9 @@ router.get('/:id', auth, validateId, CampanhaController.obterPorId);
  *               tipo_exibicao:
  *                 type: string
  *                 enum: [computador, telemóvel, ambos]
- *               espaco:
+ *               espaco_exibicao:
  *                 type: string
+ *                 enum: [cabecalho_pagina_principal, pagina_principal, pagina_princiapl_ver_anuncios, pagina_imoveis_carros_desapego, paganina_bebe, pagina_tecnologia]
  *               descricao:
  *                 type: string
  *               botao_texto:

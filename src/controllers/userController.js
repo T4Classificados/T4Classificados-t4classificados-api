@@ -292,7 +292,7 @@ exports.getCurrentUser = async (req, res) => {
         e.logo_url as empresa_logo,
         GROUP_CONCAT(DISTINCT c.id) as campanha_ids,
         GROUP_CONCAT(DISTINCT c.tipo_exibicao) as campanha_tipos,
-        GROUP_CONCAT(DISTINCT c.espaco) as campanha_espacos,
+        GROUP_CONCAT(DISTINCT c.espaco_exibicao) as campanha_espaco_exibicao,
         GROUP_CONCAT(DISTINCT c.status) as campanha_status,
         GROUP_CONCAT(DISTINCT c.created_at) as campanha_datas
       FROM usuarios u
@@ -329,7 +329,7 @@ exports.getCurrentUser = async (req, res) => {
       campanhas = campanhasRows.map(campanha => ({
         id: campanha.id,
         tipo_exibicao: campanha.tipo_exibicao,
-        espaco: campanha.espaco,
+        espaco_exibicao: campanha.espaco_exibicao,
         descricao: campanha.descricao,
         logo_url: campanha.logo_url ? `${baseUrl}${campanha.logo_url}` : null,
         botao_texto: campanha.botao_texto,

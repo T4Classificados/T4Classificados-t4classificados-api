@@ -369,6 +369,26 @@ class AnuncioController {
         });
     }
   }
+
+  static async listarMaisVisualizados(req, res) {
+    try {
+        const { limit = 5 } = req.query;
+        
+        const anuncios = await AnuncioModel.listarMaisVisualizados(parseInt(limit));
+
+        res.json({
+            success: true,
+            data: anuncios
+        });
+    } catch (error) {
+        console.error('Erro ao listar anúncios mais visualizados:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao listar anúncios mais visualizados',
+            error: error.message
+        });
+    }
+  }
 }
 
 module.exports = AnuncioController; 

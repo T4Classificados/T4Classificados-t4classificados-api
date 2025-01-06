@@ -25,15 +25,15 @@ class CampanhaController {
 
             // Prepara os dados da campanha
             const campanha = {
-                nome: req.body.nome,
-                tipo_exibicao: req.body.tipo_exibicao,
-                espaco: req.body.espaco,
-                descricao: req.body.descricao,
-                logo_url: logo ? logo[0] : undefined,
-                botao_texto: req.body.botao_texto,
-                num_visualizacoes: parseInt(req.body.num_visualizacoes),
-                valor_visualizacao: parseFloat(req.body.valor_visualizacao),
-                total_pagar: parseFloat(req.body.total_pagar)
+              nome: req.body.nome,
+              tipo_exibicao: req.body.tipo_exibicao,
+              espaco_exibicao: req.body.espaco_exibicao,
+              descricao: req.body.descricao,
+              logo_url: logo ? logo[0] : undefined,
+              botao_texto: req.body.botao_texto,
+              num_visualizacoes: parseInt(req.body.num_visualizacoes),
+              valor_visualizacao: parseFloat(req.body.valor_visualizacao),
+              total_pagar: parseFloat(req.body.total_pagar),
             };
 
             // Tenta criar a campanha
@@ -142,7 +142,7 @@ class CampanhaController {
             // Prepara os dados para atualização
             const dadosAtualizacao = {
                 tipo_exibicao: req.body.tipo_exibicao,
-                espaco: req.body.espaco,
+                espaco_exibicao: req.body.espaco_exibicao,
                 descricao: req.body.descricao,
                 botao_texto: req.body.botao_texto,
                 num_visualizacoes: req.body.num_visualizacoes ? parseInt(req.body.num_visualizacoes) : undefined,
@@ -237,7 +237,7 @@ class CampanhaController {
             // Cria uma nova campanha baseada na existente
             const novaCampanha = {
                 tipo_exibicao: campanhaExistente.tipo_exibicao,
-                espaco: campanhaExistente.espaco,
+                espaco_exibicao: campanhaExistente.espaco_exibicao,
                 descricao: campanhaExistente.descricao,
                 logo_url: campanhaExistente.logo_url?.replace(`${process.env.BASE_URL || 'http://localhost:4000'}`, ''),
                 botao_texto: campanhaExistente.botao_texto,

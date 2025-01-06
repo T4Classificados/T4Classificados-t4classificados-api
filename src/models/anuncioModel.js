@@ -787,6 +787,62 @@ class AnuncioModel {
             throw error;
         }
     }
+
+    static async listarMaisVisualizados(limit = 5) {
+        try {
+            const [rows] = await db.query(`
+                SELECT a.*, 
+                       GROUP_CONCAT(ai.url_imagem) as imagens,
+                       u.nome as usuario_nome,
+                       u.sobrenome as usuario_sobrenome,
+                       u.foto_url as usuario_foto,
+                       u.telefone as usuario_telefone
+                FROM anuncios a
+                LEFT JOIN anuncio_imagens ai ON a.id = ai.anuncio_id
+                LEFT JOIN usuarios u ON a.usuario_id = u.id
+                WHERE a.status = 'Disponível'
+                GROUP BY a.id
+                ORDER BY a.visualizacoes DESC
+                LIMIT ?`,
+                [limit]
+            );
+
+            if (!rows || rows.length === 0) {
+                return [];
+            }
+
+            const baseUrl = process.env.BASE_URL || 'http://localhost:4000';
+            return rows.map(anuncio => ({
+                id: anuncio.id,
+                titulo: anuncio.titulo,
+                descricao: anuncio.descricao,
+                preco: anuncio.preco,
+                provincia: anuncio.provincia,
+                municipio: anuncio.municipio,
+                tipo_transacao: anuncio.tipo_transacao,
+                categoria: anuncio.categoria,
+                status: anuncio.status,
+                visualizacoes: anuncio.visualizacoes || 0,
+                chamadas: anuncio.chamadas || 0,
+                mensagens_whatsapp: anuncio.mensagens_whatsapp || 0,
+                compartilhamentos: anuncio.compartilhamentos || 0,
+                created_at: anuncio.created_at,
+                imagem_principal: anuncio.imagem_principal ? `${baseUrl}${anuncio.imagem_principal}` : null,
+                imagens: anuncio.imagens 
+                    ? anuncio.imagens.split(',').map(img => `${baseUrl}${img}`)
+                    : [],
+                usuario: {
+                    nome: anuncio.usuario_nome,
+                    sobrenome: anuncio.usuario_sobrenome,
+                    telefone: anuncio.usuario_telefone,
+                    foto_url: anuncio.usuario_foto ? `${baseUrl}${anuncio.usuario_foto}` : null
+                }
+            }));
+        } catch (error) {
+            console.error('Erro ao listar anúncios mais visualizados:', error);
+            return [];
+        }
+    }
 }
 
 // Enum para tipos de interação

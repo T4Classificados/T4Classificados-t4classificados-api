@@ -26,4 +26,10 @@ CREATE TABLE IF NOT EXISTS anuncio_imagens (
 );
 
 CREATE INDEX idx_anuncios_usuario ON anuncios(usuario_id);
-CREATE INDEX idx_anuncios_status ON anuncios(status); 
+CREATE INDEX idx_anuncios_status ON anuncios(status);
+
+ALTER TABLE anuncios
+ADD COLUMN mobilado BOOLEAN DEFAULT NULL,
+ADD COLUMN marca VARCHAR(100) DEFAULT NULL,
+ADD COLUMN kilometragem VARCHAR(50) DEFAULT NULL,
+ADD COLUMN ano_de_fabrico INT DEFAULT NULL; 

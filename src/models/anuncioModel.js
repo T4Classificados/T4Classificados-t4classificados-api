@@ -7,8 +7,9 @@ class AnuncioModel {
                 `INSERT INTO anuncios (
                     titulo, tipo_transacao, categoria, preco, 
                     preco_negociavel, provincia, municipio, zona, 
-                    descricao, whatsapp, status, usuario_id, imagem_principal
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                    descricao, whatsapp, status, usuario_id, imagem_principal,
+                    mobilado, marca, kilometragem, ano_de_fabrico
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                 [
                     dados.titulo,
                     dados.tipo_transacao,
@@ -22,7 +23,11 @@ class AnuncioModel {
                     dados.whatsapp,
                     'Disponível',
                     dados.usuario_id,
-                    dados.imagem_principal
+                    dados.imagem_principal,
+                    dados.mobilado || null,
+                    dados.marca || null,
+                    dados.kilometragem || null,
+                    dados.ano_de_fabrico || null
                 ]
             );
 
@@ -172,7 +177,11 @@ class AnuncioModel {
                     zona = ?,
                     descricao = ?,
                     whatsapp = ?,
-                    status = ?
+                    status = ?,
+                    mobilado = ?,
+                    marca = ?,
+                    kilometragem = ?,
+                    ano_de_fabrico = ?
                 WHERE id = ? AND usuario_id = ?`,
                 [
                     anuncio.titulo,
@@ -186,6 +195,10 @@ class AnuncioModel {
                     anuncio.descricao,
                     anuncio.whatsapp,
                     anuncio.status || 'Disponível',
+                    anuncio.mobilado || null,
+                    anuncio.marca || null,
+                    anuncio.kilometragem || null,
+                    anuncio.ano_de_fabrico || null,
                     id,
                     anuncio.usuario_id
                 ]
@@ -460,6 +473,10 @@ class AnuncioModel {
                 chamadas: anuncio.chamadas,
                 mensagens_whatsapp: anuncio.mensagens_whatsapp,
                 compartilhamentos: anuncio.compartilhamentos,
+                mobilado: anuncio.mobilado,
+                marca: anuncio.marca,
+                kilometragem: anuncio.kilometragem,
+                ano_de_fabrico: anuncio.ano_de_fabrico,
                 created_at: anuncio.created_at,
                 updated_at: anuncio.updated_at,
                 usuario: {
@@ -523,7 +540,7 @@ class AnuncioModel {
                 FROM anuncios a
                 LEFT JOIN anuncio_imagens ai ON a.id = ai.anuncio_id
                 WHERE a.categoria = ? 
-                AND a.tipo_transacao = ?
+                OR a.marca = ?
                 AND a.id != ?
                 AND a.status = 'Disponível'
                 GROUP BY a.id
@@ -531,7 +548,7 @@ class AnuncioModel {
                 `,
                 [
                     anuncioRef[0].categoria,
-                    anuncioRef[0].tipo_transacao,
+                    anuncioRef[0].marca,
                     id
                 ]
             );
@@ -546,6 +563,10 @@ class AnuncioModel {
                 provincia: anuncio.provincia,
                 municipio: anuncio.municipio,
                 tipo_transacao: anuncio.tipo_transacao,
+                mobilado: anuncio.mobilado,
+                marca: anuncio.marca,
+                kilometragem: anuncio.kilometragem,
+                ano_de_fabrico: anuncio.ano_de_fabrico,
                 categoria: anuncio.categoria,
                 status: anuncio.status,
                 visualizacoes: anuncio.visualizacoes || 0,
@@ -585,14 +606,14 @@ class AnuncioModel {
                 AND a.status = 'Disponível'
                 AND (
                     a.categoria = ? OR 
-                    a.tipo_transacao = ?
+                    a.marca = ?
                 )
                 GROUP BY a.id
                 ORDER BY 
                     CASE 
-                        WHEN a.categoria = ? AND a.tipo_transacao = ? THEN 1
+                        WHEN a.categoria = ? AND a.marca = ? THEN 1
                         WHEN a.categoria = ? THEN 2
-                        WHEN a.tipo_transacao = ? THEN 3
+                        WHEN a.marca = ? THEN 3
                         ELSE 4
                     END,
                     a.created_at DESC
@@ -601,11 +622,11 @@ class AnuncioModel {
                     anuncioRef[0].usuario_id,
                     anuncioId,
                     anuncioRef[0].categoria,
-                    anuncioRef[0].tipo_transacao,
+                    anuncioRef[0].marca,
                     anuncioRef[0].categoria,
-                    anuncioRef[0].tipo_transacao,
+                    anuncioRef[0].marca,
                     anuncioRef[0].categoria,
-                    anuncioRef[0].tipo_transacao
+                    anuncioRef[0].marca
                 ]
             );
 
@@ -619,6 +640,10 @@ class AnuncioModel {
                 provincia: anuncio.provincia,
                 municipio: anuncio.municipio,
                 tipo_transacao: anuncio.tipo_transacao,
+                mobilado: anuncio.mobilado,
+                marca: anuncio.marca,
+                kilometragem: anuncio.kilometragem,
+                ano_de_fabrico: anuncio.ano_de_fabrico,
                 categoria: anuncio.categoria,
                 status: anuncio.status,
                 visualizacoes: anuncio.visualizacoes || 0,
@@ -664,6 +689,10 @@ class AnuncioModel {
                 provincia: anuncio.provincia,
                 municipio: anuncio.municipio,
                 tipo_transacao: anuncio.tipo_transacao,
+                mobilado: anuncio.mobilado,
+                marca: anuncio.marca,
+                kilometragem: anuncio.kilometragem,
+                ano_de_fabrico: anuncio.ano_de_fabrico,
                 categoria: anuncio.categoria,
                 status: anuncio.status,
                 visualizacoes: anuncio.visualizacoes || 0,

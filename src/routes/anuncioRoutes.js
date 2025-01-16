@@ -24,7 +24,6 @@ const upload = require('../middleware/upload');
  *         tipo_transacao:
  *           enum: [Vender, Alugar, Arrendar, Precisa-se]
  *           description: Tipo de transação (venda, aluguel, etc)
- *      
  *         categoria:
  *           type: string
  *           description: Categoria do anúncio
@@ -49,6 +48,18 @@ const upload = require('../middleware/upload');
  *         whatsapp:
  *           type: string
  *           description: Número de WhatsApp para contato
+ *         mobilado:
+ *           type: boolean
+ *           description: Se o imóvel está mobilado (opcional)
+ *         marca:
+ *           type: string
+ *           description: Marca do veículo (opcional)
+ *         kilometragem:
+ *           type: string
+ *           description: Kilometragem do veículo (opcional)
+ *         ano_de_fabrico:
+ *           type: integer
+ *           description: Ano de fabricação do veículo (opcional)
  *         imagem_principal:
  *           type: string
  *           description: URL da imagem principal do anúncio
@@ -103,6 +114,14 @@ const upload = require('../middleware/upload');
  *                 items:
  *                   type: string
  *                   format: binary
+ *               mobilado:
+ *                 type: boolean
+ *               marca:
+ *                 type: string
+ *               kilometragem:
+ *                 type: string
+ *               ano_de_fabrico:
+ *                 type: integer
  *     responses:
  *       201:
  *         description: Anúncio criado com sucesso

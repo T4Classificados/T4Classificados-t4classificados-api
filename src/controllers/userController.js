@@ -542,15 +542,11 @@ exports.updateUser = async (req, res) => {
 exports.listarAdmin = async (req, res) => {
     try {
         const { 
-            page = 1, 
-            limit = 10, 
             status = 'todos',
             search = '' 
         } = req.query;
 
         const usuarios = await userModel.listarAdmin(
-            parseInt(page), 
-            parseInt(limit), 
             status,
             search
         );

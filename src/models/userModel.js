@@ -96,9 +96,8 @@ exports.updateUser = async (id, updateData) => {
   return result.affectedRows > 0;
 };
 
-exports.listarAdmin = async (page = 1, limit = 10, status = 'todos', search = '') => {
+exports.listarAdmin = async (status = 'todos', search = '') => {
     try {
-        const offset = (page - 1) * limit;
         let whereClause = '';
         let params = [];
 
@@ -142,8 +141,8 @@ exports.listarAdmin = async (page = 1, limit = 10, status = 'todos', search = ''
             LEFT JOIN contas_afiliadas ca ON u.conta_afiliada_id = ca.id
             WHERE 1=1 ${whereClause}
             ORDER BY u.created_at DESC
-            LIMIT ? OFFSET ?`,
-            [...params, parseInt(limit), offset]
+            `,
+            [...params]
         );
 
         // Contagem total para paginação
@@ -183,9 +182,6 @@ exports.listarAdmin = async (page = 1, limit = 10, status = 'todos', search = ''
             usuarios: usuariosFormatados,
             pagination: {
                 total: total[0].total,
-                page: parseInt(page),
-                limit: parseInt(limit),
-                pages: Math.ceil(total[0].total / limit)
             }
         };
     } catch (error) {

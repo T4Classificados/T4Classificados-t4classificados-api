@@ -11,16 +11,6 @@ const CampanhaController = require('../controllers/campanhaController');
  *     tags: [Anúncios]
  *     parameters:
  *       - in: query
- *         name: page
- *         schema:
- *           type: integer
- *         description: Número da página
- *       - in: query
- *         name: limit
- *         schema:
- *           type: integer
- *         description: Itens por página
- *       - in: query
  *         name: categoria
  *         schema:
  *           type: string
@@ -163,12 +153,6 @@ router.get('/anuncios/:id', AnuncioController.obterPorId);
  *         schema:
  *           type: integer
  *         description: ID do anúncio de referência
- *       - in: query
- *         name: limit
- *         schema:
- *           type: integer
- *           default: 4
- *         description: Número máximo de anúncios similares a retornar
  *     responses:
  *       200:
  *         description: Lista de anúncios similares
@@ -227,12 +211,6 @@ router.get('/anuncios/:id/similares', AnuncioController.buscarSimilares);
  *         schema:
  *           type: integer
  *         description: ID do anúncio de referência
- *       - in: query
- *         name: limit
- *         schema:
- *           type: integer
- *           default: 4
- *         description: Número máximo de anúncios similares a retornar
  *     responses:
  *       200:
  *         description: Lista de anúncios similares do usuário
@@ -331,12 +309,6 @@ router.post('/anuncios/:id/interacao', AnuncioController.registrarInteracao);
  *         schema:
  *           type: integer
  *         description: ID do usuário
- *       - in: query
- *         name: limit
- *         schema:
- *           type: integer
- *           default: 4
- *         description: Número máximo de anúncios a retornar
  *     responses:
  *       200:
  *         description: Lista de anúncios recentes do usuário

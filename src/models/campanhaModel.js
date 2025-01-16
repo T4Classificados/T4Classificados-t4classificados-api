@@ -67,9 +67,8 @@ class CampanhaModel {
         }
     }
 
-    static async listar(userId, page = 1, limit = 10) {
+    static async listar(userId) {
         try {
-            const offset = (page - 1) * limit;
             const [rows] = await db.query(
                 `SELECT c.*, 
                     GROUP_CONCAT(ci.url_imagem) as imagens,
@@ -82,8 +81,8 @@ class CampanhaModel {
                 WHERE c.usuario_id = ?
                 GROUP BY c.id
                 ORDER BY c.created_at DESC
-                LIMIT ? OFFSET ?`,
-                [userId, limit, offset]
+                `,
+                [userId]
             );
 
             const baseUrl = process.env.BASE_URL || 'http://localhost:4000';
@@ -249,9 +248,8 @@ class CampanhaModel {
         }
     }
 
-    static async listarAdmin(page = 1, limit = 10, status = 'todos') {
+    static async listarAdmin(status = 'todos') {
         try {
-            const offset = (page - 1) * limit;
             let whereClause = '';
             let params = [];
 
@@ -276,8 +274,8 @@ class CampanhaModel {
                 WHERE 1=1 ${whereClause}
                 GROUP BY c.id
                 ORDER BY c.created_at DESC
-                LIMIT ? OFFSET ?`,
-                [...params, parseInt(limit), offset]
+                `,
+                [...params]
             );
 
             // Contagem total para paginação
@@ -324,9 +322,6 @@ class CampanhaModel {
                 campanhas: campanhasFormatadas,
                 pagination: {
                     total: total[0].total,
-                    page: parseInt(page),
-                    limit: parseInt(limit),
-                    pages: Math.ceil(total[0].total / limit)
                 }
             };
         } catch (error) {

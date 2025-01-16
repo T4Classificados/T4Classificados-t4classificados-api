@@ -68,8 +68,7 @@ class CampanhaController {
 
     static async listar(req, res) {
         try {
-            const { page = 1, limit = 10 } = req.query;
-            const campanhas = await CampanhaModel.listar(req.userData.userId, page, limit);
+            const campanhas = await CampanhaModel.listar(req.userData.userId);
             
             res.json({
                 success: true,
@@ -271,14 +270,10 @@ class CampanhaController {
     static async listarAdmin(req, res) {
         try {
             const { 
-                page = 1, 
-                limit = 10,
                 status = 'todos'
             } = req.query;
 
             const campanhas = await CampanhaModel.listarAdmin(
-                parseInt(page), 
-                parseInt(limit),
                 status
             );
 

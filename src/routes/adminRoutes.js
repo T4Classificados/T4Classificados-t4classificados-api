@@ -17,16 +17,6 @@ const CampanhaController = require('../controllers/campanhaController');
  *       - bearerAuth: []
  *     parameters:
  *       - in: query
- *         name: page
- *         schema:
- *           type: integer
- *         description: Número da página
- *       - in: query
- *         name: limit
- *         schema:
- *           type: integer
- *         description: Itens por página
- *       - in: query
  *         name: status
  *         schema:
  *           type: string
@@ -87,17 +77,6 @@ router.patch('/usuarios/:id/status', auth, adminAuth, UserController.alterarStat
  *     tags: [Admin]
  *     security:
  *       - bearerAuth: []
- *     parameters:
- *       - in: query
- *         name: page
- *         schema:
- *           type: integer
- *         description: Número da página
- *       - in: query
- *         name: limit
- *         schema:
- *           type: integer
- *         description: Itens por página
  *     responses:
  *       200:
  *         description: Lista de anúncios
@@ -140,16 +119,6 @@ router.delete('/anuncios/:id', auth, adminAuth, AnuncioController.excluir);
  *     security:
  *       - bearerAuth: []
  *     parameters:
- *       - in: query
- *         name: page
- *         schema:
- *           type: integer
- *         description: Número da página
- *       - in: query
- *         name: limit
- *         schema:
- *           type: integer
- *         description: Itens por página
  *       - in: query
  *         name: status
  *         schema:

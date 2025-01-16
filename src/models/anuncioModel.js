@@ -49,9 +49,8 @@ class AnuncioModel {
         }
     }
 
-    static async listar(page = 1, limit = 10, filtros = {}) {
+    static async listar(filtros = {}) {
         try {
-            const offset = (page - 1) * limit;
             let query = `
                 SELECT a.*, GROUP_CONCAT(ai.url_imagem) as imagens
                 FROM anuncios a
@@ -74,10 +73,8 @@ class AnuncioModel {
             query += `
                 GROUP BY a.id
                 ORDER BY a.created_at DESC
-                LIMIT ? OFFSET ?
             `;
             
-            values.push(parseInt(limit), offset);
             
             const [rows] = await db.query(query, values);
             
@@ -277,10 +274,8 @@ class AnuncioModel {
         }
     }
 
-    static async listarTodos(page = 1, limit = 10) {
+    static async listarTodos() {
         try {
-            const offset = (page - 1) * limit;
-
             // Query para buscar todos os anúncios com informações do usuário
             const [anuncios] = await db.query(
                 `SELECT 
@@ -294,8 +289,7 @@ class AnuncioModel {
                 LEFT JOIN anuncio_imagens ai ON a.id = ai.anuncio_id
                 GROUP BY a.id
                 ORDER BY a.created_at DESC
-                LIMIT ? OFFSET ?`,
-                [parseInt(limit), offset]
+                `
             );
 
             // Buscar total de anúncios para paginação
@@ -336,9 +330,6 @@ class AnuncioModel {
                 anuncios: anunciosFormatados,
                 pagination: {
                     total: total[0].total,
-                    page: parseInt(page),
-                    limit: parseInt(limit),
-                    pages: Math.ceil(total[0].total / limit)
                 }
             };
         } catch (error) {
@@ -346,9 +337,8 @@ class AnuncioModel {
         }
     }
 
-    static async listarPublicos(page = 1, limit = 10, filtros = {}) {
+    static async listarPublicos(filtros = {}) {
         try {
-            const offset = (page - 1) * limit;
             let query = `
                 SELECT a.*, 
                        GROUP_CONCAT(ai.url_imagem) as imagens
@@ -372,10 +362,7 @@ class AnuncioModel {
             query += `
                 GROUP BY a.id
                 ORDER BY a.created_at DESC
-                LIMIT ? OFFSET ?
             `;
-            
-            values.push(parseInt(limit), offset);
             
             const [rows] = await db.query(query, values);
             
@@ -412,9 +399,8 @@ class AnuncioModel {
         }
     }
 
-    static async listarPorUsuario(usuarioId, page = 1, limit = 10, filtros = {}) {
+    static async listarPorUsuario(usuarioId, filtros = {}) {
         try {
-            const offset = (page - 1) * limit;
 
             // Query para buscar anúncios do usuário com informações completas
             let query = `
@@ -445,10 +431,7 @@ class AnuncioModel {
             query += `
                 GROUP BY a.id
                 ORDER BY a.created_at DESC
-                LIMIT ? OFFSET ?
             `;
-            
-            values.push(parseInt(limit), offset);
             
             const [anuncios] = await db.query(query, values);
 
@@ -469,6 +452,10 @@ class AnuncioModel {
                 subcategoria: anuncio.subcategoria,
                 condicao: anuncio.condicao,
                 status: anuncio.status,
+                tipo_transacao: anuncio.tipo_transacao,
+                provincia: anuncio.provincia,
+                municipio: anuncio.municipio,
+                zona: anuncio.zona,
                 visualizacoes: anuncio.visualizacoes,
                 chamadas: anuncio.chamadas,
                 mensagens_whatsapp: anuncio.mensagens_whatsapp,
@@ -491,9 +478,6 @@ class AnuncioModel {
                 anuncios: anunciosFormatados,
                 pagination: {
                     total: total[0].total,
-                    page: parseInt(page),
-                    limit: parseInt(limit),
-                    pages: Math.ceil(total[0].total / limit)
                 }
             };
         } catch (error) {
@@ -520,7 +504,7 @@ class AnuncioModel {
         }
     }
 
-    static async buscarSimilares(id, limit = 4) {
+    static async buscarSimilares(id) {
         try {
             // Primeiro obtém o anúncio de referência
             const [anuncioRef] = await db.query(
@@ -544,12 +528,11 @@ class AnuncioModel {
                 AND a.status = 'Disponível'
                 GROUP BY a.id
                 ORDER BY RAND()
-                LIMIT ?`,
+                `,
                 [
                     anuncioRef[0].categoria,
                     anuncioRef[0].tipo_transacao,
-                    id,
-                    limit
+                    id
                 ]
             );
 
@@ -579,7 +562,7 @@ class AnuncioModel {
         }
     }
 
-    static async buscarSimilaresDoUsuario(anuncioId, limit = 4) {
+    static async buscarSimilaresDoUsuario(anuncioId) {
         try {
             // Primeiro obtém o anúncio de referência
             const [anuncioRef] = await db.query(
@@ -613,7 +596,7 @@ class AnuncioModel {
                         ELSE 4
                     END,
                     a.created_at DESC
-                LIMIT ?`,
+                `,
                 [
                     anuncioRef[0].usuario_id,
                     anuncioId,
@@ -622,8 +605,7 @@ class AnuncioModel {
                     anuncioRef[0].categoria,
                     anuncioRef[0].tipo_transacao,
                     anuncioRef[0].categoria,
-                    anuncioRef[0].tipo_transacao,
-                    limit
+                    anuncioRef[0].tipo_transacao
                 ]
             );
 
@@ -654,7 +636,7 @@ class AnuncioModel {
         }
     }
 
-    static async buscarRecentesDoUsuario(usuarioId, limit = 4) {
+    static async buscarRecentesDoUsuario(usuarioId) {
         try {
             const [rows] = await db.query(`
                 SELECT a.*, 
@@ -669,8 +651,8 @@ class AnuncioModel {
                 AND a.status = 'Disponível'
                 GROUP BY a.id
                 ORDER BY a.created_at DESC
-                LIMIT ?`,
-                [usuarioId, limit]
+                `,
+                [usuarioId]
             );
 
             const baseUrl = process.env.BASE_URL || 'http://localhost:4000';
@@ -788,7 +770,7 @@ class AnuncioModel {
         }
     }
 
-    static async listarMaisVisualizados(limit = 5) {
+    static async listarMaisVisualizados() {
         try {
             const [rows] = await db.query(`
                 SELECT a.*, 
@@ -803,8 +785,7 @@ class AnuncioModel {
                 WHERE a.status = 'Disponível'
                 GROUP BY a.id
                 ORDER BY a.visualizacoes DESC
-                LIMIT ?`,
-                [limit]
+                `
             );
 
             if (!rows || rows.length === 0) {

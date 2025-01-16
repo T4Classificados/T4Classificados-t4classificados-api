@@ -51,18 +51,15 @@ class AnuncioController {
 
   static async listar(req, res) {
     try {
-      const { page = 1, limit = 10 } = req.query;
       let anuncios;
 
       // Se for admin, lista todos os anúncios
       if (req.userData && req.userData.role === "admin") {
-        anuncios = await AnuncioModel.listarTodos(page, limit);
+        anuncios = await AnuncioModel.listarTodos();
       } else {
         // Se não for admin, lista apenas anúncios públicos
         anuncios = await AnuncioModel.listarPorUsuario(
           req.userData.userId,
-          page,
-          limit
         );
       }
 
@@ -77,13 +74,13 @@ class AnuncioController {
 
   static async listarPublicos(req, res) {
     try {
-      const { page = 1, limit = 10, categoria, provincia } = req.query;
+      const { categoria, provincia } = req.query;
       const filtros = {};
       
       if (categoria) filtros.categoria = categoria;
       if (provincia) filtros.provincia = provincia;
 
-      const anuncios = await AnuncioModel.listarPublicos(page, limit, filtros);
+      const anuncios = await AnuncioModel.listarPublicos(filtros);
       
       res.json({
         success: true,
@@ -281,9 +278,8 @@ class AnuncioController {
   static async buscarSimilares(req, res) {
     try {
         const { id } = req.params;
-        const { limit = 4 } = req.query;
 
-        const anuncios = await AnuncioModel.buscarSimilares(id, parseInt(limit));
+        const anuncios = await AnuncioModel.buscarSimilares(id);
 
         res.json({
             success: true,
@@ -302,9 +298,8 @@ class AnuncioController {
   static async buscarSimilaresDoUsuario(req, res) {
     try {
         const { id } = req.params;
-        const { limit = 4 } = req.query;
 
-        const anuncios = await AnuncioModel.buscarSimilaresDoUsuario(id, parseInt(limit));
+        const anuncios = await AnuncioModel.buscarSimilaresDoUsuario(id);
 
         res.json({
             success: true,
@@ -323,9 +318,8 @@ class AnuncioController {
   static async buscarRecentesDoUsuario(req, res) {
     try {
         const { userId } = req.params;
-        const { limit = 4 } = req.query;
 
-        const anuncios = await AnuncioModel.buscarRecentesDoUsuario(userId, parseInt(limit));
+        const anuncios = await AnuncioModel.buscarRecentesDoUsuario(userId);
 
         res.json({
             success: true,
@@ -372,9 +366,8 @@ class AnuncioController {
 
   static async listarMaisVisualizados(req, res) {
     try {
-        const { limit = 5 } = req.query;
         
-        const anuncios = await AnuncioModel.listarMaisVisualizados(parseInt(limit));
+        const anuncios = await AnuncioModel.listarMaisVisualizados();
 
         res.json({
             success: true,

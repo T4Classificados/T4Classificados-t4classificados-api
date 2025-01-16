@@ -131,8 +131,7 @@ function formatImageUrls(images) {
   });
 }
 
-exports.getPublicidades = async (filters = {}, page = 1, limit = 10) => {
-  const offset = (page - 1) * limit;
+exports.getPublicidades = async (filters = {}) => {
   let query = `
     SELECT p.*, u.nome as anunciante_nome, 
            GROUP_CONCAT(pi.url ORDER BY pi.ordem) as imagens
@@ -153,8 +152,7 @@ exports.getPublicidades = async (filters = {}, page = 1, limit = 10) => {
     queryParams.push(filters.status);
   }
 
-  query += ' GROUP BY p.id ORDER BY p.created_at DESC LIMIT ? OFFSET ?';
-  queryParams.push(limit, offset);
+  query += ' GROUP BY p.id ORDER BY p.created_at DESC';
 
   const [rows] = await db.query(query, queryParams);
   return rows.map(row => ({
@@ -202,8 +200,7 @@ exports.deletePublicidade = async (id, userId) => {
   return result.affectedRows > 0;
 };
 
-exports.getPublicidadesPendentes = async (page = 1, limit = 10) => {
-  const offset = (page - 1) * limit;
+exports.getPublicidadesPendentes = async () => {
   const query = `
     SELECT p.*, u.nome as anunciante_nome, u.telefone as anunciante_telefone,
            GROUP_CONCAT(pi.url ORDER BY pi.ordem) as imagens
@@ -213,10 +210,9 @@ exports.getPublicidadesPendentes = async (page = 1, limit = 10) => {
     WHERE p.status = 'pendente'
     GROUP BY p.id
     ORDER BY p.created_at ASC
-    LIMIT ? OFFSET ?
   `;
 
-  const [rows] = await db.query(query, [limit, offset]);
+  const [rows] = await db.query(query);
   
   // Contar total de pendentes para paginação
   const [totalRows] = await db.query(
@@ -487,8 +483,7 @@ const getAcaoURL = (objetivo, contato) => {
   }
 };
 
-exports.getPublicidadesAnunciante = async (userId, filtros = {}, page = 1, limit = 10) => {
-  const offset = (page - 1) * limit;
+exports.getPublicidadesAnunciante = async (userId, filtros = {}) => {
   let query = `
     SELECT p.*,
            GROUP_CONCAT(pi.url ORDER BY pi.ordem) as imagens,
@@ -525,8 +520,7 @@ exports.getPublicidadesAnunciante = async (userId, filtros = {}, page = 1, limit
 
   query += ` GROUP BY p.id
             ORDER BY p.created_at DESC
-            LIMIT ? OFFSET ?`;
-  queryParams.push(limit, offset);
+            `;
 
   const [rows] = await db.query(query, queryParams);
 
@@ -722,8 +716,7 @@ exports.garantirCustosPadrao = async () => {
   }
 };
 
-exports.getPublicidadesPublicas = async (page = 1, limit = 10) => {
-  const offset = (page - 1) * limit;
+exports.getPublicidadesPublicas = async () => {
   const query = `
     SELECT 
       p.id, 
@@ -742,10 +735,10 @@ exports.getPublicidadesPublicas = async (page = 1, limit = 10) => {
       AND (p.plafond_diario IS NULL OR p.plafond_consumido_hoje < p.plafond_diario)
     GROUP BY p.id
     ORDER BY RAND()
-    LIMIT ? OFFSET ?
+    
   `;
 
-  const [rows] = await db.query(query, [limit, offset]);
+  const [rows] = await db.query(query);
 
   // Contar total para paginação
   const [totalRows] = await db.query(

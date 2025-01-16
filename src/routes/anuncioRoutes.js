@@ -155,16 +155,6 @@ router.get('/anuncios/:id', auth, AnuncioController.obterPorId);
  *       - bearerAuth: []
  *     parameters:
  *       - in: query
- *         name: page
- *         schema:
- *           type: integer
- *         description: Número da página
- *       - in: query
- *         name: limit
- *         schema:
- *           type: integer
- *         description: Itens por página
- *       - in: query
  *         name: categoria
  *         schema:
  *           type: string
@@ -465,13 +455,6 @@ router.get(
  *     tags: [Anúncios]
  *     security:
  *       - bearerAuth: []
- *     parameters:
- *       - in: query
- *         name: limit
- *         schema:
- *           type: integer
- *           default: 5
- *         description: Número máximo de anúncios a retornar
  *     responses:
  *       200:
  *         description: Lista dos anúncios mais visualizados

@@ -181,17 +181,6 @@ router.post('/', auth, uploadFields, CampanhaController.criar);
  *     tags: [Campanhas]
  *     security:
  *       - bearerAuth: []
- *     parameters:
- *       - in: query
- *         name: page
- *         schema:
- *           type: integer
- *         description: Número da página
- *       - in: query
- *         name: limit
- *         schema:
- *           type: integer
- *         description: Itens por página
  *     responses:
  *       200:
  *         description: Lista de campanhas

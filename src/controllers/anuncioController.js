@@ -366,8 +366,14 @@ class AnuncioController {
 
   static async listarMaisVisualizados(req, res) {
     try {
-        
         const anuncios = await AnuncioModel.listarMaisVisualizados();
+        
+        if (!anuncios || anuncios.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Nenhum anúncio encontrado'
+            });
+        }
 
         res.json({
             success: true,

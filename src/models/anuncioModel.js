@@ -814,6 +814,7 @@ class AnuncioModel {
                 WHERE a.status = 'Disponível'
                 GROUP BY a.id
                 ORDER BY a.visualizacoes DESC
+                LIMIT 5
                 `
             );
 
@@ -830,6 +831,10 @@ class AnuncioModel {
                 provincia: anuncio.provincia,
                 municipio: anuncio.municipio,
                 tipo_transacao: anuncio.tipo_transacao,
+                mobilado: anuncio.mobilado,
+                marca: anuncio.marca,
+                kilometragem: anuncio.kilometragem,
+                ano_de_fabrico: anuncio.ano_de_fabrico,
                 categoria: anuncio.categoria,
                 status: anuncio.status,
                 visualizacoes: anuncio.visualizacoes || 0,

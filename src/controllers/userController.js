@@ -3,6 +3,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const db = require('../config/database');
 const dotenv = require('dotenv');
+const PagamentoModel = require('../models/pagamentoModel');
 
 dotenv.config();
 
@@ -676,3 +677,49 @@ exports.atualizarFoto = async (req, res) => {
         });
     }
 };
+
+exports.processarCallbackPagamento = async (req, res) => {
+    try {
+      const pagamento = {
+        reference_id: req.body.reference_id,
+        transaction_id: req.body.transaction_id,
+        amount: req.body.amount,
+      };
+
+      if (!pagamento.reference_id) {
+        return res.status(400).json({
+          success: false,
+          message: "Dados incompletos no callback",
+        });
+      }
+
+      // Atualiza o status do usuário
+      const sucesso = await userModel.ativarConta(pagamento.reference_id);
+
+      if (!sucesso) {
+        return res.status(404).json({
+          success: false,
+          message: "Usuário não encontrado",
+        });
+      }
+
+      // Registra o pagamento
+      await PagamentoModel.registrar(
+        "ativacao",
+        pagamento.reference_id,
+        pagamento
+      );
+
+      res.json({
+        success: true,
+        message: "Pagamento registrado e conta ativada com sucesso",
+      });
+    } catch (error) {
+        console.error('Erro ao processar callback de pagamento:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao processar callback de pagamento',
+            error: error.message
+        });
+    }
+}

@@ -357,42 +357,44 @@ class CampanhaController {
 
     static async processarCallbackPagamento(req, res) {
         try {
-            const pagamento = {
-                reference_id: req.body.reference_id,
-                transaction_id: req.body.transaction_id,
-                amount: req.body.amount,
-            };
+          const pagamento = {
+            reference_id: req.body.reference_id,
+            transaction_id: req.body.transaction_id,
+            amount: req.body.amount,
+          };
 
-            if (!pagamento.reference_id) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'Dados incompletos no callback'
-                });
-            }
-
-            // Registra o pagamento
-            await PagamentoModel.registrar('campanha', pagamento.reference_id, pagamento);
-
-
-            // Atualiza o status da campanha
-            const sucesso = await CampanhaModel.atualizarStatusPagamento(
-                pagamento.reference_id,
-                'Ativa',
-                pagamento.transaction_id
-            );
-
-            if (!sucesso) {
-                return res.status(404).json({
-                    success: false,
-                    message: 'Campanha não encontrada'
-                });
-            }
-
-            res.json({
-                success: true,
-                message: 'Pagamento registrado e status atualizado com sucesso'
+          if (!pagamento.reference_id) {
+            return res.status(400).json({
+              success: false,
+              message: "Dados incompletos no callback",
             });
+          }
 
+          // Atualiza o status da campanha
+          const sucesso = await CampanhaModel.atualizarStatusPagamento(
+            pagamento.reference_id,
+            "Ativa",
+            pagamento.transaction_id
+          );
+
+          if (!sucesso) {
+            return res.status(404).json({
+              success: false,
+              message: "Campanha não encontrada",
+            });
+          }
+
+          // Registra o pagamento
+          await PagamentoModel.registrar(
+            "campanha",
+            pagamento.reference_id,
+            pagamento
+          );
+
+          res.json({
+            success: true,
+            message: "Pagamento registrado e status atualizado com sucesso",
+          });
         } catch (error) {
             console.error('Erro ao processar callback de pagamento:', error);
             res.status(500).json({

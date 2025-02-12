@@ -214,3 +214,22 @@ exports.atualizarFoto = async (userId, fotoUrl) => {
         throw error;
     }
 };
+
+exports.ativarConta = async (userId) => {
+   const phone = `+244${userId}`
+    try {
+        const [result] = await db.query(
+          `UPDATE usuarios 
+            SET 
+                is_active = true
+            WHERE 
+                telefone = ? 
+                AND is_active = false`,
+          [phone]
+        );
+
+        return result.affectedRows > 0;
+    } catch (error) {
+        throw error;
+    }
+};

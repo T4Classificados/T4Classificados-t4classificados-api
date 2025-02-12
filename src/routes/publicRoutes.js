@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const AnuncioController = require('../controllers/anuncioController');
 const CampanhaController = require('../controllers/campanhaController');
+const UserController = require('../controllers/userController');
 
 /**
  * @swagger
@@ -417,5 +418,45 @@ router.get('/usuarios/:userId/anuncios/recentes', AnuncioController.buscarRecent
  *         description: Erro do servidor
  */
 router.post('/campanhas/pagamento/callback', CampanhaController.processarCallbackPagamento);
+
+/**
+ * @swagger
+ * /public/usuarios/pagamento/callback:
+ *   post:
+ *     summary: Webhook para receber confirmação de pagamento de ativação de conta
+ *     description: Endpoint público para receber callbacks de confirmação de pagamento de ativação
+ *     tags: [Usuários]
+ *     security: [] # Remove a necessidade de autenticação
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - reference_id
+ *               - transaction_id
+ *               - amount
+ *             properties:
+ *               reference_id:
+ *                 type: string
+ *                 description: ID do usuário
+ *               transaction_id:
+ *                 type: string
+ *                 description: ID da transação
+ *               amount:
+ *                 type: number
+ *                 description: Valor do pagamento
+ *     responses:
+ *       200:
+ *         description: Callback processado com sucesso
+ *       400:
+ *         description: Dados inválidos
+ *       404:
+ *         description: Usuário não encontrado
+ *       500:
+ *         description: Erro do servidor
+ */
+router.post('/usuarios/pagamento/callback', UserController.processarCallbackPagamento);
 
 module.exports = router; 

@@ -32,8 +32,10 @@ class CampanhaModel {
                     views,
                     chamadas,
                     cliques,
-                    status
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0, 0, 'Pendente')`,
+                    status,
+                    reference_id,
+                    transaction_id
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0, 0, 'Pendente', ?, ?)`,
                 [
                     empresaId,
                     userId,
@@ -45,7 +47,9 @@ class CampanhaModel {
                     campanha.botao_texto,
                     campanha.num_visualizacoes,
                     campanha.valor_visualizacao,
-                    campanha.total_pagar
+                    campanha.total_pagar,
+                    campanha.reference_id || null,
+                    campanha.transaction_id || null
                 ]
             );
 
@@ -382,6 +386,26 @@ class CampanhaModel {
                     id = ? 
                     AND status = 'Pendente'`,
                 [id]
+            );
+
+            return result.affectedRows > 0;
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    static async atualizarStatusPagamento(id, status, transactionId) {
+        try {
+            const [result] = await db.query(
+                `UPDATE campanhas 
+                SET 
+                    status = ?,
+                    transaction_id = ?,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE 
+                    reference_id = ? 
+                    AND status = 'Pendente'`,
+                [status, transactionId, id]
             );
 
             return result.affectedRows > 0;

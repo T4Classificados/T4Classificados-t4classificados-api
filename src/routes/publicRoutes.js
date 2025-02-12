@@ -380,18 +380,12 @@ router.get('/usuarios/:userId/anuncios/recentes', AnuncioController.buscarRecent
 
 /**
  * @swagger
- * /public/campanhas/{id}/interacao:
+ * /public/campanhas/pagamento/callback:
  *   post:
- *     summary: Registrar uma interação com a campanha
- *     description: Registra visualizações, chamadas ou cliques em uma campanha
+ *     summary: Webhook para receber confirmação de pagamento
+ *     description: Endpoint público para receber callbacks de confirmação de pagamento
  *     tags: [Campanhas]
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: integer
- *         description: ID da campanha
+ *     security: [] # Remove a necessidade de autenticação
  *     requestBody:
  *       required: true
  *       content:
@@ -399,22 +393,29 @@ router.get('/usuarios/:userId/anuncios/recentes', AnuncioController.buscarRecent
  *           schema:
  *             type: object
  *             required:
- *               - tipo
+ *               - reference_id
+ *               - status
  *             properties:
- *               tipo:
+ *               reference_id:
  *                 type: string
- *                 enum: [view, chamada, clique]
- *                 description: Tipo de interação com a campanha
+ *                 description: ID da campanha
+ *               status:
+ *                 type: string
+ *                 enum: [paid, failed]
+ *                 description: Status do pagamento
+ *               transaction_id:
+ *                 type: string
+ *                 description: ID da transação no gateway de pagamento
  *     responses:
  *       200:
- *         description: Interação registrada com sucesso
+ *         description: Callback processado com sucesso
  *       400:
- *         description: Tipo de interação inválido
+ *         description: Dados inválidos
  *       404:
  *         description: Campanha não encontrada
  *       500:
  *         description: Erro do servidor
  */
-router.post('/campanhas/:id/interacao', CampanhaController.registrarInteracao);
+router.post('/campanhas/pagamento/callback', CampanhaController.processarCallbackPagamento);
 
 module.exports = router; 

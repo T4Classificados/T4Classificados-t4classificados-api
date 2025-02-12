@@ -373,7 +373,4 @@ router.post('/:id/promover', auth, validateId, CampanhaController.promoverNovame
  */
 router.post('/:id/confirmar-pagamento', auth, validateId, CampanhaController.confirmarPagamento);
 
-// Remover ou comentar esta rota
-// router.post('/:id/interacao', auth, CampanhaController.registrarInteracao);
-
 module.exports = router; 

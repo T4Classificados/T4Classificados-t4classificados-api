@@ -16,9 +16,15 @@ CREATE TABLE campanhas (
     status ENUM('pendente', 'ativa', 'pausada', 'concluida', 'rejeitada') DEFAULT 'pendente',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    transaction_id VARCHAR(100) DEFAULT NULL COMMENT 'ID da transação de pagamento',
+    reference_id VARCHAR(100) DEFAULT NULL COMMENT 'ID de referência para pagamento',
     FOREIGN KEY (usuario_id) REFERENCES usuarios(id),
     FOREIGN KEY (empresa_id) REFERENCES empresas(id)
 );
+
+
+ALTER TABLE campanhas ADD COLUMN transaction_id VARCHAR(100) DEFAULT NULL COMMENT 'ID da transação de pagamento';
+ALTER TABLE campanhas ADD COLUMN reference_id VARCHAR(100) DEFAULT NULL COMMENT 'ID de referência para pagamento';
 
 CREATE TABLE campanha_imagens (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -29,4 +35,6 @@ CREATE TABLE campanha_imagens (
 );
 
 CREATE INDEX idx_campanhas_usuario ON campanhas(usuario_id);
-CREATE INDEX idx_campanhas_status ON campanhas(status); 
+CREATE INDEX idx_campanhas_status ON campanhas(status);
+CREATE INDEX idx_campanhas_reference ON campanhas(reference_id);
+CREATE INDEX idx_campanhas_transaction ON campanhas(transaction_id); 

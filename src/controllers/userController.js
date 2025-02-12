@@ -15,7 +15,7 @@ function generateConfirmationCode() {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
-async function sendSMS(phoneNumber, smsMessage) {
+/* async function sendSMS(phoneNumber, smsMessage) {
   try {
     const message = await client.messages.create({
       body: smsMessage,
@@ -28,9 +28,9 @@ async function sendSMS(phoneNumber, smsMessage) {
     console.error("Erro ao enviar SMS:", error);
     return false;
   }
-}
+} */
 
-  /* async function sendSMS(phoneNumber, smsMessage) {
+  async function sendSMS(phoneNumber, smsMessage) {
     const urlToSendMessage = process.env.URL_TO_SEND_MESSAGE;
     const API_KEY = process.env.API_TELCOSMS_KEY;
 
@@ -55,7 +55,7 @@ async function sendSMS(phoneNumber, smsMessage) {
       console.error("Erro ao enviar SMS:", error);
       return false;
     }
-  } */
+  }
 
 if (!process.env.JWT_SECRET) {
   console.error('JWT_SECRET não está definido. Verifique seu arquivo .env');

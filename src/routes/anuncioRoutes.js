@@ -54,6 +54,9 @@ const upload = require('../middleware/upload');
  *         marca:
  *           type: string
  *           description: Marca do veículo (opcional)
+ *         modelo:
+ *           type: string
+ *           description: Modelo do veículo (opcional)
  *         kilometragem:
  *           type: string
  *           description: Kilometragem do veículo (opcional)

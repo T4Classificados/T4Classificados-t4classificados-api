@@ -221,7 +221,8 @@ exports.ativarConta = async (userId) => {
         const [result] = await db.query(
           `UPDATE usuarios 
             SET 
-                is_active = true
+                is_active = true,
+                data_pagamento_mensal = NOW()
             WHERE 
                 telefone = ? 
                 AND is_active = false`,
@@ -232,4 +233,17 @@ exports.ativarConta = async (userId) => {
     } catch (error) {
         throw error;
     }
+};
+
+exports.updatePaymentDate = async (userId, paymentDate) => {
+  try {
+    const [result] = await db.query(
+      'UPDATE usuarios SET data_pagamento_mensal = ? WHERE id = ?',
+      [paymentDate, userId]
+    );
+    return result.affectedRows > 0;
+  } catch (error) {
+    console.error('Erro ao atualizar data de pagamento:', error);
+    throw error;
+  }
 };

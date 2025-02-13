@@ -116,7 +116,7 @@ exports.register = async (req, res) => {
     dataLimite.setHours(dataLimite.getHours() + 48);
 
     // Gerar referência no ProxyPay
-    const referencia = await PagamentoService.gerarReferencia(
+    await PagamentoService.gerarReferencia(
       {
         amount: valorAtivacao,
         end_datetime: dataLimite.toISOString(),
@@ -149,30 +149,31 @@ exports.register = async (req, res) => {
     await sendSMS(telefone, mensagem);
 
     // Salvar referência na tabela de pagamentos como pendente
-    await PagamentoModel.registrar('ativacao', referencia, {
-        reference_id: referencia,
+    await PagamentoModel.registrar('ativacao', gerarReferenciaPagamento(telefone), {
+        reference_id: gerarReferenciaPagamento(telefone),
         transaction_id: null,
         amount: valorAtivacao,
         status: 'pendente'
     });
 
     res.status(201).json({
-        success: true,
-        message: 'Usuário registrado com sucesso. Verifique seu telefone para instruções de pagamento.',
-        data: {
-            id: result.insertId,
-            nome,
-            sobrenome,
-            telefone,
-            provincia,
-            municipio,
-            pagamento: {
-                entidade,
-                referencia,
-                valor: valorAtivacao,
-                dataLimite: dataLimiteFormatada
-            }
-        }
+      success: true,
+      message:
+        "Usuário registrado com sucesso. Verifique seu telefone para instruções de pagamento.",
+      data: {
+        id: result.insertId,
+        nome,
+        sobrenome,
+        telefone,
+        provincia,
+        municipio,
+        pagamento: {
+          entidade,
+          referencia: gerarReferenciaPagamento(telefone),
+          valor: valorAtivacao,
+          dataLimite: dataLimiteFormatada,
+        },
+      },
     });
 
   } catch (error) {
@@ -775,6 +776,10 @@ exports.processarCallbackPagamento = async (req, res) => {
         pagamento.reference_id,
         pagamento
       );
+
+      const telefone = `+244${pagamento.phone_number}`;
+
+      await sendSMS(telefone, "Sua conta foi activada com sucesso. Bem-vindo ao T4 Classificados.");
 
       res.json({
         success: true,

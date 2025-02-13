@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const db = require('../config/database');
 const dotenv = require('dotenv');
 const PagamentoModel = require('../models/pagamentoModel');
+const PagamentoService = require('../services/pagamentoService');
 
 dotenv.config();
 
@@ -63,6 +64,19 @@ if (!process.env.JWT_SECRET) {
   process.exit(1);
 }
 
+function gerarReferenciaPagamento(telefone) {
+    // Remove o prefixo +244 e qualquer outro caractere não numérico
+    const numeroLimpo = telefone.replace(/\D/g, '').replace(/^244/, '');
+    return numeroLimpo;
+}
+
+function formatarValor(valor) {
+    return new Intl.NumberFormat('pt-AO', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    }).format(valor);
+}
+
 exports.register = async (req, res) => {
   try {
     const { 
@@ -97,25 +111,77 @@ exports.register = async (req, res) => {
       bilhete
     );
 
-    // Enviar SMS com o código de confirmação
-    
-    const smsMessage = `Seu código de confirmação é: ${confirmationCode}`;
-    const smsSent = await sendSMS(telefone, smsMessage);
+    const valorAtivacao = "2500.00";
+    const dataLimite = new Date();
+    dataLimite.setHours(dataLimite.getHours() + 48);
 
-    if (smsSent) {
-      res.status(201).json({ 
-        message: 'Usuário cadastrado com sucesso. Por favor, verifique seu telefone para o código de confirmação.', 
-        userId: result.insertId 
-      });
-    } else {
-      res.status(201).json({ 
-        message: 'Usuário cadastrado com sucesso, mas houve um problema ao enviar o SMS. Por favor, tente novamente mais tarde.', 
-        userId: result.insertId 
-      });
-    }
+    // Gerar referência no ProxyPay
+    const referencia = await PagamentoService.gerarReferencia(
+      {
+        amount: valorAtivacao,
+        end_datetime: dataLimite.toISOString(),
+        custom_fields: {
+          callback_url: `${process.env.BASE_URL}/api/public/usuarios/pagamento/callback`,
+        },
+      },
+      gerarReferenciaPagamento(telefone)
+    );
+
+    const entidade = "00940";
+
+    // Formatar data limite
+    const dataLimiteFormatada = dataLimite.toLocaleDateString('pt-AO', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+    });
+
+    // Montar mensagem SMS
+    const mensagem =
+      `T4 Classificados - Dados para pagamento:\n` +
+      `Entidade: ${entidade}\n` +
+      `Referencia: ${gerarReferenciaPagamento(telefone)}\n` +
+      `Valor: ${formatarValor(valorAtivacao)} Kz\n` +
+      `Data limite: ${dataLimiteFormatada}\n\n` +
+      `Pague em qualquer agente MULTICAIXA`;
+
+    // Enviar SMS
+    await sendSMS(telefone, mensagem);
+
+    // Salvar referência na tabela de pagamentos como pendente
+    await PagamentoModel.registrar('ativacao', referencia, {
+        reference_id: referencia,
+        transaction_id: null,
+        amount: valorAtivacao,
+        status: 'pendente'
+    });
+
+    res.status(201).json({
+        success: true,
+        message: 'Usuário registrado com sucesso. Verifique seu telefone para instruções de pagamento.',
+        data: {
+            id: result.insertId,
+            nome,
+            sobrenome,
+            telefone,
+            provincia,
+            municipio,
+            pagamento: {
+                entidade,
+                referencia,
+                valor: valorAtivacao,
+                dataLimite: dataLimiteFormatada
+            }
+        }
+    });
+
   } catch (error) {
     console.error('Erro no registro:', error);
-    res.status(500).json({ message: 'Erro no registro do usuário' });
+    res.status(500).json({
+        success: false,
+        message: 'Erro ao registrar usuário',
+        error: error.message
+    });
   }
 };
 

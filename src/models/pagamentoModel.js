@@ -10,12 +10,13 @@ class PagamentoModel {
                     transaction_id,
                     amount,
                     status
-                ) VALUES (?, ?, ?, ?, 'pago')`,
+                ) VALUES (?, ?, ?, ?, ?)`,
                 [
                     tipo,
                     referenciaId,
                     pagamento.transaction_id,
-                    pagamento.amount
+                    pagamento.amount,
+                    pagamento.status || 'pago'
                 ]
             );
 

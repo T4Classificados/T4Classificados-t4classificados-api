@@ -49,7 +49,7 @@ async function verificarPagamentosVencidos() {
     
         const valorAtivacao = "2500.00";
         const dataLimite = new Date();
-        dataLimite.setHours(dataLimite.getHours() + 48);
+        dataLimite.setHours(dataLimite.getHours() + 720);
 
         // Gerar referência no ProxyPay
         await PagamentoService.gerarReferencia(
@@ -75,14 +75,12 @@ async function verificarPagamentosVencidos() {
         // Montar mensagem SMS
         const mensagem =
           `T4 Classificados\n` +
-          `A tua substituição mensal terminou\n\n` +
+          `A tua substituicao mensal terminou\n\n` +
           `Escolha os canais abaixo para ativar novamente:\n\n` +
-          `Multicaixa Express\n` +
-          `ATM ou\n` +
-          `Internet banking\n\n` +
-          `Escolha a opção pagamentos, pagamentos por referência e introduza os dados abaixo:\n\n` +
+          `Faça no Multicaixa Express, ATM ou Internet banking\n\n` +
+          `Escolha a opcao pagamentos, pagamentos por referencia e introduza os dados abaixo:\n\n` +
           `Entidade: ${entidade}\n` +
-          `Referência: ${gerarReferenciaPagamento(usuario.telefone)}\n` +
+          `Referencia: ${gerarReferenciaPagamento(usuario.telefone)}\n` +
           `Valor: ${formatarValor(valorAtivacao)} Kz`;
 
         await NotificacaoService.enviarNotificacao(usuario.telefone, mensagem);

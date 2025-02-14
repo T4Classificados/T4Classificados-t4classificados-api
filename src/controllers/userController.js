@@ -113,7 +113,7 @@ exports.register = async (req, res) => {
 
     const valorAtivacao = "2500.00";
     const dataLimite = new Date();
-    dataLimite.setHours(dataLimite.getHours() + 48);
+    dataLimite.setHours(dataLimite.getHours() + 720);
 
     // Gerar referência no ProxyPay
     await PagamentoService.gerarReferencia(
@@ -139,10 +139,8 @@ exports.register = async (req, res) => {
     // Montar mensagem SMS
     const mensagem =
       `T4 Classificados\n` +
-      `Dados para pagamento da subscrição mensal\n\n` +
-      `Multicaixa Express\n` +
-      `ATM ou\n` +
-      `Internet banking\n\n` +
+      `Dados para pagamento da subscricao mensal\n\n` +
+      `Faça no Multicaixa Express, ATM ou Internet banking\n\n` +
       `Escolha a opcao pagamentos, pagamentos por referencia e introduza os dados abaixo:\n\n` +
       `Entidade: ${entidade}\n` +
       `Referencia: ${gerarReferenciaPagamento(telefone)}\n` +

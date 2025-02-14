@@ -74,13 +74,16 @@ async function verificarPagamentosVencidos() {
 
         // Montar mensagem SMS
         const mensagem =
-          `Olá ${usuario.nome} ${usuario.sobrenome}, sua mensalidade venceu. Sua conta foi desativada.\n\n` +
-          `Para reativar sua conta, efetue o pagamento com os seguintes dados:\n` +
+          `T4 Classificados\n` +
+          `A tua substituição mensal terminou\n\n` +
+          `Escolha os canais abaixo para ativar novamente:\n\n` +
+          `Multicaixa Express\n` +
+          `ATM ou\n` +
+          `Internet banking\n\n` +
+          `Escolha a opção pagamentos, pagamentos por referência e introduza os dados abaixo:\n\n` +
           `Entidade: ${entidade}\n` +
           `Referência: ${gerarReferenciaPagamento(usuario.telefone)}\n` +
-          `Valor: ${formatarValor(valorAtivacao)} Kz\n` +
-          `Data limite: ${dataLimiteFormatada}\n\n` +
-          `Pague em qualquer agente MULTICAIXA`;
+          `Valor: ${formatarValor(valorAtivacao)} Kz`;
 
         await NotificacaoService.enviarNotificacao(usuario.telefone, mensagem);
 

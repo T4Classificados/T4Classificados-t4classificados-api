@@ -138,12 +138,15 @@ exports.register = async (req, res) => {
 
     // Montar mensagem SMS
     const mensagem =
-      `T4 Classificados - Dados para pagamento:\n` +
+      `T4 Classificados\n` +
+      `Dados para pagamento da subscrição mensal\n\n` +
+      `Multicaixa Express\n` +
+      `ATM ou\n` +
+      `Internet banking\n\n` +
+      `Escolha a opcao pagamentos, pagamentos por referencia e introduza os dados abaixo:\n\n` +
       `Entidade: ${entidade}\n` +
       `Referencia: ${gerarReferenciaPagamento(telefone)}\n` +
-      `Valor: ${formatarValor(valorAtivacao)} Kz\n` +
-      `Data limite: ${dataLimiteFormatada}\n\n` +
-      `Pague em qualquer agente MULTICAIXA`;
+      `Valor: ${formatarValor(valorAtivacao)} Kz`;
 
     // Enviar SMS
     await sendSMS(telefone, mensagem);

@@ -89,6 +89,9 @@ app.use((req, res) => {
 // Inicia o cronjob
 campanhaStatusJob.start();
 
+// Inicializa os jobs agendados
+require('./jobs/verificarPagamentosVencidos');
+
 app.listen(port, () => {
   console.log(`Servidor rodando na porta ${port}`);
   console.log(

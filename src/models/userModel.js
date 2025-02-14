@@ -247,3 +247,16 @@ exports.updatePaymentDate = async (userId, paymentDate) => {
     throw error;
   }
 };
+
+exports.desativarUsuario = async (userId) => {
+  try {
+    const [result] = await db.query(
+      'UPDATE usuarios SET is_active = false WHERE id = ?',
+      [userId]
+    );
+    return result.affectedRows > 0;
+  } catch (error) {
+    console.error('Erro ao desativar usuário:', error);
+    throw error;
+  }
+};

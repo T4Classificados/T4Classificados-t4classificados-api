@@ -1,7 +1,24 @@
 const CampanhaModel = require('../models/campanhaModel');
 const { uploadImagens } = require('../utils/upload');
-const PagamentoCampanhaModel = require('../models/pagamentoCampanhaModel');
 const PagamentoModel = require('../models/pagamentoModel');
+const PagamentoService = require('../services/pagamentoService');
+const NotificacaoService = require('../services/notificacaoService');
+const db = require('../config/database');
+
+
+function gerarReferenciaPagamento(telefone) {
+  console.log("TELEFINE", telefone);
+  // Remove o prefixo +244 e qualquer outro caractere não numérico
+  const numeroLimpo = telefone.replace(/\D/g, "").replace(/^244/, "");
+  return numeroLimpo;
+}
+
+function formatarValor(valor) {
+  return new Intl.NumberFormat("pt-AO", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(valor);
+}
 
 class CampanhaController {
     static async criar(req, res) {
@@ -25,6 +42,23 @@ class CampanhaController {
                 });
             }
 
+            // Busca o telefone do usuário
+            const [usuario] = await db.query(
+                'SELECT telefone FROM usuarios WHERE id = ?',
+                [req.userData.userId]
+            );
+
+            if (!usuario[0]) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Usuário não encontrado'
+                });
+            }
+            console.log("USUARIO", usuario[0]);
+
+            // Gera reference_id a partir do telefone
+            const reference_id = gerarReferenciaPagamento(usuario[0].telefone);
+
             // Prepara os dados da campanha
             const campanha = {
               nome: req.body.nome,
@@ -36,17 +70,69 @@ class CampanhaController {
               num_visualizacoes: parseInt(req.body.num_visualizacoes),
               valor_visualizacao: parseFloat(req.body.valor_visualizacao),
               total_pagar: parseFloat(req.body.total_pagar),
+              status: 'Pendente'
             };
 
-            // Tenta criar a campanha
             try {
+                // Cria a campanha
                 const campanhaId = await CampanhaModel.criar(req.userData.userId, campanha);
+                
+                // Configura prazo de pagamento
+                const dataLimite = new Date();
+                dataLimite.setHours(dataLimite.getHours() + 720); // 30 dias
+
+                // Gera referência no ProxyPay
+                await PagamentoService.gerarReferencia(
+                    {
+                        amount: campanha.total_pagar,
+                        end_datetime: dataLimite.toISOString(),
+                        custom_fields: {
+                            callback_url: `${process.env.BASE_URL}/api/public/campanhas/pagamento/callback`,
+                        },
+                    },
+                    reference_id // Usa o telefone como reference_id
+                );
+
+                const entidade = "00940";
+
+                // Monta mensagem SMS
+                const mensagem = 
+                    `T4 Classificados\n` +
+                    `Dados para pagamento da campanha\n\n` +
+                    `Faça no Multicaixa Express, ATM ou Internet banking\n\n` +
+                    `Escolha a opcao pagamentos, pagamentos por referencia e introduza os dados abaixo:\n\n` +
+                    `Entidade: ${entidade}\n` +
+                    `Referencia: ${reference_id}\n` + // Usa o telefone como referência
+                    `Valor: ${formatarValor(campanha.total_pagar)} Kz`;
+
+                // Envia notificação
+                 await NotificacaoService.enviarNotificacao(
+                   usuario[0].telefone,
+                   mensagem
+                 );
+
+                // Registra o pagamento como pendente
+                await PagamentoModel.registrar("campanha", reference_id, {
+                  reference_id, // Usa o telefone como reference_id
+                  transaction_id: null,
+                  amount: formatarValor(campanha.total_pagar),
+                  status: "pendente",
+                });
+
                 const campanhaCreated = await CampanhaModel.obterPorId(campanhaId, req.userData.userId);
 
                 res.status(201).json({
                     success: true,
-                    message: 'Campanha criada com sucesso',
-                    data: campanhaCreated
+                    message: 'Campanha criada com sucesso. Verifique seu telefone para instruções de pagamento.',
+                    data: {
+                        ...campanhaCreated,
+                        pagamento: {
+                            entidade,
+                            referencia: reference_id, // Usa o telefone como referência
+                            valor: campanha.total_pagar,
+                            dataLimite: dataLimite.toLocaleDateString('pt-AO')
+                        }
+                    }
                 });
             } catch (error) {
                 if (error.message === 'Usuário não possui empresa vinculada') {

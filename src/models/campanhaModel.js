@@ -404,7 +404,7 @@ class CampanhaModel {
                     updated_at = CURRENT_TIMESTAMP
                 WHERE 
                     reference_id = ? 
-                    AND status = 'Pendente'`,
+                    AND status = 'Pendente' OR status = 'Concluída'`,
                 [status, transactionId, id]
             );
 

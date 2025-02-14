@@ -140,7 +140,7 @@ exports.register = async (req, res) => {
     const mensagem =
       `T4 Classificados\n` +
       `Dados para pagamento da subscricao mensal\n\n` +
-      `Faça no Multicaixa Express, ATM ou Internet banking\n\n` +
+      `Faca no Multicaixa Express, ATM ou Internet banking\n\n` +
       `Escolha a opcao pagamentos, pagamentos por referencia e introduza os dados abaixo:\n\n` +
       `Entidade: ${entidade}\n` +
       `Referencia: ${gerarReferenciaPagamento(telefone)}\n` +
@@ -150,7 +150,7 @@ exports.register = async (req, res) => {
     await sendSMS(telefone, mensagem);
 
     // Salvar referência na tabela de pagamentos como pendente
-    await PagamentoModel.registrar('ativacao', gerarReferenciaPagamento(telefone), {
+    await PagamentoModel.registrar('ativacao_usuario', gerarReferenciaPagamento(telefone), {
         reference_id: gerarReferenciaPagamento(telefone),
         transaction_id: null,
         amount: valorAtivacao,

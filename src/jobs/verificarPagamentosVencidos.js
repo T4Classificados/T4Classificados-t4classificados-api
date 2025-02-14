@@ -77,7 +77,7 @@ async function verificarPagamentosVencidos() {
           `T4 Classificados\n` +
           `A tua substituicao mensal terminou\n\n` +
           `Escolha os canais abaixo para ativar novamente:\n\n` +
-          `Faça no Multicaixa Express, ATM ou Internet banking\n\n` +
+          `Faca no Multicaixa Express, ATM ou Internet banking\n\n` +
           `Escolha a opcao pagamentos, pagamentos por referencia e introduza os dados abaixo:\n\n` +
           `Entidade: ${entidade}\n` +
           `Referencia: ${gerarReferenciaPagamento(usuario.telefone)}\n` +
@@ -87,7 +87,7 @@ async function verificarPagamentosVencidos() {
 
         // Salvar referência na tabela de pagamentos como pendente
         await PagamentoModel.registrar(
-          "renovacao",
+          "renovacao_usuario",
           gerarReferenciaPagamento(usuario.telefone),
           {
             reference_id: gerarReferenciaPagamento(usuario.telefone),

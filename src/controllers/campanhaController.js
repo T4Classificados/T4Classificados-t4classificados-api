@@ -7,7 +7,7 @@ const db = require('../config/database');
 
 
 function gerarReferenciaPagamento(telefone) {
-  console.log("TELEFINE", telefone);
+
   // Remove o prefixo +244 e qualquer outro caractere não numérico
   const numeroLimpo = telefone.replace(/\D/g, "").replace(/^244/, "");
   return numeroLimpo;
@@ -23,127 +23,137 @@ function formatarValor(valor) {
 class CampanhaController {
     static async criar(req, res) {
         try {
-            // Processa as imagens se existirem
-            let imagens = undefined;
-            let logo = undefined;
+          // Processa as imagens se existirem
+          let imagens = undefined;
+          let logo = undefined;
 
-            try {
-                if (req.files?.imagens) {
-                    imagens = await uploadImagens(req.files.imagens);
-                }
-                if (req.files?.logo) {
-                    logo = await uploadImagens([req.files.logo[0]]);
-                }
-            } catch (uploadError) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'Erro ao processar imagens',
-                    error: uploadError.message
-                });
+          try {
+            if (req.files?.imagens) {
+              imagens = await uploadImagens(req.files.imagens);
             }
+            if (req.files?.logo) {
+              logo = await uploadImagens([req.files.logo[0]]);
+            }
+          } catch (uploadError) {
+            return res.status(400).json({
+              success: false,
+              message: "Erro ao processar imagens",
+              error: uploadError.message,
+            });
+          }
 
-            // Busca o telefone do usuário
-            const [usuario] = await db.query(
-                'SELECT telefone FROM usuarios WHERE id = ?',
-                [req.userData.userId]
+          // Busca o telefone do usuário
+          const [usuario] = await db.query(
+            "SELECT telefone FROM usuarios WHERE id = ?",
+            [req.userData.userId]
+          );
+
+          if (!usuario[0]) {
+            return res.status(404).json({
+              success: false,
+              message: "Usuário não encontrado",
+            });
+          }
+
+          // Gera reference_id único de 9 dígitos
+          const timestamp = Date.now().toString().slice(-4); // Últimos 4 dígitos do timestamp
+          const randomNum = Math.floor(Math.random() * 10000)
+            .toString()
+            .padStart(4, "0"); // 4 dígitos aleatórios
+          const reference_id = timestamp.slice(0, 5) + randomNum.slice(0, 4); // Combina para ter 9 dígitos únicos
+
+          // Prepara os dados da campanha
+          const campanha = {
+            nome: req.body.nome,
+            tipo_exibicao: req.body.tipo_exibicao,
+            espaco_exibicao: req.body.espaco_exibicao,
+            descricao: req.body.descricao,
+            logo_url: logo ? logo[0] : undefined,
+            botao_texto: req.body.botao_texto,
+            num_visualizacoes: parseInt(req.body.num_visualizacoes),
+            valor_visualizacao: parseFloat(req.body.valor_visualizacao),
+            total_pagar: parseFloat(req.body.total_pagar),
+            status: "Pendente",
+          };
+
+          try {
+            // Cria a campanha
+            const campanhaId = await CampanhaModel.criar(
+              req.userData.userId,
+              campanha
             );
 
-            if (!usuario[0]) {
-                return res.status(404).json({
-                    success: false,
-                    message: 'Usuário não encontrado'
-                });
+            // Configura prazo de pagamento
+            const dataLimite = new Date();
+            dataLimite.setHours(dataLimite.getHours() + 720); // 30 dias
+
+            // Gera referência no ProxyPay
+            await PagamentoService.gerarReferencia(
+              {
+                amount: campanha.total_pagar,
+                end_datetime: dataLimite.toISOString(),
+                custom_fields: {
+                  callback_url: `${process.env.BASE_URL}/api/public/campanhas/pagamento/callback`,
+                },
+              },
+              reference_id // Usa o telefone como reference_id
+            );
+
+            const entidade = "00940";
+
+            // Monta mensagem SMS
+            const mensagem =
+              `T4 Classificados\n` +
+              `Dados para pagamento da campanha\n\n` +
+              `Faca no Multicaixa Express, ATM ou Internet banking\n\n` +
+              `Escolha a opcao pagamentos, pagamentos por referencia e introduza os dados abaixo:\n\n` +
+              `Entidade: ${entidade}\n` +
+              `Referencia: ${reference_id}\n` + // Usa o telefone como referência
+              `Valor: ${formatarValor(campanha.total_pagar)} Kz`;
+
+            // Envia notificação
+            await NotificacaoService.enviarNotificacao(
+              usuario[0].telefone,
+              mensagem
+            );
+
+            // Registra o pagamento como pendente
+            await PagamentoModel.registrar("criacao_campanha", reference_id, {
+              reference_id, // Usa o telefone como reference_id
+              transaction_id: null,
+              amount: formatarValor(campanha.total_pagar),
+              status: "pendente",
+            });
+
+            const campanhaCreated = await CampanhaModel.obterPorId(
+              campanhaId,
+              req.userData.userId
+            );
+
+            res.status(201).json({
+              success: true,
+              message:
+                "Campanha criada com sucesso. Verifique seu telefone para instruções de pagamento.",
+              data: {
+                ...campanhaCreated,
+                pagamento: {
+                  entidade,
+                  referencia: reference_id, // Usa o telefone como referência
+                  valor: campanha.total_pagar,
+                  dataLimite: dataLimite.toLocaleDateString("pt-AO"),
+                },
+              },
+            });
+          } catch (error) {
+            if (error.message === "Usuário não possui empresa vinculada") {
+              return res.status(400).json({
+                success: false,
+                message:
+                  "É necessário vincular uma empresa antes de criar uma campanha",
+              });
             }
-            console.log("USUARIO", usuario[0]);
-
-            // Gera reference_id a partir do telefone
-            const reference_id = gerarReferenciaPagamento(usuario[0].telefone);
-
-            // Prepara os dados da campanha
-            const campanha = {
-              nome: req.body.nome,
-              tipo_exibicao: req.body.tipo_exibicao,
-              espaco_exibicao: req.body.espaco_exibicao,
-              descricao: req.body.descricao,
-              logo_url: logo ? logo[0] : undefined,
-              botao_texto: req.body.botao_texto,
-              num_visualizacoes: parseInt(req.body.num_visualizacoes),
-              valor_visualizacao: parseFloat(req.body.valor_visualizacao),
-              total_pagar: parseFloat(req.body.total_pagar),
-              status: 'Pendente'
-            };
-
-            try {
-                // Cria a campanha
-                const campanhaId = await CampanhaModel.criar(req.userData.userId, campanha);
-                
-                // Configura prazo de pagamento
-                const dataLimite = new Date();
-                dataLimite.setHours(dataLimite.getHours() + 720); // 30 dias
-
-                // Gera referência no ProxyPay
-                await PagamentoService.gerarReferencia(
-                    {
-                        amount: campanha.total_pagar,
-                        end_datetime: dataLimite.toISOString(),
-                        custom_fields: {
-                            callback_url: `${process.env.BASE_URL}/api/public/campanhas/pagamento/callback`,
-                        },
-                    },
-                    reference_id // Usa o telefone como reference_id
-                );
-
-                const entidade = "00940";
-
-                // Monta mensagem SMS
-                const mensagem = 
-                    `T4 Classificados\n` +
-                    `Dados para pagamento da campanha\n\n` +
-                    `Faça no Multicaixa Express, ATM ou Internet banking\n\n` +
-                    `Escolha a opcao pagamentos, pagamentos por referencia e introduza os dados abaixo:\n\n` +
-                    `Entidade: ${entidade}\n` +
-                    `Referencia: ${reference_id}\n` + // Usa o telefone como referência
-                    `Valor: ${formatarValor(campanha.total_pagar)} Kz`;
-
-                // Envia notificação
-                 await NotificacaoService.enviarNotificacao(
-                   usuario[0].telefone,
-                   mensagem
-                 );
-
-                // Registra o pagamento como pendente
-                await PagamentoModel.registrar("campanha", reference_id, {
-                  reference_id, // Usa o telefone como reference_id
-                  transaction_id: null,
-                  amount: formatarValor(campanha.total_pagar),
-                  status: "pendente",
-                });
-
-                const campanhaCreated = await CampanhaModel.obterPorId(campanhaId, req.userData.userId);
-
-                res.status(201).json({
-                    success: true,
-                    message: 'Campanha criada com sucesso. Verifique seu telefone para instruções de pagamento.',
-                    data: {
-                        ...campanhaCreated,
-                        pagamento: {
-                            entidade,
-                            referencia: reference_id, // Usa o telefone como referência
-                            valor: campanha.total_pagar,
-                            dataLimite: dataLimite.toLocaleDateString('pt-AO')
-                        }
-                    }
-                });
-            } catch (error) {
-                if (error.message === 'Usuário não possui empresa vinculada') {
-                    return res.status(400).json({
-                        success: false,
-                        message: 'É necessário vincular uma empresa antes de criar uma campanha'
-                    });
-                }
-                throw error;
-            }
-
+            throw error;
+          }
         } catch (error) {
             console.error('Erro ao criar campanha:', error);
             res.status(500).json({
@@ -310,41 +320,148 @@ class CampanhaController {
 
     static async promoverNovamente(req, res) {
         try {
-            const { id } = req.params;
-            
-            // Primeiro busca a campanha
-            const campanhaExistente = await CampanhaModel.obterPorId(id, req.userData.userId);
-            if (!campanhaExistente) {
-                return res.status(404).json({
-                    success: false,
-                    message: 'Campanha não encontrada'
-                });
-            }
+          const { id } = req.params;
 
-            // Cria uma nova campanha baseada na existente
-            const novaCampanha = {
-                tipo_exibicao: campanhaExistente.tipo_exibicao,
-                espaco_exibicao: campanhaExistente.espaco_exibicao,
-                descricao: campanhaExistente.descricao,
-                logo_url: campanhaExistente.logo_url?.replace(`${process.env.BASE_URL || 'http://localhost:4000'}`, ''),
-                botao_texto: campanhaExistente.botao_texto,
-                num_visualizacoes: campanhaExistente.num_visualizacoes,
-                valor_visualizacao: campanhaExistente.valor_visualizacao,
-                total_pagar: campanhaExistente.total_pagar,
-                imagens: campanhaExistente.imagens?.map(img => 
-                    img.replace(`${process.env.BASE_URL || 'http://localhost:4000'}`, '')
-                )
-            };
-
-            // Cria a nova campanha
-            const novaCampanhaId = await CampanhaModel.criar(req.userData.userId, novaCampanha);
-            const campanhaPromovida = await CampanhaModel.obterPorId(novaCampanhaId, req.userData.userId);
-
-            res.status(201).json({
-                success: true,
-                message: 'Campanha promovida novamente com sucesso',
-                data: campanhaPromovida
+          // Primeiro busca a campanha
+          const campanhaExistente = await CampanhaModel.obterPorId(
+            id,
+            req.userData.userId
+          );
+          if (!campanhaExistente) {
+            return res.status(404).json({
+              success: false,
+              message: "Campanha não encontrada",
             });
+          }
+          if (campanhaExistente.status === "Ativa") {
+            return res.status(400).json({
+              success: false,
+              message: "Campanha já está ativa",
+            });
+          }
+
+          if (campanhaExistente.status === "Pendente") {
+            return res.status(400).json({
+              success: false,
+              message: "Campanha está pendente",
+            });
+          }
+
+          if (campanhaExistente.status === "Cancelada") {
+            return res.status(400).json({
+              success: false,
+              message: "Campanha está cancelada",
+            });
+          }
+
+          // Busca o telefone do usuário
+          const [usuario] = await db.query(
+            "SELECT telefone FROM usuarios WHERE id = ?",
+            [req.userData.userId]
+          );
+
+          if (!usuario[0]) {
+            return res.status(404).json({
+              success: false,
+              message: "Usuário não encontrado",
+            });
+          }
+
+          // Cria uma nova campanha baseada na existente
+          const novaCampanha = {
+            nome: campanhaExistente.nome,
+            tipo_exibicao: campanhaExistente.tipo_exibicao,
+            espaco_exibicao: campanhaExistente.espaco_exibicao,
+            descricao: campanhaExistente.descricao,
+            logo_url: campanhaExistente.logo_url?.replace(
+              `${process.env.BASE_URL || "http://localhost:4000"}`,
+              ""
+            ),
+            botao_texto: campanhaExistente.botao_texto,
+            num_visualizacoes: campanhaExistente.num_visualizacoes,
+            valor_visualizacao: campanhaExistente.valor_visualizacao,
+            total_pagar: campanhaExistente.total_pagar,
+            status: "Pendente",
+            imagens: campanhaExistente.imagens?.map((img) =>
+              img.replace(
+                `${process.env.BASE_URL || "http://localhost:4000"}`,
+                ""
+              )
+            ),
+          };
+
+          // Cria a nova campanha
+          const novaCampanhaId = await CampanhaModel.criar(
+            req.userData.userId,
+            novaCampanha
+          );
+
+          // Gera reference_id único de 9 dígitos
+          const timestamp = Date.now().toString().slice(-4); // Últimos 4 dígitos do timestamp
+          const randomNum = Math.floor(Math.random() * 10000).toString().padStart(4, '0'); // 4 dígitos aleatórios
+          const reference_id = timestamp.slice(0,5) + randomNum.slice(0,4); // Combina para ter 9 dígitos únicos
+
+          // Configura prazo de pagamento
+          const dataLimite = new Date();
+          dataLimite.setHours(dataLimite.getHours() + 720); // 30 dias
+
+          // Gera referência no ProxyPay
+          await PagamentoService.gerarReferencia(
+            {
+              amount: novaCampanha.total_pagar,
+              end_datetime: dataLimite.toISOString(),
+              custom_fields: {
+                callback_url: `${process.env.BASE_URL}/api/public/campanhas/pagamento/callback`,
+              },
+            },
+            reference_id // Usa o telefone como reference_id
+          );
+
+          const entidade = "00940";
+
+          // Monta mensagem SMS
+          const mensagem =
+            `T4 Classificados\n` +
+            `Dados para pagamento de renovacao de campanha\n\n` +
+            `Faca no Multicaixa Express, ATM ou Internet banking\n\n` +
+            `Escolha a opcao pagamentos, pagamentos por referencia e introduza os dados abaixo:\n\n` +
+            `Entidade: ${entidade}\n` +
+            `Referencia: ${reference_id}\n` + // Usa o telefone como referência
+            `Valor: ${formatarValor(novaCampanha.total_pagar)} Kz`;
+
+          // Envia notificação
+          await NotificacaoService.enviarNotificacao(
+            usuario[0].telefone,
+            mensagem
+          );
+
+          // Registra o pagamento como pendente
+          await PagamentoModel.registrar("renovacao_campanha", reference_id, {
+            reference_id, // Usa o telefone como reference_id
+            transaction_id: null,
+            amount: formatarValor(novaCampanha.total_pagar),
+            status: "pendente",
+          });
+
+          const campanhaPromovida = await CampanhaModel.obterPorId(
+            novaCampanhaId,
+            req.userData.userId
+          );
+
+          res.status(201).json({
+            success: true,
+            message:
+              "Campanha promovida novamente com sucesso. Verifique seu telefone para instruções de pagamento.",
+            data: {
+              ...campanhaPromovida,
+              pagamento: {
+                entidade,
+                referencia: reference_id,
+                valor: novaCampanha.total_pagar,
+                dataLimite: dataLimite.toLocaleDateString("pt-AO"),
+              },
+            },
+          });
         } catch (error) {
             console.error('Erro ao promover campanha:', error);
             res.status(500).json({
@@ -446,7 +563,7 @@ class CampanhaController {
           const pagamento = {
             reference_id: req.body.reference_id,
             transaction_id: req.body.transaction_id,
-            amount: req.body.amount,
+            amount: formatarValor(req.body.amount),
           };
 
           if (!pagamento.reference_id) {

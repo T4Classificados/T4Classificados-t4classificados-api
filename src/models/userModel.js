@@ -224,8 +224,7 @@ exports.ativarConta = async (userId) => {
                 is_active = true,
                 data_pagamento_mensal = NOW()
             WHERE 
-                telefone = ? 
-                AND is_active = false`,
+                telefone = ?`,
           [phone]
         );
 

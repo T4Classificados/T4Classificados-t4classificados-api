@@ -265,6 +265,7 @@ exports.confirmAccount = async (req, res) => {
         transaction_id: null,
         amount: valorAtivacao,
         status: "pendente",
+        user_id: user.id
       }
     );
 
@@ -767,8 +768,12 @@ exports.processarCallbackPagamento = async (req, res) => {
           message: "Usuário não encontrado",
         });
       }
+      
+      const phone_number = `+244${pagamento.reference_id}`;
+      const user = await userModel.getUserByTelefone(phone_number);
 
       // Registra o pagamento
+      pagamento.user_id = user.id;
       await PagamentoModel.registrar(
         "ativacao_usuario",
         pagamento.reference_id,

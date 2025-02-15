@@ -119,6 +119,7 @@ class CampanhaController {
               amount: parseFloat(campanha.total_pagar),
               status: "pendente",
               product_id: campanhaId,
+              user_id: req.userData.userId
             });
 
             const campanhaCreated = await CampanhaModel.obterPorId(
@@ -363,6 +364,13 @@ class CampanhaController {
             });
           }
 
+          // Gera reference_id único de 9 dígitos
+          const timestamp = Date.now().toString().slice(-4); // Últimos 4 dígitos do timestamp
+          const randomNum = Math.floor(Math.random() * 10000)
+            .toString()
+            .padStart(4, "0"); // 4 dígitos aleatórios
+          const reference_id = timestamp.slice(0, 5) + randomNum.slice(0, 4); // Combina para ter 9 dígitos únicos
+
           // Cria uma nova campanha baseada na existente
           const novaCampanha = {
             nome: campanhaExistente.nome,
@@ -378,6 +386,7 @@ class CampanhaController {
             valor_visualizacao: campanhaExistente.valor_visualizacao,
             total_pagar: campanhaExistente.total_pagar,
             status: "Pendente",
+            reference_id: reference_id,
             imagens: campanhaExistente.imagens?.map((img) =>
               img.replace(
                 `${process.env.BASE_URL || "http://localhost:4000"}`,
@@ -391,11 +400,6 @@ class CampanhaController {
             req.userData.userId,
             novaCampanha
           );
-
-          // Gera reference_id único de 9 dígitos
-          const timestamp = Date.now().toString().slice(-4); // Últimos 4 dígitos do timestamp
-          const randomNum = Math.floor(Math.random() * 10000).toString().padStart(4, '0'); // 4 dígitos aleatórios
-          const reference_id = timestamp.slice(0,5) + randomNum.slice(0,4); // Combina para ter 9 dígitos únicos
 
           // Configura prazo de pagamento
           const dataLimite = new Date();
@@ -438,6 +442,7 @@ class CampanhaController {
             amount: parseFloat(novaCampanha.total_pagar),
             status: "pendente",
             product_id: novaCampanhaId,
+            user_id: req.userData.userId,
           });
 
           const campanhaPromovida = await CampanhaModel.obterPorId(
@@ -560,7 +565,8 @@ class CampanhaController {
             const pagamento = {
                 reference_id: req.body.reference_id,
                 transaction_id: req.body.transaction_id,
-                amount: req.body.amount
+                amount: req.body.amount,
+                //user_id: req.userData.userId
             };
 
             if (!pagamento.reference_id) {
@@ -577,6 +583,8 @@ class CampanhaController {
                 pagamento.transaction_id
             );
 
+            const campanha = await CampanhaModel.obterPorReferenceId(pagamento.reference_id);
+          
             if (!sucesso) {
                 return res.status(404).json({
                     success: false,
@@ -585,6 +593,9 @@ class CampanhaController {
             }
 
             // Registra o pagamento
+            pagamento.user_id = campanha.usuario_id;
+            pagamento.product_id = campanha.id;
+
             await PagamentoModel.registrar(
               "criacao_campanha",
               pagamento.reference_id,

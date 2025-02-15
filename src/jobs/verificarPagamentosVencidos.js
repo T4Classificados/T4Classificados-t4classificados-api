@@ -65,13 +65,6 @@ async function verificarPagamentosVencidos() {
 
         const entidade = "00940";
 
-        // Formatar data limite
-        const dataLimiteFormatada = dataLimite.toLocaleDateString("pt-AO", {
-          day: "2-digit",
-          month: "2-digit",
-          year: "numeric",
-        });
-
         // Montar mensagem SMS
         const mensagem =
           `T4 Classificados\n` +
@@ -94,6 +87,7 @@ async function verificarPagamentosVencidos() {
             transaction_id: null,
             amount: valorAtivacao,
             status: "pendente",
+            user_id: usuario.id
           }
         );
 

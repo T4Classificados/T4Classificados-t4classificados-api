@@ -10,15 +10,17 @@ class PagamentoModel {
                     transaction_id,
                     amount,
                     status,
-                    product_id
-                ) VALUES (?, ?, ?, ?, ?, ?)`,
+                    product_id,
+                    user_id
+                ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
                 [
                     tipo,
                     referenciaId,
                     pagamento.transaction_id,
                     pagamento.amount,
                     pagamento.status || 'pago',
-                    pagamento.product_id || null
+                    pagamento.product_id || null,
+                    pagamento.user_id || null
                 ]
             );
 
@@ -96,6 +98,37 @@ class PagamentoModel {
                     id: row.product_id,
                     nome: row.campanha_nome
                 }
+            }));
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    static async listarPorUsuario(userId) {
+        try {
+            const [rows] = await db.query(
+                `SELECT p.*, c.nome as campanha_nome,
+                    u.nome as usuario_nome, u.telefone as usuario_telefone
+                FROM pagamentos p
+                LEFT JOIN campanhas c ON p.product_id = c.id
+                LEFT JOIN usuarios u ON p.user_id = u.id
+                WHERE p.user_id = ?
+                ORDER BY p.created_at DESC`,
+                [userId]
+            );
+
+            return rows.map(row => ({
+                ...row,
+                custom_fields: row.custom_fields ? JSON.parse(row.custom_fields) : null,
+                produto: row.product_id ? {
+                    id: row.product_id,
+                    nome: row.campanha_nome
+                } : null,
+                usuario: row.user_id ? {
+                    id: row.user_id,
+                    nome: row.usuario_nome,
+                    telefone: row.usuario_telefone
+                } : null
             }));
         } catch (error) {
             throw error;

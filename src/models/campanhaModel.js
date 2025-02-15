@@ -144,6 +144,44 @@ class CampanhaModel {
             throw error;
         }
     }
+    static async obterPorReferenceId(referenceId) {
+        try {
+            const [rows] = await db.query(
+                `SELECT c.*, 
+                    GROUP_CONCAT(ci.url_imagem) as imagens,
+                    e.nome as empresa_nome,
+                    e.nif as empresa_nif,
+                    e.logo_url as empresa_logo
+                FROM campanhas c
+                LEFT JOIN campanha_imagens ci ON c.id = ci.campanha_id
+                LEFT JOIN empresas e ON c.empresa_id = e.id
+                WHERE c.reference_id = ?
+                GROUP BY c.id`,
+                [referenceId]
+            );
+
+            if (rows.length === 0) return null;
+
+            const campanha = rows[0];
+            const baseUrl = process.env.BASE_URL || 'http://localhost:4000';
+            
+            return {
+                ...campanha,
+                logo_url: campanha.logo_url ? `${baseUrl}${campanha.logo_url}` : null,
+                imagens: campanha.imagens 
+                    ? campanha.imagens.split(',').map(img => `${baseUrl}${img}`)
+                    : [],
+                empresa: {
+                    id: campanha.empresa_id,
+                    nome: campanha.empresa_nome,
+                    nif: campanha.empresa_nif,
+                    logo_url: campanha.empresa_logo ? `${baseUrl}${campanha.empresa_logo}` : null
+                }
+            };
+        } catch (error) {
+            throw error;
+        }
+    }
 
     static async atualizar(id, userId, campanha) {
         try {

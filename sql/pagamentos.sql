@@ -20,9 +20,15 @@ CREATE TABLE pagamentos (
     custom_fields TEXT,
     status ENUM('pendente', 'pago', 'falhou', 'reembolsado') DEFAULT 'pendente',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    user_id INT NULL,
+    FOREIGN KEY (user_id) REFERENCES usuarios(id)
 );
+
+ALTER TABLE pagamentos ADD COLUMN user_id INT NULL;
+ALTER TABLE pagamentos ADD FOREIGN KEY (user_id) REFERENCES usuarios(id);
 
 CREATE INDEX idx_pagamentos_referencia ON pagamentos(tipo, referencia_id);
 CREATE INDEX idx_pagamentos_transaction ON pagamentos(transaction_id);
-CREATE INDEX idx_pagamentos_status ON pagamentos(status); 
+CREATE INDEX idx_pagamentos_status ON pagamentos(status);
+CREATE INDEX idx_pagamentos_user ON pagamentos(user_id); 

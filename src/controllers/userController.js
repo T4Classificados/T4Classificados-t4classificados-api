@@ -111,51 +111,6 @@ exports.register = async (req, res) => {
       bilhete
     );
 
-    const valorAtivacao = "2500.00";
-    const dataLimite = new Date();
-    dataLimite.setHours(dataLimite.getHours() + 720);
-
-    // Gerar referência no ProxyPay
-    await PagamentoService.gerarReferencia(
-      {
-        amount: valorAtivacao,
-        end_datetime: dataLimite.toISOString(),
-        custom_fields: {
-          callback_url: `${process.env.BASE_URL}/api/public/usuarios/pagamento/callback`,
-        },
-      },
-      gerarReferenciaPagamento(telefone)
-    );
-
-    const entidade = "00940";
-
-    // Formatar data limite
-    const dataLimiteFormatada = dataLimite.toLocaleDateString('pt-AO', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric'
-    });
-
-    // Montar mensagem SMS
-    const mensagem =
-      `T4 Classificados\n` +
-      `Dados para pagamento da subscricao mensal\n\n` +
-      `Faca no Multicaixa Express, ATM ou Internet banking\n\n` +
-      `Escolha a opcao pagamentos, pagamentos por referencia e introduza os dados abaixo:\n\n` +
-      `Entidade: ${entidade}\n` +
-      `Referencia: ${gerarReferenciaPagamento(telefone)}\n` +
-      `Valor: ${formatarValor(valorAtivacao)} Kz`;
-
-    // Enviar SMS
-    await sendSMS(telefone, mensagem);
-
-    // Salvar referência na tabela de pagamentos como pendente
-    await PagamentoModel.registrar('ativacao_usuario', gerarReferenciaPagamento(telefone), {
-        reference_id: gerarReferenciaPagamento(telefone),
-        transaction_id: null,
-        amount: valorAtivacao,
-        status: 'pendente'
-    });
 
     res.status(201).json({
       success: true,
@@ -196,9 +151,9 @@ exports.loginUser = async (req, res) => {
       return res.status(401).json({ message: 'Credenciais inválidas' });
     }
 
-    if (!user.is_active) {
+   /*  if (!user.is_active) {
       return res.status(403).json({ message: 'Conta não ativada. Por favor, verifique seu SMS e ative sua conta.' });
-    }
+    } */
 
     const isPasswordValid = await bcrypt.compare(senha, user.senha);
     if (!isPasswordValid) {
@@ -270,10 +225,52 @@ exports.confirmAccount = async (req, res) => {
       return res.status(400).json({ message: 'Conta já está ativa' });
     }
 
-    await userModel.activateUser(user.id);
+    const valorAtivacao = "2500.00";
+    const dataLimite = new Date();
+    dataLimite.setHours(dataLimite.getHours() + 720);
 
+    // Gerar referência no ProxyPay
+    await PagamentoService.gerarReferencia(
+      {
+        amount: valorAtivacao,
+        end_datetime: dataLimite.toISOString(),
+        custom_fields: {
+          callback_url: `${process.env.BASE_URL}/api/public/usuarios/pagamento/callback`,
+        },
+      },
+      gerarReferenciaPagamento(telefone)
+    );
+
+    const entidade = "00940";
+
+    // Montar mensagem SMS
+    const mensagem =
+      `T4 Classificados\n` +
+      `Dados para pagamento da subscricao mensal\n\n` +
+      `Faca no Multicaixa Express, ATM ou Internet banking\n\n` +
+      `Escolha a opcao pagamentos, pagamentos por referencia e introduza os dados abaixo:\n\n` +
+      `Entidade: ${entidade}\n` +
+      `Referencia: ${gerarReferenciaPagamento(telefone)}\n` +
+      `Valor: ${formatarValor(valorAtivacao)} Kz`;
+
+    // Enviar SMS
+    await sendSMS(telefone, mensagem);
+
+    // Salvar referência na tabela de pagamentos como pendente
+    await PagamentoModel.registrar(
+      "ativacao_usuario",
+      gerarReferenciaPagamento(telefone),
+      {
+        reference_id: gerarReferenciaPagamento(telefone),
+        transaction_id: null,
+        amount: valorAtivacao,
+        status: "pendente",
+      }
+    );
+
+    //await userModel.activateUser(user.id);
    
-    const smsMessage =  "A tua conta foi criada com sucesso. Podes publicar anúncios todos os dias sem pagar nada";
+    /* const smsMessage =  "A tua conta foi criada com sucesso. Podes publicar anúncios todos os dias sem pagar nada";
     const smsSent = await sendSMS(telefone, smsMessage);
 
     if (smsSent) {
@@ -286,9 +283,9 @@ exports.confirmAccount = async (req, res) => {
         message: 'Conta ativada com sucesso, mas houve um problema ao enviar o SMS. Por favor, tente novamente mais tarde.', 
         userId: user.id 
       });
-    }
+    } */
 
-    res.json({ message: 'Conta ativada com sucesso' });
+    res.json({ message: "Conta criada com sucesso" });
   } catch (error) {
     console.error('Erro ao confirmar conta:', error);
     res.status(500).json({ message: 'Erro ao confirmar conta' });
@@ -773,7 +770,7 @@ exports.processarCallbackPagamento = async (req, res) => {
 
       // Registra o pagamento
       await PagamentoModel.registrar(
-        "ativacao",
+        "ativacao_usuario",
         pagamento.reference_id,
         pagamento
       );

@@ -57,10 +57,10 @@ class AnuncioModel {
 
     static async listar(filtros = {}) {
         try {
-            let query = `
+  let query = `
                 SELECT a.*, GROUP_CONCAT(ai.url_imagem) as imagens
-                FROM anuncios a
-                LEFT JOIN anuncio_imagens ai ON a.id = ai.anuncio_id
+    FROM anuncios a
+    LEFT JOIN anuncio_imagens ai ON a.id = ai.anuncio_id
                 WHERE 1=1
             `;
             
@@ -86,13 +86,13 @@ class AnuncioModel {
             
             // Convert comma-separated images string to array with full URLs
             const baseUrl = process.env.BASE_URL || 'http://localhost:4000';
-            return rows.map(row => ({
-                ...row,
+  return rows.map(row => ({
+    ...row,
                 imagem_principal: row.imagem_principal ? `${baseUrl}${row.imagem_principal}` : null,
                 imagens: row.imagens 
                     ? row.imagens.split(',').map(img => `${baseUrl}${img}`)
                     : []
-            }));
+  }));
         } catch (error) {
             throw error;
         }
@@ -100,9 +100,9 @@ class AnuncioModel {
 
     static async obterPorId(id) {
         try {
-            const [rows] = await db.query(`
-                SELECT 
-                    a.*,
+  const [rows] = await db.query(`
+    SELECT 
+      a.*,
                     GROUP_CONCAT(ai.url_imagem) as imagens,
                     u.id as usuario_id,
                     u.nome as usuario_nome,
@@ -113,12 +113,12 @@ class AnuncioModel {
                     u.foto_url as usuario_foto,
                     u.genero as usuario_genero,
                     u.created_at as usuario_created_at
-                FROM anuncios a
-                LEFT JOIN anuncio_imagens ai ON a.id = ai.anuncio_id
+    FROM anuncios a
+    LEFT JOIN anuncio_imagens ai ON a.id = ai.anuncio_id
                 LEFT JOIN usuarios u ON a.usuario_id = u.id
-                WHERE a.id = ?
-                GROUP BY a.id
-            `, [id]);
+    WHERE a.id = ?
+    GROUP BY a.id
+  `, [id]);
 
             if (rows.length === 0) {
                 return null;
@@ -151,7 +151,7 @@ class AnuncioModel {
             delete anuncio.usuario_genero;
             delete anuncio.usuario_created_at;
 
-            return {
+    return {
                 ...anuncio,
                 imagem_principal: anuncio.imagem_principal ? `${baseUrl}${anuncio.imagem_principal}` : null,
                 imagens: anuncio.imagens 
@@ -259,12 +259,12 @@ class AnuncioModel {
             );
 
             // Depois exclui o anúncio
-            const [result] = await db.query(
+  const [result] = await db.query(
                 'DELETE FROM anuncios WHERE id = ? AND usuario_id = ?',
                 [id, usuarioId]
-            );
-            
-            return result.affectedRows > 0;
+  );
+
+  return result.affectedRows > 0;
         } catch (error) {
             throw error;
         }
@@ -418,9 +418,9 @@ class AnuncioModel {
                 [id]
             );
 
-            return result.affectedRows > 0;
-        } catch (error) {
-            throw error;
+    return result.affectedRows > 0;
+  } catch (error) {
+    throw error;
         }
     }
 
@@ -602,8 +602,8 @@ class AnuncioModel {
             // Primeiro obtém o anúncio de referência
             const [anuncioRef] = await db.query(
                 'SELECT categoria, tipo_transacao, id, usuario_id FROM anuncios WHERE id = ?',
-                [anuncioId]
-            );
+    [anuncioId]
+  );
 
             if (!anuncioRef[0]) {
                 return [];
@@ -613,10 +613,10 @@ class AnuncioModel {
             const [rows] = await db.query(`
                 SELECT a.*, 
                        GROUP_CONCAT(ai.url_imagem) as imagens
-                FROM anuncios a
-                LEFT JOIN anuncio_imagens ai ON a.id = ai.anuncio_id
+     FROM anuncios a
+     LEFT JOIN anuncio_imagens ai ON a.id = ai.anuncio_id
                 WHERE a.usuario_id = ?
-                AND a.id != ?
+       AND a.id != ?
                 AND a.status = 'Disponível'
                 AND (
                     a.categoria = ? OR 
@@ -689,16 +689,16 @@ class AnuncioModel {
                 LEFT JOIN usuarios u ON a.usuario_id = u.id
                 WHERE a.usuario_id = ?
                 AND a.status = 'Disponível'
-                GROUP BY a.id
-                ORDER BY a.created_at DESC
+     GROUP BY a.id
+     ORDER BY a.created_at DESC
                 `,
                 [usuarioId]
-            );
+  );
 
             const baseUrl = process.env.BASE_URL || 'http://localhost:4000';
             return rows.map(anuncio => ({
-                id: anuncio.id,
-                titulo: anuncio.titulo,
+    id: anuncio.id,
+    titulo: anuncio.titulo,
                 descricao: anuncio.descricao,
                 preco: anuncio.preco,
                 provincia: anuncio.provincia,
@@ -709,7 +709,7 @@ class AnuncioModel {
                 modelo: anuncio.modelo,
                 kilometragem: anuncio.kilometragem,
                 ano_de_fabrico: anuncio.ano_de_fabrico,
-                categoria: anuncio.categoria,
+    categoria: anuncio.categoria,
                 status: anuncio.status,
                 visualizacoes: anuncio.visualizacoes || 0,
                 chamadas: anuncio.chamadas || 0,
@@ -842,7 +842,7 @@ class AnuncioModel {
             return rows.map(anuncio => ({
                 id: anuncio.id,
                 titulo: anuncio.titulo,
-                descricao: anuncio.descricao,
+    descricao: anuncio.descricao,
                 preco: anuncio.preco,
                 provincia: anuncio.provincia,
                 municipio: anuncio.municipio,
@@ -858,7 +858,7 @@ class AnuncioModel {
                 chamadas: anuncio.chamadas || 0,
                 mensagens_whatsapp: anuncio.mensagens_whatsapp || 0,
                 compartilhamentos: anuncio.compartilhamentos || 0,
-                created_at: anuncio.created_at,
+    created_at: anuncio.created_at,
                 imagem_principal: anuncio.imagem_principal ? `${baseUrl}${anuncio.imagem_principal}` : null,
                 imagens: anuncio.imagens 
                     ? anuncio.imagens.split(',').map(img => `${baseUrl}${img}`)

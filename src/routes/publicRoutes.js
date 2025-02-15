@@ -459,4 +459,76 @@ router.post('/campanhas/pagamento/callback', CampanhaController.processarCallbac
  */
 router.post('/usuarios/pagamento/callback', UserController.processarCallbackPagamento);
 
+/**
+ * @swagger
+ * /public/campanhas/{campanhaId}/visualizacao:
+ *   post:
+ *     summary: Registra uma visualização da campanha
+ *     tags: [Campanhas]
+ *     security: [] # Remove a necessidade de autenticação
+ *     parameters:
+ *       - in: path
+ *         name: campanhaId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID da campanha
+ *     responses:
+ *       200:
+ *         description: Visualização registrada com sucesso
+ *       404:
+ *         description: Campanha não encontrada
+ *       500:
+ *         description: Erro do servidor
+ */
+router.post('/campanhas/:campanhaId/visualizacao', CampanhaController.registrarVisualizacao);
+
+/**
+ * @swagger
+ * /public/campanhas/{campanhaId}/chamada:
+ *   post:
+ *     summary: Registra uma chamada da campanha
+ *     tags: [Campanhas]
+ *     security: [] # Remove a necessidade de autenticação
+ *     parameters:
+ *       - in: path
+ *         name: campanhaId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID da campanha
+ *     responses:
+ *       200:
+ *         description: Chamada registrada com sucesso
+ *       404:
+ *         description: Campanha não encontrada
+ *       500:
+ *         description: Erro do servidor
+ */
+router.post('/campanhas/:campanhaId/chamada', CampanhaController.registrarChamada);
+
+/**
+ * @swagger
+ * /public/campanhas/{campanhaId}/clique:
+ *   post:
+ *     summary: Registra um clique na campanha
+ *     tags: [Campanhas]
+ *     security: [] # Remove a necessidade de autenticação
+ *     parameters:
+ *       - in: path
+ *         name: campanhaId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID da campanha
+ *     responses:
+ *       200:
+ *         description: Clique registrado com sucesso
+ *       404:
+ *         description: Campanha não encontrada
+ *       500:
+ *         description: Erro do servidor
+ */
+router.post('/campanhas/:campanhaId/clique', CampanhaController.registrarClique);
+
 module.exports = router; 

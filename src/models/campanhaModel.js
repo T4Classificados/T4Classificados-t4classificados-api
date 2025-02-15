@@ -33,9 +33,8 @@ class CampanhaModel {
                     chamadas,
                     cliques,
                     status,
-                    reference_id,
-                    transaction_id
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0, 0, 'Pendente', ?, ?)`,
+                    reference_id
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0, 0, 'Pendente', ?)`,
                 [
                     empresaId,
                     userId,
@@ -48,8 +47,7 @@ class CampanhaModel {
                     campanha.num_visualizacoes,
                     campanha.valor_visualizacao,
                     campanha.total_pagar,
-                    campanha.reference_id || null,
-                    campanha.transaction_id || null
+                    campanha.reference_id || null
                 ]
             );
 
@@ -404,7 +402,7 @@ class CampanhaModel {
                     updated_at = CURRENT_TIMESTAMP
                 WHERE 
                     reference_id = ? 
-                    AND status = 'Pendente' OR status = 'Concluída'`,
+                    AND (status = 'Pendente' OR status = 'Concluída')`,
                 [status, transactionId, id]
             );
 

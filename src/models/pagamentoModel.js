@@ -9,14 +9,16 @@ class PagamentoModel {
                     referencia_id,
                     transaction_id,
                     amount,
-                    status
-                ) VALUES (?, ?, ?, ?, ?)`,
+                    status,
+                    product_id
+                ) VALUES (?, ?, ?, ?, ?, ?)`,
                 [
                     tipo,
                     referenciaId,
                     pagamento.transaction_id,
                     pagamento.amount,
-                    pagamento.status || 'pago'
+                    pagamento.status || 'pago',
+                    pagamento.product_id || null
                 ]
             );
 
@@ -29,13 +31,21 @@ class PagamentoModel {
     static async obterPorReferencia(tipo, referenciaId) {
         try {
             const [rows] = await db.query(
-                'SELECT * FROM pagamentos WHERE tipo = ? AND referencia_id = ? ORDER BY created_at DESC',
+                `SELECT p.*, c.nome as campanha_nome 
+                FROM pagamentos p
+                LEFT JOIN campanhas c ON p.product_id = c.id
+                WHERE p.tipo = ? AND p.referencia_id = ? 
+                ORDER BY p.created_at DESC`,
                 [tipo, referenciaId]
             );
 
             return rows.map(row => ({
                 ...row,
-                custom_fields: row.custom_fields ? JSON.parse(row.custom_fields) : null
+                custom_fields: row.custom_fields ? JSON.parse(row.custom_fields) : null,
+                produto: row.product_id ? {
+                    id: row.product_id,
+                    nome: row.campanha_nome
+                } : null
             }));
         } catch (error) {
             throw error;
@@ -45,7 +55,10 @@ class PagamentoModel {
     static async obterPorTransactionId(transactionId) {
         try {
             const [rows] = await db.query(
-                'SELECT * FROM pagamentos WHERE transaction_id = ?',
+                `SELECT p.*, c.nome as campanha_nome 
+                FROM pagamentos p
+                LEFT JOIN campanhas c ON p.product_id = c.id
+                WHERE p.transaction_id = ?`,
                 [transactionId]
             );
 
@@ -54,8 +67,36 @@ class PagamentoModel {
             const pagamento = rows[0];
             return {
                 ...pagamento,
-                custom_fields: pagamento.custom_fields ? JSON.parse(pagamento.custom_fields) : null
+                custom_fields: pagamento.custom_fields ? JSON.parse(pagamento.custom_fields) : null,
+                produto: pagamento.product_id ? {
+                    id: pagamento.product_id,
+                    nome: pagamento.campanha_nome
+                } : null
             };
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    static async listarPorProduto(productId) {
+        try {
+            const [rows] = await db.query(
+                `SELECT p.*, c.nome as campanha_nome 
+                FROM pagamentos p
+                LEFT JOIN campanhas c ON p.product_id = c.id
+                WHERE p.product_id = ?
+                ORDER BY p.created_at DESC`,
+                [productId]
+            );
+
+            return rows.map(row => ({
+                ...row,
+                custom_fields: row.custom_fields ? JSON.parse(row.custom_fields) : null,
+                produto: {
+                    id: row.product_id,
+                    nome: row.campanha_nome
+                }
+            }));
         } catch (error) {
             throw error;
         }

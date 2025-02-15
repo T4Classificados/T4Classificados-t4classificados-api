@@ -9,18 +9,6 @@ const uploadFields = upload.fields([
     { name: 'logo', maxCount: 1 }
 ]);
 
-// Validação do parâmetro id
-const validateId = (req, res, next) => {
-    const { id } = req.params;
-    if (!id || isNaN(id)) {
-        return res.status(400).json({
-            success: false,
-            message: 'ID inválido'
-        });
-    }
-    next();
-};
-
 /**
  * @swagger
  * components:
@@ -218,7 +206,7 @@ router.get('/', auth, CampanhaController.listar);
  *       404:
  *         description: Campanha não encontrada
  */
-router.get('/:id', auth, validateId, CampanhaController.obterPorId);
+router.get('/:id', auth, CampanhaController.obterPorId);
 
 /**
  * @swagger
@@ -276,7 +264,7 @@ router.get('/:id', auth, validateId, CampanhaController.obterPorId);
  *       500:
  *         description: Erro do servidor
  */
-router.put('/:id', auth, validateId, uploadFields, CampanhaController.atualizar);
+router.put('/:id', auth, uploadFields, CampanhaController.atualizar);
 
 /**
  * @swagger
@@ -300,7 +288,7 @@ router.put('/:id', auth, validateId, uploadFields, CampanhaController.atualizar)
  *       500:
  *         description: Erro do servidor
  */
-router.delete('/:id', auth, validateId, CampanhaController.excluir);
+router.delete('/:id', auth, CampanhaController.excluir);
 
 /**
  * @swagger
@@ -343,7 +331,7 @@ router.delete('/:id', auth, validateId, CampanhaController.excluir);
  *       500:
  *         description: Erro do servidor
  */
-router.post('/:id/promover', auth, validateId, CampanhaController.promoverNovamente);
+router.post('/:id/promover', auth, CampanhaController.promoverNovamente);
 
 /**
  * @swagger
@@ -371,6 +359,6 @@ router.post('/:id/promover', auth, validateId, CampanhaController.promoverNovame
  *       500:
  *         description: Erro do servidor
  */
-router.post('/:id/confirmar-pagamento', auth, validateId, CampanhaController.confirmarPagamento);
+router.post('/:id/confirmar-pagamento', auth, CampanhaController.confirmarPagamento);
 
 module.exports = router; 

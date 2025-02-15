@@ -13,13 +13,6 @@ function gerarReferenciaPagamento(telefone) {
   return numeroLimpo;
 }
 
-function formatarValor(valor) {
-  return new Intl.NumberFormat("pt-AO", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(valor);
-}
-
 class CampanhaController {
     static async criar(req, res) {
         try {
@@ -74,6 +67,7 @@ class CampanhaController {
             valor_visualizacao: parseFloat(req.body.valor_visualizacao),
             total_pagar: parseFloat(req.body.total_pagar),
             status: "Pendente",
+            reference_id: reference_id,
           };
 
           try {
@@ -109,20 +103,22 @@ class CampanhaController {
               `Escolha a opcao pagamentos, pagamentos por referencia e introduza os dados abaixo:\n\n` +
               `Entidade: ${entidade}\n` +
               `Referencia: ${reference_id}\n` + // Usa o telefone como referência
-              `Valor: ${formatarValor(campanha.total_pagar)} Kz`;
+              `Valor: ${parseFloat(campanha.total_pagar)} Kz`;
 
             // Envia notificação
             await NotificacaoService.enviarNotificacao(
               usuario[0].telefone,
               mensagem
-            );
+            )
+
+            console.log(reference_id);
 
             // Registra o pagamento como pendente
             await PagamentoModel.registrar("criacao_campanha", reference_id, {
-              reference_id, // Usa o telefone como reference_id
               transaction_id: null,
-              amount: formatarValor(campanha.total_pagar),
+              amount: parseFloat(campanha.total_pagar),
               status: "pendente",
+              product_id: campanhaId,
             });
 
             const campanhaCreated = await CampanhaModel.obterPorId(
@@ -427,7 +423,7 @@ class CampanhaController {
             `Escolha a opcao pagamentos, pagamentos por referencia e introduza os dados abaixo:\n\n` +
             `Entidade: ${entidade}\n` +
             `Referencia: ${reference_id}\n` + // Usa o telefone como referência
-            `Valor: ${formatarValor(novaCampanha.total_pagar)} Kz`;
+            `Valor: ${parseFloat(novaCampanha.total_pagar)} Kz`;
 
           // Envia notificação
           await NotificacaoService.enviarNotificacao(
@@ -439,8 +435,9 @@ class CampanhaController {
           await PagamentoModel.registrar("renovacao_campanha", reference_id, {
             reference_id, // Usa o telefone como reference_id
             transaction_id: null,
-            amount: formatarValor(novaCampanha.total_pagar),
+            amount: parseFloat(novaCampanha.total_pagar),
             status: "pendente",
+            product_id: novaCampanhaId,
           });
 
           const campanhaPromovida = await CampanhaModel.obterPorId(
@@ -560,49 +557,130 @@ class CampanhaController {
 
     static async processarCallbackPagamento(req, res) {
         try {
-          const pagamento = {
-            reference_id: req.body.reference_id,
-            transaction_id: req.body.transaction_id,
-            amount: formatarValor(req.body.amount),
-          };
+            const pagamento = {
+                reference_id: req.body.reference_id,
+                transaction_id: req.body.transaction_id,
+                amount: req.body.amount
+            };
 
-          if (!pagamento.reference_id) {
-            return res.status(400).json({
-              success: false,
-              message: "Dados incompletos no callback",
+            if (!pagamento.reference_id) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Dados incompletos no callback'
+                });
+            }
+
+            // Atualiza o status da campanha usando o reference_id
+            const sucesso = await CampanhaModel.atualizarStatusPagamento(
+                pagamento.reference_id,
+                'Ativa',
+                pagamento.transaction_id
+            );
+
+            if (!sucesso) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Campanha não encontrada'
+                });
+            }
+
+            // Registra o pagamento
+            await PagamentoModel.registrar(
+              "criacao_campanha",
+              pagamento.reference_id,
+              pagamento
+            );
+
+            res.json({
+                success: true,
+                message: 'Pagamento registrado e status atualizado com sucesso'
             });
-          }
-
-          // Atualiza o status da campanha
-          const sucesso = await CampanhaModel.atualizarStatusPagamento(
-            pagamento.reference_id,
-            "Ativa",
-            pagamento.transaction_id
-          );
-
-          if (!sucesso) {
-            return res.status(404).json({
-              success: false,
-              message: "Campanha não encontrada",
-            });
-          }
-
-          // Registra o pagamento
-          await PagamentoModel.registrar(
-            "campanha",
-            pagamento.reference_id,
-            pagamento
-          );
-
-          res.json({
-            success: true,
-            message: "Pagamento registrado e status atualizado com sucesso",
-          });
         } catch (error) {
             console.error('Erro ao processar callback de pagamento:', error);
             res.status(500).json({
                 success: false,
                 message: 'Erro ao processar callback de pagamento',
+                error: error.message
+            });
+        }
+    }
+
+    static async registrarVisualizacao(req, res) {
+        try {
+            const { campanhaId } = req.params;
+            
+            const sucesso = await CampanhaModel.incrementarVisualizacao(campanhaId);
+            
+            if (!sucesso) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Campanha não encontrada ou não está ativa'
+                });
+            }
+
+            res.json({
+                success: true,
+                message: 'Visualização registrada com sucesso'
+            });
+        } catch (error) {
+            console.error('Erro ao registrar visualização:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Erro ao registrar visualização',
+                error: error.message
+            });
+        }
+    }
+
+    static async registrarChamada(req, res) {
+        try {
+            const { campanhaId } = req.params;
+            
+            const sucesso = await CampanhaModel.incrementarEstatistica(campanhaId, 'chamada');
+            
+            if (!sucesso) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Campanha não encontrada ou não está ativa'
+                });
+            }
+
+            res.json({
+                success: true,
+                message: 'Chamada registrada com sucesso'
+            });
+        } catch (error) {
+            console.error('Erro ao registrar chamada:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Erro ao registrar chamada',
+                error: error.message
+            });
+        }
+    }
+
+    static async registrarClique(req, res) {
+        try {
+            const { campanhaId } = req.params;
+            
+            const sucesso = await CampanhaModel.incrementarEstatistica(campanhaId, 'clique');
+            
+            if (!sucesso) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Campanha não encontrada ou não está ativa'
+                });
+            }
+
+            res.json({
+                success: true,
+                message: 'Clique registrado com sucesso'
+            });
+        } catch (error) {
+            console.error('Erro ao registrar clique:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Erro ao registrar clique',
                 error: error.message
             });
         }

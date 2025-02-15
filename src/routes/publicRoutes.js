@@ -3,6 +3,63 @@ const router = express.Router();
 const AnuncioController = require('../controllers/anuncioController');
 const CampanhaController = require('../controllers/campanhaController');
 const UserController = require('../controllers/userController');
+const PagamentoModel = require('../models/pagamentoModel');
+const userModel = require('../models/userModel');
+
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     Pagamento:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: integer
+ *           description: ID do pagamento
+ *         tipo:
+ *           type: string
+ *           enum: [campanha, ativacao]
+ *           description: Tipo do pagamento
+ *         referencia_id:
+ *           type: string
+ *           description: ID de referência do pagamento
+ *         transaction_id:
+ *           type: string
+ *           description: ID da transação
+ *         amount:
+ *           type: number
+ *           format: float
+ *           description: Valor do pagamento
+ *         status:
+ *           type: string
+ *           enum: [pendente, pago, falhou, reembolsado]
+ *           description: Status do pagamento
+ *         created_at:
+ *           type: string
+ *           format: date-time
+ *           description: Data de criação
+ *         produto:
+ *           type: object
+ *           properties:
+ *             id:
+ *               type: integer
+ *               description: ID do produto (campanha)
+ *             nome:
+ *               type: string
+ *               description: Nome do produto
+ *         usuario:
+ *           type: object
+ *           properties:
+ *             id:
+ *               type: integer
+ *               description: ID do usuário
+ *             nome:
+ *               type: string
+ *               description: Nome do usuário
+ *             telefone:
+ *               type: string
+ *               description: Telefone do usuário
+ */
 
 /**
  * @swagger
@@ -530,5 +587,159 @@ router.post('/campanhas/:campanhaId/chamada', CampanhaController.registrarChamad
  *         description: Erro do servidor
  */
 router.post('/campanhas/:campanhaId/clique', CampanhaController.registrarClique);
+
+/**
+ * @swagger
+ * /public/pagamentos/{userId}:
+ *   get:
+ *     summary: Retorna os pagamentos de um usuário
+ *     description: Lista todos os pagamentos associados a um usuário específico, incluindo detalhes do produto e usuário
+ *     tags: [Pagamentos]
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID do usuário
+ *     responses:
+ *       200:
+ *         description: Lista de pagamentos do usuário
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Pagamento'
+ *       404:
+ *         description: Usuário não encontrado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: Usuário não encontrado
+ *       500:
+ *         description: Erro do servidor
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: Erro ao listar pagamentos
+ *                 error:
+ *                   type: string
+ */
+router.get('/pagamentos/:userId', async (req, res) => {
+    try {
+        const { userId } = req.params;
+
+        // Verifica se o usuário existe
+        const user = await userModel.getUserById(userId);
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: 'Usuário não encontrado'
+            });
+        }
+
+        // Busca os pagamentos
+        const pagamentos = await PagamentoModel.listarPorUsuario(userId);
+
+        res.json({
+            success: true,
+            data: pagamentos.map(p => ({
+                id: p.id,
+                tipo: p.tipo,
+                referencia_id: p.referencia_id,
+                transaction_id: p.transaction_id,
+                amount: p.amount,
+                status: p.status,
+                created_at: p.created_at,
+                produto: p.produto,
+                usuario: p.usuario
+            }))
+        });
+    } catch (error) {
+        console.error('Erro ao listar pagamentos:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao listar pagamentos',
+            error: error.message
+        });
+    }
+});
+
+/**
+ * @swagger
+ * /public/pagamentos:
+ *   get:
+ *     summary: Retorna todos os pagamentos
+ *     description: Lista todos os pagamentos, incluindo detalhes do produto e usuário
+ *     tags: [Pagamentos]
+ *     responses:
+ *       200:
+ *         description: Lista de pagamentos
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Pagamento'
+ *       500:
+ *         description: Erro do servidor
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: Erro ao listar pagamentos
+ *                 error:
+ *                   type: string
+ */
+router.get('/pagamentos', async (req, res) => {
+    try {
+        const pagamentos = await PagamentoModel.listarTodos();
+
+        res.json({
+            success: true,
+            data: pagamentos
+        });
+    } catch (error) {
+        console.error('Erro ao listar pagamentos:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao listar pagamentos',
+            error: error.message
+        });
+    }
+});
 
 module.exports = router; 

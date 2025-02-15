@@ -108,10 +108,12 @@ class PagamentoModel {
         try {
             const [rows] = await db.query(
                 `SELECT p.*, c.nome as campanha_nome,
-                    u.nome as usuario_nome, u.telefone as usuario_telefone
+                    u.nome as usuario_nome, u.telefone as usuario_telefone, u.sobrenome as usuario_sobrenome,
+                    e.nome as empresa_nome, e.nif as empresa_nif, e.logo_url as empresa_logo
                 FROM pagamentos p
                 LEFT JOIN campanhas c ON p.product_id = c.id
                 LEFT JOIN usuarios u ON p.user_id = u.id
+                LEFT JOIN empresas e ON u.empresa_id = e.id
                 WHERE p.user_id = ?
                 ORDER BY p.created_at DESC`,
                 [userId]
@@ -127,7 +129,50 @@ class PagamentoModel {
                 usuario: row.user_id ? {
                     id: row.user_id,
                     nome: row.usuario_nome,
-                    telefone: row.usuario_telefone
+                    sobrenome: row.usuario_sobrenome,
+                    telefone: row.usuario_telefone,
+                    empresa: row.empresa_nome ? {
+                        nome: row.empresa_nome,
+                        nif: row.empresa_nif,
+                        logo_url: row.empresa_logo
+                    } : null
+                } : null
+            }));
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    static async listarTodos() {
+        try {
+            const [rows] = await db.query(
+                `SELECT p.*, c.nome as campanha_nome,
+                    u.nome as usuario_nome, u.telefone as usuario_telefone, u.sobrenome as usuario_sobrenome,
+                    e.nome as empresa_nome, e.nif as empresa_nif, e.logo_url as empresa_logo
+                FROM pagamentos p
+                LEFT JOIN campanhas c ON p.product_id = c.id
+                LEFT JOIN usuarios u ON p.user_id = u.id
+                LEFT JOIN empresas e ON u.empresa_id = e.id
+                ORDER BY p.created_at DESC`
+            );
+
+            return rows.map(row => ({
+                ...row,
+                custom_fields: row.custom_fields ? JSON.parse(row.custom_fields) : null,
+                produto: row.product_id ? {
+                    id: row.product_id,
+                    nome: row.campanha_nome
+                } : null,
+                usuario: row.user_id ? {
+                    id: row.user_id,
+                    nome: row.usuario_nome,
+                    sobrenome: row.usuario_sobrenome,
+                    telefone: row.usuario_telefone,
+                    empresa: row.empresa_nome ? {
+                        nome: row.empresa_nome,
+                        nif: row.empresa_nif,
+                        logo_url: row.empresa_logo
+                    } : null
                 } : null
             }));
         } catch (error) {

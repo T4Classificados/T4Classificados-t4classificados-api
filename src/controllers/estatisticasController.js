@@ -26,8 +26,7 @@ class EstatisticasController {
                     COALESCE(SUM(a.compartilhamentos), 0) as total_compartilhamentos,
                     COALESCE(ROUND(AVG(NULLIF(a.visualizacoes, 0)), 2), 0) as media_visualizacoes,
                     COALESCE(ROUND(AVG(NULLIF(a.chamadas, 0)), 2), 0) as media_chamadas
-                FROM anuncios a
-                WHERE a.usuario_id = ? ${dateFilter}`,
+                FROM anuncios a`,
                 queryParams
             );
 
@@ -43,7 +42,6 @@ class EstatisticasController {
                         WHERE usuario_id = ? ${dateFilter}
                     )), 1) as porcentagem
                 FROM anuncios a
-                WHERE a.usuario_id = ? ${dateFilter}
                 GROUP BY a.categoria
                 ORDER BY visualizacoes DESC`,
                 [...queryParams, ...queryParams]
@@ -64,11 +62,7 @@ class EstatisticasController {
                 compartilhamentos: "0.0"
             };
 
-            if (dataInicio && dataFim) {
-                const dias = Math.ceil((new Date(dataFim) - new Date(dataInicio)) / (1000 * 60 * 60 * 24));
-                const dataInicioAnterior = new Date(dataInicio);
-                dataInicioAnterior.setDate(dataInicioAnterior.getDate() - dias);
-                
+             
                 const [statsAnteriores] = await db.query(
                     `SELECT 
                         COUNT(DISTINCT id) as total_anuncios,
@@ -76,10 +70,7 @@ class EstatisticasController {
                         COALESCE(SUM(chamadas), 0) as total_chamadas,
                         COALESCE(SUM(mensagens_whatsapp), 0) as total_mensagens,
                         COALESCE(SUM(compartilhamentos), 0) as total_compartilhamentos
-                    FROM anuncios
-                    WHERE usuario_id = ? 
-                    AND created_at BETWEEN ? AND ?`,
-                    [userId, dataInicioAnterior.toISOString(), dataInicio]
+                    FROM anuncios`,
                 );
 
                 crescimento = {
@@ -89,7 +80,7 @@ class EstatisticasController {
                     mensagens: calcularCrescimento(stats[0].total_mensagens, statsAnteriores[0].total_mensagens),
                     compartilhamentos: calcularCrescimento(stats[0].total_compartilhamentos, statsAnteriores[0].total_compartilhamentos)
                 };
-            }
+            
 
             res.json({
                 success: true,

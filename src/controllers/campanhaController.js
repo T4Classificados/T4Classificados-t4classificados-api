@@ -6,11 +6,11 @@ const NotificacaoService = require('../services/notificacaoService');
 const db = require('../config/database');
 
 
-function gerarReferenciaPagamento(telefone) {
-
-  // Remove o prefixo +244 e qualquer outro caractere não numérico
-  const numeroLimpo = telefone.replace(/\D/g, "").replace(/^244/, "");
-  return numeroLimpo;
+function formatarValor(valor) {
+  return new Intl.NumberFormat("pt-AO", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(valor);
 }
 
 class CampanhaController {
@@ -57,17 +57,18 @@ class CampanhaController {
 
           // Prepara os dados da campanha
           const campanha = {
-            nome: req.body.nome,
+            nome: req.body.nome || null,
             tipo_exibicao: req.body.tipo_exibicao,
             espaco_exibicao: req.body.espaco_exibicao,
             descricao: req.body.descricao,
             logo_url: logo ? logo[0] : undefined,
             botao_texto: req.body.botao_texto,
             num_visualizacoes: parseInt(req.body.num_visualizacoes),
-            valor_visualizacao: parseFloat(req.body.valor_visualizacao),
-            total_pagar: parseFloat(req.body.total_pagar),
+            valor_visualizacao: parseFloat(req.body.valor_visualizacao).toFixed(3),
+            total_pagar: parseFloat(req.body.total_pagar).toFixed(3),
             status: "Pendente",
             reference_id: reference_id,
+            channel_value: req.body.channel_value,
           };
 
           try {
@@ -103,7 +104,7 @@ class CampanhaController {
               `Escolha a opcao pagamentos, pagamentos por referencia e introduza os dados abaixo:\n\n` +
               `Entidade: ${entidade}\n` +
               `Referencia: ${reference_id}\n` + // Usa o telefone como referência
-              `Valor: ${parseFloat(campanha.total_pagar)} Kz`;
+              `Valor: ${formatarValor(campanha.total_pagar)} Kz`;
 
             // Envia notificação
             await NotificacaoService.enviarNotificacao(
@@ -373,7 +374,7 @@ class CampanhaController {
 
           // Cria uma nova campanha baseada na existente
           const novaCampanha = {
-            nome: campanhaExistente.nome,
+            nome: campanhaExistente.nome || null,
             tipo_exibicao: campanhaExistente.tipo_exibicao,
             espaco_exibicao: campanhaExistente.espaco_exibicao,
             descricao: campanhaExistente.descricao,
@@ -427,7 +428,7 @@ class CampanhaController {
             `Escolha a opcao pagamentos, pagamentos por referencia e introduza os dados abaixo:\n\n` +
             `Entidade: ${entidade}\n` +
             `Referencia: ${reference_id}\n` + // Usa o telefone como referência
-            `Valor: ${parseFloat(novaCampanha.total_pagar)} Kz`;
+            `Valor: ${formatarValor(novaCampanha.total_pagar)} Kz`;
 
           // Envia notificação
           await NotificacaoService.enviarNotificacao(

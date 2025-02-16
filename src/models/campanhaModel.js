@@ -33,21 +33,23 @@ class CampanhaModel {
                     chamadas,
                     cliques,
                     status,
-                    reference_id
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0, 0, 'Pendente', ?)`,
+                    reference_id,
+                    channel_value
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0, 0, 'Pendente', ?, ?)`,
                 [
                     empresaId,
                     userId,
-                    campanha.nome,
+                    campanha.nome || null,
                     campanha.tipo_exibicao,
                     campanha.espaco_exibicao,
                     campanha.descricao,
                     campanha.logo_url,
                     campanha.botao_texto,
                     campanha.num_visualizacoes,
-                    campanha.valor_visualizacao,
-                    campanha.total_pagar,
-                    campanha.reference_id || null
+                    parseFloat(campanha.valor_visualizacao) || 0,
+                    parseFloat(campanha.total_pagar) || 0,
+                    campanha.reference_id || null,
+                    campanha.channel_value || null
                 ]
             );
 
@@ -206,6 +208,7 @@ class CampanhaModel {
                     num_visualizacoes = ?,
                     valor_visualizacao = ?,
                     total_pagar = ?,
+                    channel_value = ?,
                     updated_at = CURRENT_TIMESTAMP
                 WHERE id = ? AND usuario_id = ?`,
                 [
@@ -217,6 +220,7 @@ class CampanhaModel {
                     campanha.num_visualizacoes || existente[0].num_visualizacoes,
                     campanha.valor_visualizacao || existente[0].valor_visualizacao,
                     campanha.total_pagar || existente[0].total_pagar,
+                    campanha.channel_value || existente[0].channel_value,
                     id,
                     userId
                 ]
@@ -338,6 +342,7 @@ class CampanhaModel {
                 botao_texto: campanha.botao_texto,
                 num_visualizacoes: campanha.num_visualizacoes,
                 valor_visualizacao: campanha.valor_visualizacao,
+                channel_value: campanha.channel_value,
                 total_pagar: campanha.total_pagar,
                 views: campanha.views || 0,
                 chamadas: campanha.chamadas || 0,

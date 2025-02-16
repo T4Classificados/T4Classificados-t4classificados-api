@@ -44,7 +44,7 @@ const uploadFields = upload.fields([
  *           enum: [computador, telemóvel, ambos]
  *         espaco_exibicao:
  *           type: string
- *           enum: [cabecalho_pagina_principal, pagina_principal, pagina_princiapl_ver_anuncios, pagina_imoveis_carros_desapego, paganina_bebe, pagina_tecnologia]
+ *           enum: [cabecalho-pagina-principal, cabecalho-pagina-imoveis, cabecalho-pagina-carros, cabecalho-pagina-bebe-criancas, pagina-principal, pagina-principal-ver-anuncios, pagina-imoveis-carros-desapego, pagina-bebe-criancas, pagina-tecnologia]
  *         descricao:
  *           type: string
  *         logo_url:
@@ -82,6 +82,12 @@ const uploadFields = upload.fields([
  *             type: string
  *         empresa:
  *           $ref: '#/components/schemas/Empresa'
+ *         channel_value:
+ *           type: string
+ *           description: Valor do canal (ex: número de telefone, link, etc)
+ *         reference_id:
+ *           type: string
+ *           description: ID de referência para pagamento
  */
 
 /**
@@ -100,7 +106,6 @@ const uploadFields = upload.fields([
  *           schema:
  *             type: object
  *             required:
- *               - nome
  *               - tipo_exibicao
  *               - espaco_exibicao
  *               - num_visualizacoes
@@ -121,6 +126,8 @@ const uploadFields = upload.fields([
  *                 type: string
  *                 format: binary
  *               botao_texto:
+ *                 type: string
+ *               channel_value:
  *                 type: string
  *               num_visualizacoes:
  *                 type: integer

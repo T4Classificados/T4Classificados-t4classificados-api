@@ -49,11 +49,11 @@ class CampanhaController {
           }
 
           // Gera reference_id único de 9 dígitos
-          const timestamp = Date.now().toString().slice(-4); // Últimos 4 dígitos do timestamp
+          const timestamp = Date.now().toString().slice(-5); // Últimos 5 dígitos do timestamp
           const randomNum = Math.floor(Math.random() * 10000)
             .toString()
             .padStart(4, "0"); // 4 dígitos aleatórios
-          const reference_id = timestamp.slice(0, 5) + randomNum.slice(0, 4); // Combina para ter 9 dígitos únicos
+          const reference_id = timestamp + randomNum; // Combina para ter 9 dígitos únicos
 
           // Prepara os dados da campanha
           const campanha = {
@@ -99,7 +99,7 @@ class CampanhaController {
             // Monta mensagem SMS
             const mensagem =
               `T4 Classificados\n` +
-              `Dados para pagamento da campanha\n\n` +
+              `Dados para pagamento da campanha patrocinada\n\n` +
               `Faca no Multicaixa Express, ATM ou Internet banking\n\n` +
               `Escolha a opcao pagamentos, pagamentos por referencia e introduza os dados abaixo:\n\n` +
               `Entidade: ${entidade}\n` +
@@ -366,11 +366,11 @@ class CampanhaController {
           }
 
           // Gera reference_id único de 9 dígitos
-          const timestamp = Date.now().toString().slice(-4); // Últimos 4 dígitos do timestamp
+          const timestamp = Date.now().toString().slice(-5); // Últimos 5 dígitos do timestamp
           const randomNum = Math.floor(Math.random() * 10000)
             .toString()
             .padStart(4, "0"); // 4 dígitos aleatórios
-          const reference_id = timestamp.slice(0, 5) + randomNum.slice(0, 4); // Combina para ter 9 dígitos únicos
+          const reference_id = timestamp + randomNum; // Combina para ter 9 dígitos únicos
 
           // Cria uma nova campanha baseada na existente
           const novaCampanha = {
@@ -423,7 +423,7 @@ class CampanhaController {
           // Monta mensagem SMS
           const mensagem =
             `T4 Classificados\n` +
-            `Dados para pagamento de renovacao de campanha\n\n` +
+            `Dados para pagamento de renovacao de campanha patrocinada\n\n` +
             `Faca no Multicaixa Express, ATM ou Internet banking\n\n` +
             `Escolha a opcao pagamentos, pagamentos por referencia e introduza os dados abaixo:\n\n` +
             `Entidade: ${entidade}\n` +

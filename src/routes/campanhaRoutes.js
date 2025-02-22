@@ -84,7 +84,6 @@ const uploadFields = upload.fields([
  *           $ref: '#/components/schemas/Empresa'
  *         channel_value:
  *           type: string
- *           description: Valor do canal (ex: número de telefone, link, etc)
  *         reference_id:
  *           type: string
  *           description: ID de referência para pagamento

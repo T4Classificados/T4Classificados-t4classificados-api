@@ -111,6 +111,9 @@ exports.register = async (req, res) => {
       bilhete
     );
 
+    const smsMessage = `Obrigado por se registrar no T4 Classificados. Código de verificação: ${confirmationCode}`;
+    await sendSMS(telefone, smsMessage);
+
 
     res.status(201).json({
       success: true,
@@ -122,13 +125,7 @@ exports.register = async (req, res) => {
         sobrenome,
         telefone,
         provincia,
-        municipio,
-        pagamento: {
-          entidade,
-          referencia: gerarReferenciaPagamento(telefone),
-          valor: valorAtivacao,
-          dataLimite: dataLimiteFormatada,
-        },
+        municipio
       },
     });
 
@@ -147,6 +144,9 @@ exports.loginUser = async (req, res) => {
     const { telefone, senha, lembrar } = req.body;
 
     const user = await userModel.getUserByTelefone(telefone);
+
+    
+
     if (!user) {
       return res.status(401).json({ message: 'Credenciais inválidas' });
     }
@@ -155,10 +155,14 @@ exports.loginUser = async (req, res) => {
       return res.status(403).json({ message: 'Conta não ativada. Por favor, verifique seu SMS e ative sua conta.' });
     } */
 
+
     const isPasswordValid = await bcrypt.compare(senha, user.senha);
+    
     if (!isPasswordValid) {
       return res.status(401).json({ message: 'Credenciais inválidas' });
     }
+
+    
 
     const accessToken = jwt.sign(
       { userId: user.id, telefone: user.telefone, role: user.role },
@@ -780,9 +784,9 @@ exports.processarCallbackPagamento = async (req, res) => {
         pagamento
       );
 
-      const telefone = `+244${pagamento.phone_number}`;
+     // const telefone = `+244${pagamento.phone_number}`;
 
-      await sendSMS(telefone, "Sua conta foi activada com sucesso. Bem-vindo ao T4 Classificados.");
+     // await sendSMS(telefone, "Sua conta foi activada com sucesso. Bem-vindo ao T4 Classificados.");
 
       res.json({
         success: true,

@@ -70,6 +70,23 @@ class CampanhaModel {
             throw error;
         }
     }
+    static async salvarImagens(campanha_id, imagens) {
+        console.log(campanha_id);
+        try {
+            // Preparar a query para inserção múltipla
+            const values = imagens.map(url => [campanha_id, url]);
+            
+            await db.query(
+                'INSERT INTO campanha_imagens (campanha_id, url_imagem) VALUES ?',
+                [values]
+            );
+
+            return true;
+        } catch (error) {
+            console.error('Erro ao salvar imagens:', error);
+            throw error;
+        }
+    }
 
     static async listar(userId) {
         try {
@@ -89,18 +106,52 @@ class CampanhaModel {
                 [userId]
             );
 
-            const baseUrl = process.env.BASE_URL || 'http://localhost:4000';
+            //const baseUrl = process.env.BASE_URL || 'http://localhost:4000';
             return rows.map(row => ({
                 ...row,
-                logo_url: row.logo_url ? `${baseUrl}${row.logo_url}` : null,
+                logo_url: row.logo_url ? row.logo_url : null,
                 imagens: row.imagens 
-                    ? row.imagens.split(',').map(img => `${baseUrl}${img}`)
+                    ? row.imagens.split(',').map(img => img)
                     : [],
                 empresa: {
                     id: row.empresa_id,
                     nome: row.empresa_nome,
                     nif: row.empresa_nif,
-                    logo_url: row.empresa_logo ? `${baseUrl}${row.empresa_logo}` : null
+                    logo_url: row.empresa_logo ?row.empresa_logo : null
+                }
+            }));
+        } catch (error) {
+            throw error;
+        }
+    }
+    static async listarPublico() {
+        try {
+            const [rows] = await db.query(
+                `SELECT c.*, 
+                    GROUP_CONCAT(ci.url_imagem) as imagens,
+                    e.nome as empresa_nome,
+                    e.nif as empresa_nif,
+                    e.logo_url as empresa_logo
+                FROM campanhas c
+                LEFT JOIN campanha_imagens ci ON c.id = ci.campanha_id
+                LEFT JOIN empresas e ON c.empresa_id = e.id
+                GROUP BY c.id
+                ORDER BY c.created_at DESC`
+            );
+    
+            //const baseUrl = process.env.BASE_URL || 'http://localhost:4000';
+    
+            return rows.map(row => ({
+                ...row,
+                logo_url: row.logo_url ? row.logo_url : null,
+                imagens: row.imagens 
+                    ? row.imagens.split(',').map(img => img)
+                    : [],
+                empresa: {
+                    id: row.empresa_id,
+                    nome: row.empresa_nome,
+                    nif: row.empresa_nif,
+                    logo_url: row.empresa_logo ? row.empresa_logo : null
                 }
             }));
         } catch (error) {
@@ -109,6 +160,7 @@ class CampanhaModel {
     }
 
     static async obterPorId(id, userId) {
+     
         try {
             const [rows] = await db.query(
                 `SELECT c.*, 
@@ -127,19 +179,19 @@ class CampanhaModel {
             if (rows.length === 0) return null;
 
             const campanha = rows[0];
-            const baseUrl = process.env.BASE_URL || 'http://localhost:4000';
+           // const baseUrl = process.env.BASE_URL || 'http://localhost:4000';
             
             return {
                 ...campanha,
-                logo_url: campanha.logo_url ? `${baseUrl}${campanha.logo_url}` : null,
+                logo_url: campanha.logo_url ? campanha.logo_url : null,
                 imagens: campanha.imagens 
-                    ? campanha.imagens.split(',').map(img => `${baseUrl}${img}`)
+                    ? campanha.imagens.split(',').map(img => img)
                     : [],
                 empresa: {
                     id: campanha.empresa_id,
                     nome: campanha.empresa_nome,
                     nif: campanha.empresa_nif,
-                    logo_url: campanha.empresa_logo ? `${baseUrl}${campanha.empresa_logo}` : null
+                    logo_url: campanha.empresa_logo ? campanha.empresa_logo: null
                 }
             };
         } catch (error) {
@@ -147,6 +199,7 @@ class CampanhaModel {
         }
     }
     static async obterPorReferenceId(referenceId) {
+        console.log("Entre aqui")
         try {
             const [rows] = await db.query(
                 `SELECT c.*, 

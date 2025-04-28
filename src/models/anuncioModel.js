@@ -85,12 +85,12 @@ class AnuncioModel {
             const [rows] = await db.query(query, values);
             
             // Convert comma-separated images string to array with full URLs
-            const baseUrl = process.env.BASE_URL || 'http://localhost:4000';
+            //const baseUrl = process.env.BASE_URL || 'http://localhost:4000';
   return rows.map(row => ({
     ...row,
-                imagem_principal: row.imagem_principal ? `${baseUrl}${row.imagem_principal}` : null,
+                imagem_principal: row.imagem_principal ? row.imagem_principal : null,
                 imagens: row.imagens 
-                    ? row.imagens.split(',').map(img => `${baseUrl}${img}`)
+                    ? row.imagens.split(',').map(img => img)
                     : []
   }));
         } catch (error) {
@@ -125,7 +125,7 @@ class AnuncioModel {
             }
 
             const anuncio = rows[0];
-            const baseUrl = process.env.BASE_URL || 'http://localhost:4000';
+           // const baseUrl = process.env.BASE_URL || 'http://localhost:4000';
 
             // Formatar dados do usuário
             const usuario = {
@@ -136,7 +136,7 @@ class AnuncioModel {
                 provincia: anuncio.usuario_provincia,
                 municipio: anuncio.usuario_municipio,
                 genero: anuncio.usuario_genero,
-                foto_url: anuncio.usuario_foto ? `${baseUrl}${anuncio.usuario_foto}` : null,
+                foto_url: anuncio.usuario_foto ? anuncio.usuario_foto : null,
                 created_at: anuncio.usuario_created_at
             };
 
@@ -153,9 +153,9 @@ class AnuncioModel {
 
     return {
                 ...anuncio,
-                imagem_principal: anuncio.imagem_principal ? `${baseUrl}${anuncio.imagem_principal}` : null,
+                imagem_principal: anuncio.imagem_principal ? anuncio.imagem_principal  : null,
                 imagens: anuncio.imagens 
-                    ? anuncio.imagens.split(',').map(img => `${baseUrl}${img}`)
+                    ? anuncio.imagens.split(',').map(img => img)
                     : [],
                 usuario
             };
@@ -314,7 +314,7 @@ class AnuncioModel {
             );
 
             // Formatar URLs das imagens
-            const baseUrl = process.env.BASE_URL || 'http://localhost:4000';
+            //const baseUrl = process.env.BASE_URL || 'http://localhost:4000';
             const anunciosFormatados = anuncios.map(anuncio => ({
                 id: anuncio.id,
                 titulo: anuncio.titulo,
@@ -339,14 +339,14 @@ class AnuncioModel {
                 compartilhamentos: anuncio.compartilhamentos,
                 created_at: anuncio.created_at,
                 updated_at: anuncio.updated_at,
-                imagem_principal: anuncio.imagem_principal ? `${baseUrl}${anuncio.imagem_principal}` : null,
+                imagem_principal: anuncio.imagem_principal ? anuncio.imagem_principal : null,
                 usuario: {
                     id: anuncio.usuario_id,
                     nome: anuncio.usuario_nome,
                     telefone: anuncio.usuario_telefone
                 },
                 imagens: anuncio.imagens 
-                    ? anuncio.imagens.split(',').map(img => `${baseUrl}${img}`)
+                    ? anuncio.imagens.split(',').map(img => img)
                     : [],
                 total_favoritos: anuncio.total_favoritos || 0
             }));
@@ -394,10 +394,10 @@ class AnuncioModel {
             const baseUrl = process.env.BASE_URL || 'http://localhost:4000';
             return rows.map(row => ({
                 ...row,
-                imagem_principal: row.imagem_principal ? `${baseUrl}${row.imagem_principal}` : null,
+                imagem_principal: row.imagem_principal ? row.imagem_principal : null,
                 imagens: row.imagens 
-                    ? row.imagens.split(',').map(img => `${baseUrl}${img}`)
-                    : []
+                ? row.imagens.split(',').map(img => img)
+                : []
             }));
         } catch (error) {
             throw error;
@@ -467,7 +467,7 @@ class AnuncioModel {
             );
 
             // Formatar URLs das imagens e estruturar resposta
-            const baseUrl = process.env.BASE_URL || 'http://localhost:4000';
+            //const baseUrl = process.env.BASE_URL || 'http://localhost:4000';
             const anunciosFormatados = anuncios.map(anuncio => ({
                 id: anuncio.id,
                 titulo: anuncio.titulo,
@@ -497,9 +497,9 @@ class AnuncioModel {
                     nome: anuncio.usuario_nome,
                     telefone: anuncio.usuario_telefone
                 },
-                imagem_principal: anuncio.imagem_principal ? `${baseUrl}${anuncio.imagem_principal}` : null,
+                imagem_principal: anuncio.imagem_principal ? anuncio.imagem_principal : null,
                 imagens: anuncio.imagens 
-                    ? anuncio.imagens.split(',').map(img => `${baseUrl}${img}`)
+                    ? anuncio.imagens.split(',').map(img => img)
                     : [],
                 total_favoritos: anuncio.total_favoritos || 0
             }));
@@ -567,7 +567,7 @@ class AnuncioModel {
             );
 
             // Formatar URLs das imagens
-            const baseUrl = process.env.BASE_URL || 'http://localhost:4000';
+            //const baseUrl = process.env.BASE_URL || 'http://localhost:4000';
             return rows.map(anuncio => ({
                 id: anuncio.id,
                 titulo: anuncio.titulo,
@@ -587,9 +587,9 @@ class AnuncioModel {
                 chamadas: anuncio.chamadas || 0,
                 mensagens_whatsapp: anuncio.mensagens_whatsapp || 0,
                 compartilhamentos: anuncio.compartilhamentos || 0,
-                imagem_principal: anuncio.imagem_principal ? `${baseUrl}${anuncio.imagem_principal}` : null,
+                imagem_principal: anuncio.imagem_principal ? anuncio.imagem_principal : null,
                 imagens: anuncio.imagens 
-                    ? anuncio.imagens.split(',').map(img => `${baseUrl}${img}`)
+                    ? anuncio.imagens.split(',').map(img => img)
                     : []
             }));
         } catch (error) {
@@ -645,7 +645,7 @@ class AnuncioModel {
             );
 
             // Formatar URLs das imagens
-            const baseUrl = process.env.BASE_URL || 'http://localhost:4000';
+            //const baseUrl = process.env.BASE_URL || 'http://localhost:4000';
             return rows.map(anuncio => ({
                 id: anuncio.id,
                 titulo: anuncio.titulo,
@@ -666,9 +666,9 @@ class AnuncioModel {
                 mensagens_whatsapp: anuncio.mensagens_whatsapp || 0,
                 compartilhamentos: anuncio.compartilhamentos || 0,
                 created_at: anuncio.created_at,
-                imagem_principal: anuncio.imagem_principal ? `${baseUrl}${anuncio.imagem_principal}` : null,
+                imagem_principal: anuncio.imagem_principal ? nuncio.imagem_principal : null,
                 imagens: anuncio.imagens 
-                    ? anuncio.imagens.split(',').map(img => `${baseUrl}${img}`)
+                    ? anuncio.imagens.split(',').map(img => img)
                     : []
             }));
         } catch (error) {
@@ -695,7 +695,7 @@ class AnuncioModel {
                 [usuarioId]
   );
 
-            const baseUrl = process.env.BASE_URL || 'http://localhost:4000';
+            //const baseUrl = process.env.BASE_URL || 'http://localhost:4000';
             return rows.map(anuncio => ({
     id: anuncio.id,
     titulo: anuncio.titulo,
@@ -716,14 +716,14 @@ class AnuncioModel {
                 mensagens_whatsapp: anuncio.mensagens_whatsapp || 0,
                 compartilhamentos: anuncio.compartilhamentos || 0,
                 created_at: anuncio.created_at,
-                imagem_principal: anuncio.imagem_principal ? `${baseUrl}${anuncio.imagem_principal}` : null,
+                imagem_principal: anuncio.imagem_principal ? anuncio.imagem_principal : null,
                 imagens: anuncio.imagens 
-                    ? anuncio.imagens.split(',').map(img => `${baseUrl}${img}`)
+                    ? anuncio.imagens.split(',').map(img => img)
                     : [],
                 usuario: {
                     nome: anuncio.usuario_nome,
                     sobrenome: anuncio.usuario_sobrenome,
-                    foto_url: anuncio.usuario_foto ? `${baseUrl}${anuncio.usuario_foto}` : null
+                    foto_url: anuncio.usuario_foto ? anuncio.usuario_foto : null
                 }
             }));
         } catch (error) {
@@ -838,7 +838,7 @@ class AnuncioModel {
                 return [];
             }
 
-            const baseUrl = process.env.BASE_URL || 'http://localhost:4000';
+            //const baseUrl = process.env.BASE_URL || 'http://localhost:4000';
             return rows.map(anuncio => ({
                 id: anuncio.id,
                 titulo: anuncio.titulo,
@@ -859,15 +859,15 @@ class AnuncioModel {
                 mensagens_whatsapp: anuncio.mensagens_whatsapp || 0,
                 compartilhamentos: anuncio.compartilhamentos || 0,
     created_at: anuncio.created_at,
-                imagem_principal: anuncio.imagem_principal ? `${baseUrl}${anuncio.imagem_principal}` : null,
+                imagem_principal: anuncio.imagem_principal ? anuncio.imagem_principal : null,
                 imagens: anuncio.imagens 
-                    ? anuncio.imagens.split(',').map(img => `${baseUrl}${img}`)
+                    ? anuncio.imagens.split(',').map(img => img)
                     : [],
                 usuario: {
                     nome: anuncio.usuario_nome,
                     sobrenome: anuncio.usuario_sobrenome,
                     telefone: anuncio.usuario_telefone,
-                    foto_url: anuncio.usuario_foto ? `${baseUrl}${anuncio.usuario_foto}` : null
+                    foto_url: anuncio.usuario_foto ? anuncio.usuario_foto : null
                 }
             }));
         } catch (error) {

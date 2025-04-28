@@ -1,8 +1,10 @@
 sudo mysql -u root -p
 
 CREATE DATABASE t4classificados;
-CREATE USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'topsecret!';
+CREATE USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'N@03xiste';
 GRANT ALL PRIVILEGES ON t4classificados.* TO 'root'@'localhost';
 
-ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'topsecret!';
+ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'N@03xiste';
 FLUSH PRIVILEGES;
+
+sudo apt install phpmyadmin php-mbstring php-zip php-gd php-json php-curl

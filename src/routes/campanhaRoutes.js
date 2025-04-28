@@ -2,7 +2,16 @@ const express = require('express');
 const router = express.Router();
 const CampanhaController = require('../controllers/campanhaController');
 const auth = require('../middleware/auth');
-const upload = require('../middleware/upload');
+//const upload = require('../middleware/upload');
+
+const multer = require('multer');
+
+const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: {
+        fileSize: 10 * 1024 * 1024, // 10MB limit
+    },
+});
 
 const uploadFields = upload.fields([
     { name: 'imagens', maxCount: 8 },

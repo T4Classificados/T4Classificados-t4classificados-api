@@ -1,53 +1,65 @@
 const AnuncioModel = require('../models/anuncioModel');
 const db = require('../config/database');
+const { CloudflareService } = require('../utils/cloudflare');
+
 
 class AnuncioController {
-  static async criar(req, res) {
-    try {
-      const dados = req.body;
-      dados.usuario_id = req.userData.userId;
-
-      // Processar imagem principal
-      if (req.files && req.files.imagem_principal && req.files.imagem_principal.length > 0) {
-        const imagemPrincipalPath = '/uploads/' + req.files.imagem_principal[0].filename;
-        dados.imagem_principal = imagemPrincipalPath;
-      }
-
-      // Processar imagens adicionais
-      const imagens = [];
-      if (req.files && req.files.imagens) {
-        req.files.imagens.forEach(file => {
-          imagens.push('/uploads/' + file.filename);
+    static async criar(req, res) {
+      try {
+        const dados = req.body;
+        dados.usuario_id = req.userData.userId;
+        
+        // Inicializar o serviço do Cloudflare
+        const cloudflareService = new CloudflareService();
+        if (req.files && req.files.imagem_principal && req.files.imagem_principal.length > 0) {
+          const imagemPrincipalKey = await cloudflareService.uploadFile('anuncios', req.files.imagem_principal[0]);
+          const imagemPrincipalUrl = await cloudflareService.getSignedUrl(imagemPrincipalKey);
+          dados.imagem_principal_key = imagemPrincipalKey;
+          dados.imagem_principal = imagemPrincipalUrl;
+        }
+  
+        // Processar imagens adicionais
+        const imagens = [];
+        const imagensKeys = [];
+        
+        if (req.files && req.files.imagens) {
+          // Para cada imagem adicional, fazer upload para o Cloudflare R2
+          for (const file of req.files.imagens) {
+            const imagemKey = await cloudflareService.uploadFile('anuncios', file);
+            const imagemUrl = await cloudflareService.getSignedUrl(imagemKey);
+            
+            imagens.push(imagemUrl);
+            imagensKeys.push(imagemKey);
+          }
+        }
+  
+        // Criar o anúncio
+        const anuncioId = await AnuncioModel.criar(dados);
+  
+        // Salvar as imagens adicionais
+        if (imagensKeys.length > 0) {
+          // Modificar o modelo para salvar as chaves das imagens também
+          await AnuncioModel.salvarImagens(anuncioId, imagens, imagensKeys);
+        }
+  
+        res.status(201).json({
+          success: true,
+          message: 'Anúncio criado com sucesso',
+          data: {
+            id: anuncioId,
+            imagens: imagens,
+            imagem_principal: dados.imagem_principal
+          }
+        });
+      } catch (error) {
+        console.error('Erro ao criar anúncio:', error);
+        res.status(500).json({
+          success: false,
+          message: 'Erro ao criar anúncio',
+          error: error.message
         });
       }
-
-
-      // Criar o anúncio
-      const anuncioId = await AnuncioModel.criar(dados);
-
-      // Salvar as imagens adicionais
-      if (imagens.length > 0) {
-        await AnuncioModel.salvarImagens(anuncioId, imagens);
-      }
-
-      res.status(201).json({
-        success: true,
-        message: 'Anúncio criado com sucesso',
-        data: {
-          id: anuncioId,
-          imagens: imagens,
-          imagem_principal: dados.imagem_principal
-        }
-      });
-    } catch (error) {
-      console.error('Erro ao criar anúncio:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Erro ao criar anúncio',
-        error: error.message
-      });
     }
-  }
 
   static async listar(req, res) {
     try {

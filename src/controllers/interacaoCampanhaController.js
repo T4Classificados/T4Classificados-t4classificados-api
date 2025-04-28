@@ -124,7 +124,7 @@ class InteracaoCampanhaController {
                      AND data_clique >= DATE_SUB(NOW(), INTERVAL 24 HOUR)) as cliques_24h
                 FROM campanhas c
                 LEFT JOIN campanha_visualizacoes cv ON c.id = cv.campanha_id
-                LEFT JOIN campanha_cliques cc ON c.id = cc.campanha_id
+                LEFT JOIN                                                                                                                                                                                                                                                                                                                         cc ON c.id = cc.campanha_id
                 WHERE c.id = ?
                 GROUP BY c.id`,
                 [campanhaId]

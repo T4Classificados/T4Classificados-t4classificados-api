@@ -1,5 +1,4 @@
 require("dotenv").config({ path: "/etc/app.env" });
-
 const dotenv = require("dotenv");
 dotenv.config();
 
@@ -11,7 +10,7 @@ const swaggerUi = require("swagger-ui-express");
 const swaggerSpecs = require("./config/swagger");
 const cookieParser = require("cookie-parser");
 const campanhaStatusJob = require('./jobs/campanhaStatusJob');
-
+//const { subirImagensDaPasta } = require('./arquivo');
 const app = express();
 const port = process.env.PORT || 4000;
 
@@ -22,6 +21,10 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+
+
+
+//subirImagensDaPasta('./uploads');
 
 // Criar os diretórios de upload se não existirem
 const uploadsDir = path.join(__dirname, "../uploads");

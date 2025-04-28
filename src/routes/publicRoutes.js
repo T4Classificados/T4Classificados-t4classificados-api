@@ -6,6 +6,7 @@ const UserController = require('../controllers/userController');
 const PagamentoModel = require('../models/pagamentoModel');
 const userModel = require('../models/userModel');
 
+
 /**
  * @swagger
  * components:
@@ -107,6 +108,55 @@ const userModel = require('../models/userModel');
  *                           format: uri
  */
 router.get('/anuncios', AnuncioController.listarPublicos);
+
+
+//----------------------------------------------------------------------------------------------------------------
+/**
+ * @swagger
+ * /public/anuncios:
+ *   get:
+ *     summary: Lista todos os anúncios públicos
+ *     tags: [Anúncios]
+ *     parameters:
+ *       - in: query
+ *         name: categoria
+ *         schema:
+ *           type: string
+ *         description: Filtrar por categoria
+ *       - in: query
+ *         name: provincia
+ *         schema:
+ *           type: string
+ *         description: Filtrar por província
+ *     responses:
+ *       200:
+ *         description: Lista de anúncios
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                       titulo:
+ *                         type: string
+ *                       imagem_principal:
+ *                         type: string
+ *                         format: uri
+ *                       imagens:
+ *                         type: array
+ *                         items:
+ *                           type: string
+ *                           format: uri
+ */
+router.get('/campanha', CampanhaController.listarPublicos);
 
 /**
  * @swagger

@@ -108,7 +108,11 @@ const userModel = require('../models/userModel');
  *                           format: uri
  */
 router.get('/anuncios', AnuncioController.listarPublicos);
-
+router.get('/test-api', (req, resp)=>{
+    resp.send({
+        texto: "Testando mudanças"
+    })
+});
 
 //----------------------------------------------------------------------------------------------------------------
 /**

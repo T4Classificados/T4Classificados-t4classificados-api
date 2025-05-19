@@ -64,7 +64,6 @@ class AnuncioController {
   static async listar(req, res) {
     try {
       let anuncios;
-
       // Se for admin, lista todos os anúncios
       if (req.userData && req.userData.role === "admin") {
         anuncios = await AnuncioModel.listarTodos();

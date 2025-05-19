@@ -611,30 +611,35 @@ exports.updateUser = async (req, res) => {
 };
 
 exports.listarAdmin = async (req, res) => {
-    try {
-        const { 
-            status = 'todos',
-            search = '' 
-        } = req.query;
+  try {
+      const { 
+          status = 'todos',
+          search = '',
+          page = 1,
+          limit = 10
+      } = req.query;
 
-        const usuarios = await userModel.listarAdmin(
-            status,
-            search
-        );
+      const usuarios = await userModel.listarAdmin(
+          status,
+          search,
+          parseInt(page),
+          parseInt(limit)
+      );
 
-        res.json({
-            success: true,
-            data: usuarios
-        });
-    } catch (error) {
-        console.error('Erro ao listar usuários:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Erro ao listar usuários',
-            error: error.message
-        });
-    }
+      res.json({
+          success: true,
+          data: usuarios
+      });
+  } catch (error) {
+      console.error('Erro ao listar usuários:', error);
+      res.status(500).json({
+          success: false,
+          message: 'Erro ao listar usuários',
+          error: error.message
+      });
+  }
 };
+
 
 exports.alterarStatus = async (req, res) => {
     try {

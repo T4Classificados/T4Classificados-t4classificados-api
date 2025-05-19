@@ -26,7 +26,7 @@ exports.getUserById = async (id) => {
     WHERE u.id = ?`,
     [id]
   );
-  
+
   if (rows.length === 0) {
     return null;
   }
@@ -68,7 +68,7 @@ exports.clearResetCode = async (id) => {
 exports.updateUser = async (id, updateData) => {
   // Campos permitidos para atualização
   const allowedFields = ['nome', 'sobrenome', 'genero', 'provincia', 'municipio', 'role', 'bilhete'];
-  
+
   // Filtrar apenas os campos permitidos que foram fornecidos
   const validUpdates = Object.keys(updateData)
     .filter(key => allowedFields.includes(key) && updateData[key] !== undefined)
@@ -85,7 +85,7 @@ exports.updateUser = async (id, updateData) => {
   const setClause = Object.keys(validUpdates)
     .map(field => `${field} = ?`)
     .join(', ');
-  
+
   const values = [...Object.values(validUpdates), id];
 
   const [result] = await db.query(
@@ -98,147 +98,167 @@ exports.updateUser = async (id, updateData) => {
 
 exports.listarAdmin = async (status = 'todos', search = '', page = 1, limit = 10) => {
   try {
-      let whereClause = '';
-      let params = [];
+    const safePage = Math.max(1, parseInt(page));
+    const safeLimit = Math.max(1, parseInt(limit));
+    const offset = (safePage - 1) * safeLimit;
 
-      // Filtro de status
-      if (status !== 'todos') {
-          whereClause += ' AND u.status = ?';
-          params.push(status);
+    const whereConditions = [];
+    const params = [];
+
+    // Filtrar pelo campo is_active baseado no status
+    if (status !== 'all') {
+      console.log('Status selecionado:', status);
+
+      // Mapear os valores em inglês para os valores numéricos
+      let isActiveValue;
+      if (status === 'active') {
+        isActiveValue = 1;
+      } else if (status === 'inactive') {
+        isActiveValue = 0;
+      } else {
+        // Se for passado diretamente o valor numérico
+        isActiveValue = Number(status);
       }
 
-      // Filtro de busca
-      if (search) {
-          whereClause += ` AND (
-              u.nome LIKE ? OR 
-              u.telefone LIKE ?
-          )`;
-          const searchTerm = `%${search}%`;
-          params.push(searchTerm, searchTerm);
+      // Verificar se o valor é válido (0 ou 1)
+      if (isActiveValue === 1 || isActiveValue === 0) {
+        whereConditions.push('u.is_active = ?');
+        params.push(isActiveValue);
+      } else {
+        console.log('Valor de status inválido, ignorando filtro:', status);
       }
+    }
 
-      // Cálculo de OFFSET para paginação
-      const offset = (page - 1) * limit;
+    // Filtro de busca pelo nome ou telefone
+    if (search) {
+      const searchWords = search.toLowerCase().trim().split(/\s+/);
+      const wordConditions = [];
 
-      // Query principal com LIMIT e OFFSET
-      const [usuarios] = await db.query(
-          `SELECT 
-              u.id,
-              u.nome,
-              u.sobrenome,
-              u.telefone,
-              u.provincia,
-              u.municipio,
-              u.genero,
-              u.bilhete,
-              u.role,
-              u.is_active,
-              u.foto_url,
-              u.created_at,
-              e.nome as empresa_nome,
-              e.nif as empresa_nif,
-              e.logo_url as empresa_logo,
-              ca.iban as conta_afiliada_iban
-          FROM usuarios u
-          LEFT JOIN empresas e ON u.empresa_id = e.id
-          LEFT JOIN contas_afiliadas ca ON u.conta_afiliada_id = ca.id
-          WHERE 1=1 ${whereClause}
-          ORDER BY u.created_at DESC
-          LIMIT ? OFFSET ?`,
-          [...params, parseInt(limit), parseInt(offset)]
-      );
+      searchWords.forEach(() => {
+        wordConditions.push(`(
+        LOWER(CONCAT(u.nome, ' ', u.sobrenome)) COLLATE utf8mb4_unicode_ci LIKE ? OR
+        LOWER(u.telefone) COLLATE utf8mb4_unicode_ci LIKE ?
+      )`);
+      });
 
-      // Contagem total para paginação
-      const [total] = await db.query(
-          `SELECT COUNT(*) as total 
-          FROM usuarios u 
-          WHERE 1=1 ${whereClause}`,
-          params
-      );
+      whereConditions.push(wordConditions.join(' AND '));
 
-      // Formatar URLs e estruturar dados
-      const baseUrl = process.env.BASE_URL || 'http://localhost:4000';
-      const usuariosFormatados = usuarios.map(usuario => ({
-          id: usuario.id,
-          nome: usuario.nome,
-          sobrenome: usuario.sobrenome,
-          telefone: usuario.telefone,
-          provincia: usuario.provincia,
-          municipio: usuario.municipio,
-          genero: usuario.genero,
-          bilhete: usuario.bilhete,
-          role: usuario.role,
-          is_active: usuario.is_active,
-          foto_url: usuario.foto_url ? `${baseUrl}${usuario.foto_url}` : null,
-          created_at: usuario.created_at,
-          empresa: usuario.empresa_nome ? {
-              nome: usuario.empresa_nome,
-              nif: usuario.empresa_nif,
-              logo_url: usuario.empresa_logo ? `${baseUrl}${usuario.empresa_logo}` : null
-          } : null,
-          conta_afiliada: usuario.conta_afiliada_iban ? {
-              iban: usuario.conta_afiliada_iban
-          } : null
-      }));
+      searchWords.forEach(word => {
+        const term = `%${word}%`;
+        params.push(term, term);
+      });
+    }
 
-      return {
-          usuarios: usuariosFormatados,
-          pagination: {
-              total: total[0].total,
-              page: parseInt(page),
-              limit: parseInt(limit),
-              pages: Math.ceil(total[0].total / limit)
-          }
-      };
+    const whereClause = whereConditions.length ? `WHERE ${whereConditions.join(' AND ')}` : '';
+
+    const queryUsuarios = `
+      SELECT 
+        u.id, u.nome, u.sobrenome, u.telefone, u.provincia, u.municipio,
+        u.genero, u.bilhete, u.role, u.is_active, u.foto_url, u.created_at,
+        e.nome AS empresa_nome, e.nif AS empresa_nif, e.logo_url AS empresa_logo,
+        ca.iban AS conta_afiliada_iban
+      FROM usuarios u
+      LEFT JOIN empresas e ON u.empresa_id = e.id
+      LEFT JOIN contas_afiliadas ca ON u.conta_afiliada_id = ca.id
+      ${whereClause}
+      ORDER BY u.created_at DESC
+      LIMIT ? OFFSET ?
+    `;
+
+    const queryTotal = `
+      SELECT COUNT(*) as total
+      FROM usuarios u
+      ${whereClause}
+    `;
+
+    const [usuarios] = await db.query(queryUsuarios, [...params, safeLimit, offset]);
+    const [totalResult] = await db.query(queryTotal, params);
+    const total = totalResult[0].total;
+
+    const baseUrl = process.env.BASE_URL || 'http://localhost:4000';
+
+    const usuariosFormatados = usuarios.map(usuario => ({
+      id: usuario.id,
+      nome: usuario.nome,
+      sobrenome: usuario.sobrenome,
+      telefone: usuario.telefone,
+      provincia: usuario.provincia,
+      municipio: usuario.municipio,
+      genero: usuario.genero,
+      bilhete: usuario.bilhete,
+      role: usuario.role,
+      is_active: !!usuario.is_active,
+      foto_url: usuario.foto_url ? `${baseUrl}${usuario.foto_url}` : null,
+      created_at: usuario.created_at,
+      empresa: usuario.empresa_nome ? {
+        nome: usuario.empresa_nome,
+        nif: usuario.empresa_nif,
+        logo_url: usuario.empresa_logo ? `${baseUrl}${usuario.empresa_logo}` : null
+      } : null,
+      conta_afiliada: usuario.conta_afiliada_iban ? {
+        iban: usuario.conta_afiliada_iban
+      } : null
+    }));
+
+    return {
+      usuarios: usuariosFormatados,
+      pagination: {
+        total,
+        page: safePage,
+        limit: safeLimit,
+        pages: Math.ceil(total / safeLimit)
+      }
+    };
   } catch (error) {
-      throw error;
+    throw error;
   }
 };
 
 
+
 exports.alterarStatus = async (id, is_active) => {
-    try {
-        const [result] = await db.query(
-            'UPDATE usuarios SET is_active = ? WHERE id = ?',
-            [is_active, id]
-        );
-        
-        return result.affectedRows > 0;
-    } catch (error) {
-        throw error;
-    }
+  try {
+    const [result] = await db.query(
+      'UPDATE usuarios SET is_active = ? WHERE id = ?',
+      [is_active, id]
+    );
+
+    return result.affectedRows > 0;
+  } catch (error) {
+    throw error;
+  }
 };
 
 exports.atualizarFoto = async (userId, fotoUrl) => {
-    try {
-        const [result] = await db.query(
-            'UPDATE usuarios SET foto_url = ? WHERE id = ?',
-            [fotoUrl, userId]
-        );
-        
-        return result.affectedRows > 0;
-    } catch (error) {
-        throw error;
-    }
+  try {
+    const [result] = await db.query(
+      'UPDATE usuarios SET foto_url = ? WHERE id = ?',
+      [fotoUrl, userId]
+    );
+
+    return result.affectedRows > 0;
+  } catch (error) {
+    throw error;
+  }
 };
 
 exports.ativarConta = async (userId) => {
-   const phone = `+244${userId}`
-    try {
-        const [result] = await db.query(
-          `UPDATE usuarios 
+  const phone = `+244${userId}`
+  try {
+    const [result] = await db.query(
+      `UPDATE usuarios 
             SET 
                 is_active = true,
                 data_pagamento_mensal = NOW()
             WHERE 
                 telefone = ?`,
-          [phone]
-        );
+      [phone]
+    );
 
-        return result.affectedRows > 0;
-    } catch (error) {
-        throw error;
-    }
+    return result.affectedRows > 0;
+  } catch (error) {
+    throw error;
+  }
 };
 
 exports.updatePaymentDate = async (userId, paymentDate) => {

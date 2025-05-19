@@ -108,8 +108,6 @@ const userModel = require('../models/userModel');
  *                           format: uri
  */
 router.get('/anuncios', AnuncioController.listarPublicos);
-
-
 //----------------------------------------------------------------------------------------------------------------
 /**
  * @swagger

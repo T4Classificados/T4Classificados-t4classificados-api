@@ -107,8 +107,6 @@ exports.listarAdmin = async (status = 'todos', search = '', page = 1, limit = 10
 
     // Filtrar pelo campo is_active baseado no status
     if (status !== 'all') {
-      console.log('Status selecionado:', status);
-
       // Mapear os valores em inglês para os valores numéricos
       let isActiveValue;
       if (status === 'active') {

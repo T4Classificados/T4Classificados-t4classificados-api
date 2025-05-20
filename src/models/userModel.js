@@ -96,11 +96,21 @@ exports.updateUser = async (id, updateData) => {
   return result.affectedRows > 0;
 };
 
-exports.listarAdmin = async (status = 'todos', search = '', page = 1, limit = 10) => {
+exports.listarAdmin = async (
+  filtros,
+  page = 1,
+  limit = 10,
+) => {
   try {
     const safePage = Math.max(1, parseInt(page));
     const safeLimit = Math.max(1, parseInt(limit));
     const offset = (safePage - 1) * safeLimit;
+    const { status = 'all',
+      province = 'all',
+      accountType = 'all',
+      search = '' } = filtros;
+
+      console.log(province)
 
     const whereConditions = [];
     const params = [];
@@ -126,7 +136,17 @@ exports.listarAdmin = async (status = 'todos', search = '', page = 1, limit = 10
         console.log('Valor de status inválido, ignorando filtro:', status);
       }
     }
+     // Filtrar por província
+    if (province !== 'all') {
+      whereConditions.push('u.provincia = ?');
+      params.push(province);
+    }
 
+    // Filtrar por tipo de conta (role)
+    if (accountType !== 'all') {
+      whereConditions.push('u.role = ?');
+      params.push(accountType);
+    }
     // Filtro de busca pelo nome ou telefone
     if (search) {
       const searchWords = search.toLowerCase().trim().split(/\s+/);
@@ -172,7 +192,6 @@ exports.listarAdmin = async (status = 'todos', search = '', page = 1, limit = 10
     const [usuarios] = await db.query(queryUsuarios, [...params, safeLimit, offset]);
     const [totalResult] = await db.query(queryTotal, params);
     const total = totalResult[0].total;
-
     const baseUrl = process.env.BASE_URL || 'http://localhost:4000';
 
     const usuariosFormatados = usuarios.map(usuario => ({

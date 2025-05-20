@@ -32,32 +32,32 @@ function generateConfirmationCode() {
   }
 } */
 
-  async function sendSMS(phoneNumber, smsMessage) {
-    const urlToSendMessage = process.env.URL_TO_SEND_MESSAGE;
-    const API_KEY = process.env.API_TELCOSMS_KEY;
+async function sendSMS(phoneNumber, smsMessage) {
+  const urlToSendMessage = process.env.URL_TO_SEND_MESSAGE;
+  const API_KEY = process.env.API_TELCOSMS_KEY;
 
-    const payload = {
-      message: {
-        api_key_app: API_KEY,
-        phone_number: phoneNumber,
-        message_body: smsMessage,
+  const payload = {
+    message: {
+      api_key_app: API_KEY,
+      phone_number: phoneNumber,
+      message_body: smsMessage,
+    },
+  };
+  try {
+    const message = await fetch(urlToSendMessage, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
       },
-    };
-    try {
-      const message = await fetch(urlToSendMessage, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(payload)
-      });
-      console.log("SMS enviado com sucesso:", message.sid);
-      return true;
-    } catch (error) {
-      console.error("Erro ao enviar SMS:", error);
-      return false;
-    }
+      body: JSON.stringify(payload)
+    });
+    console.log("SMS enviado com sucesso:", message.sid);
+    return true;
+  } catch (error) {
+    console.error("Erro ao enviar SMS:", error);
+    return false;
   }
+}
 
 if (!process.env.JWT_SECRET) {
   console.error('JWT_SECRET não está definido. Verifique seu arquivo .env');
@@ -65,28 +65,28 @@ if (!process.env.JWT_SECRET) {
 }
 
 function gerarReferenciaPagamento(telefone) {
-    // Remove o prefixo +244 e qualquer outro caractere não numérico
-    const numeroLimpo = telefone.replace(/\D/g, '').replace(/^244/, '');
-    return numeroLimpo;
+  // Remove o prefixo +244 e qualquer outro caractere não numérico
+  const numeroLimpo = telefone.replace(/\D/g, '').replace(/^244/, '');
+  return numeroLimpo;
 }
 
 function formatarValor(valor) {
-    return new Intl.NumberFormat('pt-AO', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-    }).format(valor);
+  return new Intl.NumberFormat('pt-AO', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }).format(valor);
 }
 
 exports.register = async (req, res) => {
   try {
-    const { 
-      nome, 
+    const {
+      nome,
       sobrenome,
-      telefone, 
+      telefone,
       role,
       senha,
       provincia,
-      municipio, 
+      municipio,
       bilhete
     } = req.body;
 
@@ -132,9 +132,9 @@ exports.register = async (req, res) => {
   } catch (error) {
     console.error('Erro no registro:', error);
     res.status(500).json({
-        success: false,
-        message: 'Erro ao registrar usuário',
-        error: error.message
+      success: false,
+      message: 'Erro ao registrar usuário',
+      error: error.message
     });
   }
 };
@@ -145,24 +145,24 @@ exports.loginUser = async (req, res) => {
 
     const user = await userModel.getUserByTelefone(telefone);
 
-    
+
 
     if (!user) {
       return res.status(401).json({ message: 'Credenciais inválidas' });
     }
 
-   /*  if (!user.is_active) {
-      return res.status(403).json({ message: 'Conta não ativada. Por favor, verifique seu SMS e ative sua conta.' });
-    } */
+    /*  if (!user.is_active) {
+       return res.status(403).json({ message: 'Conta não ativada. Por favor, verifique seu SMS e ative sua conta.' });
+     } */
 
 
     const isPasswordValid = await bcrypt.compare(senha, user.senha);
-    
+
     if (!isPasswordValid) {
       return res.status(401).json({ message: 'Credenciais inválidas' });
     }
 
-    
+
 
     const accessToken = jwt.sign(
       { userId: user.id, telefone: user.telefone, role: user.role },
@@ -191,7 +191,7 @@ exports.loginUser = async (req, res) => {
     res.cookie('accessToken', accessToken, cookieOptions);
     res.cookie('refreshToken', refreshToken, cookieOptions);
 
-    res.json({ 
+    res.json({
       message: 'Login bem-sucedido',
       accessToken,
       refreshToken,
@@ -274,7 +274,7 @@ exports.confirmAccount = async (req, res) => {
     );
 
     //await userModel.activateUser(user.id);
-   
+
     /* const smsMessage =  "A tua conta foi criada com sucesso. Podes publicar anúncios todos os dias sem pagar nada";
     const smsSent = await sendSMS(telefone, smsMessage);
 
@@ -410,7 +410,7 @@ exports.getCurrentUser = async (req, res) => {
         status: campanha.status,
         created_at: campanha.created_at,
         updated_at: campanha.updated_at,
-        imagens: campanha.imagens 
+        imagens: campanha.imagens
           ? campanha.imagens.split(',').map(img => `${baseUrl}${img}`)
           : []
       }));
@@ -569,7 +569,7 @@ exports.logout = async (req, res) => {
     // Limpar cookies
     res.clearCookie('accessToken');
     res.clearCookie('refreshToken');
-    
+
     res.json({ message: 'Logout realizado com sucesso' });
   } catch (error) {
     console.error('Erro ao fazer logout:', error);
@@ -591,8 +591,8 @@ exports.updateUser = async (req, res) => {
     const success = await userModel.updateUser(userId, updateData);
 
     if (!success) {
-      return res.status(400).json({ 
-        message: 'Nenhuma alteração realizada. Verifique se os campos enviados são válidos para atualização.' 
+      return res.status(400).json({
+        message: 'Nenhuma alteração realizada. Verifique se os campos enviados são válidos para atualização.'
       });
     }
 
@@ -612,61 +612,71 @@ exports.updateUser = async (req, res) => {
 
 exports.listarAdmin = async (req, res) => {
   try {
-      const { 
-          status = 'todos',
-          search = '',
-          page = 1,
-          limit = 10
-      } = req.query;
+    const {
+      status = 'all',
+      province = 'all',
+      accountType = 'all',
+      search = '',
+      page = 1,
+      limit = 10
+    } = req.query;
 
-      const usuarios = await userModel.listarAdmin(
-          status,
-          search,
-          parseInt(page),
-          parseInt(limit)
-      );
+    const pageNum = parseInt(page, 10);
+    const limitNum = parseInt(limit, 10);
 
-      res.json({
-          success: true,
-          data: usuarios
-      });
+    const filtros = {
+      status,
+      province,
+      accountType,
+      search
+    };
+    const usuarios = await userModel.listarAdmin(
+      filtros,
+      pageNum,
+      limitNum
+    );
+    res.json({
+      success: true,
+      ...usuarios
+    });
   } catch (error) {
-      console.error('Erro ao listar usuários:', error);
-      res.status(500).json({
-          success: false,
-          message: 'Erro ao listar usuários',
-          error: error.message
-      });
+    console.error('Erro ao listar usuários:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro ao listar usuários',
+      error: error.message
+    });
   }
 };
 
 
+
 exports.alterarStatus = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const { is_active } = req.body;
+  try {
+    const { id } = req.params;
+    const { is_active } = req.body;
 
-        const atualizado = await userModel.alterarStatus(id, is_active);
-        
-        if (!atualizado) {
-            return res.status(404).json({
-                success: false,
-                message: 'Usuário não encontrado'
-            });
-        }
+    const atualizado = await userModel.alterarStatus(id, is_active);
 
-        res.json({
-            success: true,
-            message: 'Status do usuário atualizado com sucesso'
-        });
-    } catch (error) {
-        console.error('Erro ao alterar status do usuário:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Erro ao alterar status do usuário',
-            error: error.message
-        });
+    if (!atualizado) {
+      return res.status(404).json({
+        success: false,
+        message: 'Usuário não encontrado'
+      });
     }
+
+    res.json({
+      success: true,
+      message: 'Status do usuário atualizado com sucesso'
+    });
+  } catch (error) {
+    console.error('Erro ao alterar status do usuário:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro ao alterar status do usuário',
+      error: error.message
+    });
+  }
 };
 
 exports.updateProfile = async (req, res) => {
@@ -704,105 +714,105 @@ exports.updateProfile = async (req, res) => {
 };
 
 exports.atualizarFoto = async (req, res) => {
-    try {
-        const { id } = req.params;
+  try {
+    const { id } = req.params;
 
-        // Verifica se o usuário tem permissão (é o próprio usuário ou é admin)
-        if (req.userData.userId != id && req.userData.role !== 'admin') {
-            return res.status(403).json({
-                success: false,
-                message: 'Sem permissão para atualizar foto de outro usuário'
-            });
-        }
-
-        if (!req.file) {
-            return res.status(400).json({
-                success: false,
-                message: 'Nenhuma foto enviada'
-            });
-        }
-
-        const fotoUrl = '/uploads/' + req.file.filename;
-        
-        // Atualizar foto no banco de dados
-        const atualizado = await userModel.atualizarFoto(id, fotoUrl);
-        
-        if (!atualizado) {
-            return res.status(404).json({
-                success: false,
-                message: 'Usuário não encontrado'
-            });
-        }
-
-        const baseUrl = process.env.BASE_URL || 'http://localhost:4000';
-        
-        res.json({
-            success: true,
-            message: 'Foto atualizada com sucesso',
-            data: {
-                foto_url: `${baseUrl}${fotoUrl}`
-            }
-        });
-    } catch (error) {
-        console.error('Erro ao atualizar foto:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Erro ao atualizar foto',
-            error: error.message
-        });
+    // Verifica se o usuário tem permissão (é o próprio usuário ou é admin)
+    if (req.userData.userId != id && req.userData.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Sem permissão para atualizar foto de outro usuário'
+      });
     }
+
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'Nenhuma foto enviada'
+      });
+    }
+
+    const fotoUrl = '/uploads/' + req.file.filename;
+
+    // Atualizar foto no banco de dados
+    const atualizado = await userModel.atualizarFoto(id, fotoUrl);
+
+    if (!atualizado) {
+      return res.status(404).json({
+        success: false,
+        message: 'Usuário não encontrado'
+      });
+    }
+
+    const baseUrl = process.env.BASE_URL || 'http://localhost:4000';
+
+    res.json({
+      success: true,
+      message: 'Foto atualizada com sucesso',
+      data: {
+        foto_url: `${baseUrl}${fotoUrl}`
+      }
+    });
+  } catch (error) {
+    console.error('Erro ao atualizar foto:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro ao atualizar foto',
+      error: error.message
+    });
+  }
 };
 
 exports.processarCallbackPagamento = async (req, res) => {
-    try {
-      const pagamento = {
-        reference_id: req.body.reference_id,
-        transaction_id: req.body.transaction_id,
-        amount: req.body.amount,
-      };
+  try {
+    const pagamento = {
+      reference_id: req.body.reference_id,
+      transaction_id: req.body.transaction_id,
+      amount: req.body.amount,
+    };
 
-      if (!pagamento.reference_id) {
-        return res.status(400).json({
-          success: false,
-          message: "Dados incompletos no callback",
-        });
-      }
-
-      // Atualiza o status do usuário
-      const sucesso = await userModel.ativarConta(pagamento.reference_id);
-
-      if (!sucesso) {
-        return res.status(404).json({
-          success: false,
-          message: "Usuário não encontrado",
-        });
-      }
-      
-      const phone_number = `+244${pagamento.reference_id}`;
-      const user = await userModel.getUserByTelefone(phone_number);
-
-      // Registra o pagamento
-      pagamento.user_id = user.id;
-      await PagamentoModel.registrar(
-        "ativacao_usuario",
-        pagamento.reference_id,
-        pagamento
-      );
-
-     // const telefone = `+244${pagamento.phone_number}`;
-
-     // await sendSMS(telefone, "Sua conta foi activada com sucesso. Bem-vindo ao T4 Classificados.");
-
-      res.json({
-        success: true,
-        message: "Pagamento registrado e conta ativada com sucesso",
+    if (!pagamento.reference_id) {
+      return res.status(400).json({
+        success: false,
+        message: "Dados incompletos no callback",
       });
-    } catch (error) {
-        console.error('Erro ao processar callback de pagamento:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Erro ao processar callback de pagamento',
-            error: error.message
-        });
     }
+
+    // Atualiza o status do usuário
+    const sucesso = await userModel.ativarConta(pagamento.reference_id);
+
+    if (!sucesso) {
+      return res.status(404).json({
+        success: false,
+        message: "Usuário não encontrado",
+      });
+    }
+
+    const phone_number = `+244${pagamento.reference_id}`;
+    const user = await userModel.getUserByTelefone(phone_number);
+
+    // Registra o pagamento
+    pagamento.user_id = user.id;
+    await PagamentoModel.registrar(
+      "ativacao_usuario",
+      pagamento.reference_id,
+      pagamento
+    );
+
+    // const telefone = `+244${pagamento.phone_number}`;
+
+    // await sendSMS(telefone, "Sua conta foi activada com sucesso. Bem-vindo ao T4 Classificados.");
+
+    res.json({
+      success: true,
+      message: "Pagamento registrado e conta ativada com sucesso",
+    });
+  } catch (error) {
+    console.error('Erro ao processar callback de pagamento:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro ao processar callback de pagamento',
+      error: error.message
+    });
+  }
 }

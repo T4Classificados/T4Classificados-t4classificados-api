@@ -1,5 +1,9 @@
 const db = require('../config/database');
 
+
+// Função genérica para retornar o total a partir de qualquer query (sem parâmetros)
+
+
 exports.createUser = async (nome, sobrenome, telefone, senha, provincia, municipio, role = 'user', confirmationCode, bilhete = null) => {
   const [result] = await db.query(
     'INSERT INTO usuarios (nome, sobrenome, telefone, senha, provincia, municipio, role, confirmation_code, is_active, bilhete) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
@@ -96,6 +100,16 @@ exports.updateUser = async (id, updateData) => {
   return result.affectedRows > 0;
 };
 
+exports.getTotalFromQuery= async ()=> {
+  // Exemplo de uso da função genérica
+  const queryTotal = `
+  SELECT COUNT(*) as total
+  FROM usuarios
+`;
+  const [rows] = await db.query(queryTotal);
+  return rows[0]?.total || 0;
+};
+
 exports.listarAdmin = async (
   filtros,
   page = 1,
@@ -190,7 +204,9 @@ exports.listarAdmin = async (
     `;
 
     const [usuarios] = await db.query(queryUsuarios, [...params, safeLimit, offset]);
+
     const [totalResult] = await db.query(queryTotal, params);
+
     const total = totalResult[0].total;
     const baseUrl = process.env.BASE_URL || 'http://localhost:4000';
 

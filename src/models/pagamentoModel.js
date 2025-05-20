@@ -143,6 +143,18 @@ class PagamentoModel {
         }
     }
 
+    static async getTotalPagamentos() {
+        const [rows] = await db.query(
+            `SELECT COUNT(*) as total
+     FROM pagamentos p
+     LEFT JOIN campanhas c ON p.product_id = c.id
+     LEFT JOIN usuarios u ON p.user_id = u.id
+     LEFT JOIN empresas e ON u.empresa_id = e.id`
+        );
+
+        return rows[0]?.total || 0;
+    }
+
     static async listarTodos() {
         try {
             const [rows] = await db.query(

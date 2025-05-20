@@ -34,7 +34,33 @@ const CampanhaController = require('../controllers/campanhaController');
  *         description: Acesso negado
  */
 router.get('/usuarios', auth, adminAuth, UserController.listarAdmin);
-
+/**
+ * @swagger
+ * /admin/summary:
+ *   get:
+ *     summary: Obter resumo administrativo
+ *     description: Retorna o total de usuários e total de pagamentos cadastrados no sistema. Acesso restrito a administradores.
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Totais administrativos retornados com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 totalUsuarios:
+ *                   type: integer
+ *                   example: 150
+ *                 totalPagamentos:
+ *                   type: integer
+ *                   example: 430
+ *       403:
+ *         description: Acesso negado
+ */
+router.get('/summary', auth, adminAuth, UserController.AdminSummary);
 /**
  * @swagger
  * /admin/usuarios/{id}/status:

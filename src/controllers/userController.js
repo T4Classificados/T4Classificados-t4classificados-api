@@ -13,6 +13,28 @@ const accountSid = process.env.TWILIO_ACCOUNT_SID;
 const authToken = process.env.TWILIO_AUTH_TOKEN;
 const client = require("twilio")(accountSid, authToken);
 
+
+exports.AdminSummary = async (req, res) => {
+  try {
+    const total_pagamentos = await PagamentoModel.getTotalPagamentos();
+    const total_usuarios = await userModel.getTotalFromQuery();
+
+    res.json({
+      success: true,
+      total_pagamentos,
+      total_usuarios
+    });
+
+  } catch (error) {
+    console.error('Erro ao listar usuários:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro ao listar usuários',
+      error: error.message
+    });
+  }
+};
+
 function generateConfirmationCode() {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
